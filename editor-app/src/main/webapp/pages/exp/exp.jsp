@@ -63,7 +63,7 @@
         <p></p>
         <jsp:include page="../reviewAccept.jsp"/>
     </c:when>
-    <c:when test="${user == 'krobbe'}" >
+    <c:when test="${user == 'cderow'}" >
         <p></p>
         <jsp:include page="../reviewAccept.jsp" />
     </c:when>
