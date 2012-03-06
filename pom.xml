@@ -1,188 +1,677 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>uk.ac.ebi.intact.maven</groupId>
         <artifactId>intact-hibernate-master</artifactId>
-        <version>42</version>
+        <version>40</version>
     </parent>
 
-    <modelVersion>4.0.0</modelVersion>
-
     <groupId>uk.ac.ebi.intact.service</groupId>
-    <artifactId>service-master</artifactId>
-    <packaging>pom</packaging>
-    <version>3-SNAPSHOT</version>
+    <artifactId>editor</artifactId>
+    <packaging>war</packaging>
 
-    <name>IntAct Services</name>
-    <description>Services Master POM</description>
-    <url>http://www.ebi.ac.uk/~intact/devsite/service</url>
+    <version>2.1.5.6</version>
 
-    <properties>
-        <currentVersion>${version}</currentVersion>
-        <jetty.port>9090</jetty.port>
-        <jetty.context>${pom.artifactId}</jetty.context>
-        <tempH2>${project.build.directory}/db/intact-${artifactId}-${jetty.port}-h2</tempH2>
-
-        <user>${env.USERNAME}</user>
-        <appRoot>/intact</appRoot>
-
-        <core.version>2.4.0-SNAPSHOT</core.version>
-    </properties>
-
-    <modules>
-        <module>commons</module>
-        <module>editor</module>
-        <module>statistics</module>
-        <module>imex</module>
-        <module>exporter</module>
-    </modules>
+    <name>Service :: IntAct Editor</name>
 
     <scm>
-        <connection>scm:svn:https://intact.googlecode.com/svn/repo/service/trunk</connection>
-        <developerConnection>scm:svn:https://intact.googlecode.com/svn/repo/service/trunk</developerConnection>
-        <url>http://code.google.com/p/intact/source/browse/repo/service/trunk</url>
+        <connection>scm:svn:https://intact.googlecode.com/svn/repo/service/trunk/editor</connection>
+        <developerConnection>scm:svn:https://intact.googlecode.com/svn/repo/service/trunk/editor</developerConnection>
+        <url>http://code.google.com/p/intact/wiki/Editor</url>
     </scm>
 
+    <properties>
+        <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
+        <timestamp>${maven.build.timestamp}</timestamp>
+
+        <core.version>2.6.0-SNAPSHOT</core.version>
+        <spring.version>3.0.3.RELEASE</spring.version>
+        <bridges.version>2.1.4</bridges.version>
+        <h2.version>1.3.162</h2.version>
+
+        <!-- configurable bits -->
+        <jetty.port>9192</jetty.port>
+        <jetty.contextPath>/${pom.artifactId}</jetty.contextPath>
+
+        <!-- database defaults -->
+        <db.jndi>jdbc/IntactEditorDS</db.jndi>
+
+        <!--<db.url>jdbc:h2:editordb;DB_CLOSE_DELAY=-1;LOCK_MODE=0</db.url>-->
+        <db.url>${db.protocol}:${db.subprotocol}${db.separator}${db.alias}</db.url>
+        <db.hbm2ddl>none</db.hbm2ddl>
+
+        <!-- other property defaults -->
+        <webapp.logo.url>http://www.ebi.ac.uk/~intact/images/intact_logo.png</webapp.logo.url>
+        <intact.instance.name>Not Set</intact.instance.name>
+        <google.username></google.username>
+        <google.password></google.password>
+        <maintainer.emails>skerrien@ebi.ac.uk</maintainer.emails>
+
+        <userContext.scope>session</userContext.scope>
+
+        <projectStage>Development</projectStage>
+
+    </properties>
+
     <build>
+        <finalName>${artifactId}-${version}</finalName>
 
-        <finalName>intact-${artifactId}-${db.alias}-${version}-${buildNumber}</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
 
-        <pluginManagement>
-            <plugins>
-               <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>maven-buildnumber-plugin</artifactId>
-                <version>0.9.4</version>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>create</goal>
-                        </goals>
-                    </execution>
-                </executions>
+        <plugins>
+            <plugin>
+                <groupId>org.mortbay.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>7.2.0.RC0</version>
                 <configuration>
-                    <doCheck>false</doCheck>
-                    <doUpdate>false</doUpdate>
+                    <connectors>
+                        <connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
+                            <port>${jetty.port}</port>
+                            <maxIdleTime>600000</maxIdleTime>
+                        </connector>
+                    </connectors>
+                    <scanIntervalSeconds>0</scanIntervalSeconds>
+                    <webAppConfig>
+                        <contextPath>${jetty.contextPath}</contextPath>
+                        <jettyEnvXml>${build.outputDirectory}/META-INF/jetty-env.xml</jettyEnvXml>
+                    </webAppConfig>
+                </configuration>
+                <dependencies>
+
+                    <dependency>
+                        <groupId>javax.servlet.jsp</groupId>
+                        <artifactId>jsp-api</artifactId>
+                        <version>2.2</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>javax.el</groupId>
+                        <artifactId>el-api</artifactId>
+                        <version>2.2.1-b01</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.glassfish.web</groupId>
+                        <artifactId>el-impl</artifactId>
+                        <version>2.2.1-b01</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.mortbay.jetty</groupId>
+                        <artifactId>jsp-2.1-glassfish</artifactId>
+                        <version>9.1.1.B60.25.p2</version>
+                        <exclusions>
+                            <exclusion>
+                                <groupId>org.mortbay.jetty</groupId>
+                                <artifactId>jsp-api-2.1</artifactId>
+                            </exclusion>
+                            <exclusion>
+                                <groupId>org.mortbay.jetty</groupId>
+                                <artifactId>start</artifactId>
+                            </exclusion>
+                            <exclusion>
+                                <groupId>org.mortbay.jetty</groupId>
+                                <artifactId>jetty-annotations</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
                 </configuration>
             </plugin>
 
-            </plugins>
-        </pluginManagement>
+        </plugins>
     </build>
 
-    <dependencyManagement>
-        <dependencies>
-            <!-- IntAct dependencies -->
-            <dependency>
-                <groupId>uk.ac.ebi.intact.core</groupId>
-                <artifactId>intact-core</artifactId>
-                <version>${core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>uk.ac.ebi.intact.core</groupId>
-                <artifactId>intact-annotations</artifactId>
-                <version>${core.version}</version>
-            </dependency>
+    <profiles>
+        <profile>
 
-            <!-- Inter-group dependencies: services -->
-            <dependency>
-                <groupId>uk.ac.ebi.intact.service.commons</groupId>
-                <artifactId>app-commons</artifactId>
-                <version>${currentVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>uk.ac.ebi.intact.service.search.legacy</groupId>
-                <artifactId>search-engine</artifactId>
-                <version>${currentVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>uk.ac.ebi.intact.service.hierarchview</groupId>
-                <artifactId>intact-graph</artifactId>
-                <version>${currentVersion}</version>
-                <exclusions>
-                <exclusion>
-                    <groupId>cglib</groupId>
-                    <artifactId>cglib-full</artifactId>
-                </exclusion>
-            </exclusions>
-            </dependency>
+            <!-- Documentation: http://code.google.com/p/intact/wiki/Editor  -->
 
-            <!-- Web development-->
-            <dependency>
-                <groupId>struts</groupId>
-                <artifactId>struts</artifactId>
-                <version>1.2.9</version>
-            </dependency>
+            <id>standalone</id>
+            <properties>
 
-            <!-- server -->
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>servlet-api</artifactId>
-                <version>2.4</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>jsp-api</artifactId>
-                <version>2.0</version>
-                <scope>provided</scope>
-            </dependency>
+                <!-- LOCK_MODE=3:      Transaction Isolation = Read Committed (docs: http://goo.gl/LqADa) -->
+                <!-- CACHE_SIZE=X:     The H2 cache measured in Kb, here set to 128Mb (docs: http://goo.gl/KpXiY) -->
+                <!-- MVCC=TRUE:        Prevents table locking when using LOCK_MODE=3 -->
+                <!-- AUTO_SERVER=TRUE: Allows multiple TCP connection, delegates to H2 the client or server mode management -->
+                <db.url>jdbc:h2:~/editor-db;AUTO_SERVER=TRUE;LOCK_MODE=3;MVCC=TRUE;CACHE_SIZE=131072</db.url>
+
+                <db.driver>org.h2.Driver</db.driver>
+                <db.dialect>org.hibernate.dialect.H2Dialect</db.dialect>
+                <db.user>sa</db.user>
+                <db.password></db.password>
+                <db.hbm2ddl>update</db.hbm2ddl>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <version>${h2.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>integration-tests</id>
+            <properties>
+                <db.url>jdbc:h2:tcp:localhost:39102/intact-editor;DB_CLOSE_DELAY=-1;LOCK_MODE=0</db.url>
+                <db.driver>org.h2.Driver</db.driver>
+                <db.dialect>org.hibernate.dialect.H2Dialect</db.dialect>
+                <db.user>sa</db.user>
+                <db.password></db.password>
+                <db.hbm2ddl>update</db.hbm2ddl>
+
+                <projectStage>Production</projectStage>
+                <userContext.scope>singleton</userContext.scope>
+
+                <daemon>true</daemon>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                      <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <!-- start server before integration tests -->
+                                <id>start-h2</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>uk.ac.ebi.intact.editor.StartH2Server</mainClass>
+                                    <classpathScope>test</classpathScope>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!-- populate test data -->
+                                <id>create-test-data</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>uk.ac.ebi.intact.editor.DataPopulator</mainClass>
+                                    <classpathScope>test</classpathScope>
+                                    <cleanupDaemonThreads>true</cleanupDaemonThreads>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!-- stop server after integration tests -->
+                                <id>stop-h2</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>uk.ac.ebi.intact.editor.StopH2Server</mainClass>
+                                    <classpathScope>test</classpathScope>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
 
 
-            <!-- Other third party dependencies -->
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>1.2.15</version>
-                <exclusions>
-                   <exclusion>
-                      <groupId>com.sun.jmx</groupId>
-                      <artifactId>jmxri</artifactId>
-                  </exclusion>
-                </exclusions>
-            </dependency>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>2.10</version>
+                        <executions>
+                            <execution>
+                                <id>run-tests</id>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <argLine>-Xmx1024m -XX:MaxPermSize=250m</argLine>
+                        </configuration>
+                    </plugin>
 
-            <dependency>
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-                <version>1.1.1</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-collections</groupId>
-                <artifactId>commons-collections</artifactId>
-                <version>3.2</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>2.3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>1.0.20070429</version>
-            </dependency>
+                    <plugin>
+                        <groupId>org.mortbay.jetty</groupId>
+                        <artifactId>jetty-maven-plugin</artifactId>
+                        <version>7.2.0.RC0</version>
+                        <configuration>
+                            <connectors>
+                                <connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
+                                    <port>33442</port>
+                                    <maxIdleTime>600000</maxIdleTime>
+                                </connector>
+                            </connectors>
+                            <scanIntervalSeconds>0</scanIntervalSeconds>
+                            <webAppConfig>
+                                <contextPath>${jetty.contextPath}</contextPath>
+                                <jettyEnvXml>${build.outputDirectory}/META-INF/jetty-env.xml</jettyEnvXml>
+                            </webAppConfig>
+                            <stopPort>29966</stopPort>
+                            <stopKey>die!!!!</stopKey>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>start-jetty</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <daemon>${daemon}</daemon>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>stop-jetty</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                            </execution>
+                        </executions>
 
-        </dependencies>
-
-    </dependencyManagement>
+                        <dependencies>
+                            <dependency>
+                                <groupId>javax.servlet.jsp</groupId>
+                                <artifactId>jsp-api</artifactId>
+                                <version>2.2</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>javax.el</groupId>
+                                <artifactId>el-api</artifactId>
+                                <version>2.2.1-b01</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.glassfish.web</groupId>
+                                <artifactId>el-impl</artifactId>
+                                <version>2.2.1-b01</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.mortbay.jetty</groupId>
+                                <artifactId>jsp-2.1-glassfish</artifactId>
+                                <version>9.1.1.B60.25.p2</version>
+                                <exclusions>
+                                    <exclusion>
+                                        <groupId>org.mortbay.jetty</groupId>
+                                        <artifactId>jsp-api-2.1</artifactId>
+                                    </exclusion>
+                                    <exclusion>
+                                        <groupId>org.mortbay.jetty</groupId>
+                                        <artifactId>start</artifactId>
+                                    </exclusion>
+                                    <exclusion>
+                                        <groupId>org.mortbay.jetty</groupId>
+                                        <artifactId>jetty-annotations</artifactId>
+                                    </exclusion>
+                                </exclusions>
+                            </dependency>
+                            <dependency>
+                                <groupId>com.h2database</groupId>
+                                <artifactId>h2</artifactId>
+                                <version>${h2.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <dependencies>
+        <!-- IntAct -->
+        <dependency>
+            <groupId>uk.ac.ebi.intact.core</groupId>
+            <artifactId>intact-core</artifactId>
+            <version>${core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>uk.ac.ebi.intact.core</groupId>
+            <artifactId>intact-batch</artifactId>
+            <version>${core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>uk.ac.ebi.intact.dbupdate</groupId>
+            <artifactId>intact-proteins-update</artifactId>
+            <version>2.1.2-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Bridges -->
+        <dependency>
+            <groupId>uk.ac.ebi.intact.bridges</groupId>
+            <artifactId>intact-uniprot</artifactId>
+            <version>2.1.5-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>uk.ac.ebi.intact.bridges</groupId>
+            <artifactId>intact-imexcentral</artifactId>
+            <version>${bridges.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>uk.ac.ebi.intact.bridges</groupId>
+            <artifactId>intact-citexplore</artifactId>
+            <version>${bridges.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>uk.ac.ebi.intact.bridges</groupId>
+            <artifactId>intact-go</artifactId>
+            <version>${bridges.version}</version>
+        </dependency>
+
+        <!-- PSIMI -->
+        <dependency>
+            <groupId>psidev.psi.mi</groupId>
+            <artifactId>psimitab</artifactId>
+            <version>1.7.10-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>psidev.psi.mi</groupId>
+            <artifactId>psimitab-search</artifactId>
+            <version>1.7.10-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.6.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.6.1</version>
+            <!--            <optional>true</optional>-->
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <version>1.6.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>99.0-does-not-exist</version>
+        </dependency>
+
+        <!-- Intact -->
+        <dependency>
+            <groupId>uk.ac.ebi.intact.bridges</groupId>
+            <artifactId>intact-ontologies</artifactId>
+            <version>${bridges.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>uk.ac.ebi.intact.commons</groupId>
+            <artifactId>intact-commons</artifactId>
+            <version>2.1.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>uk.ac.ebi.intact.dataexchange.psimi</groupId>
+            <artifactId>intact-psixml-exchange</artifactId>
+            <version>2.1.4-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>cpdetector</groupId>
+                    <artifactId>cpdetector</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>uk.ac.ebi.intact.dataexchange.psimi</groupId>
+            <artifactId>intact-solr</artifactId>
+            <version>2.1.4-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.lucene</groupId>
+                    <artifactId>com.springsource.org.apache.lucene</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.solr</groupId>
+                    <artifactId>solr-lucene-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.solr</groupId>
+                    <artifactId>solr-lucene-highlighter</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>uk.ac.ebi.intact.util</groupId>
+            <artifactId>intact-ols</artifactId>
+            <version>2.0-beta-8</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.axis</groupId>
+                    <artifactId>axis-saaj</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- PSICQUIC -->
+        <!--<dependency>-->
+        <!--<groupId>org.hupo.psi.mi.psicquic</groupId>-->
+        <!--<artifactId>psicquic-client</artifactId>-->
+        <!--<version>1.3-SNAPSHOT</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>org.hupo.psi.mi.psicquic</groupId>-->
+        <!--<artifactId>psicquic-registry-client</artifactId>-->
+        <!--<version>1.0-SNAPSHOT</version>-->
+        <!--</dependency>-->
+
+        <!-- other -->
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-highlighter</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <version>2.8.1</version>
+        </dependency>
+        <dependency>
+            <groupId>concurrent</groupId>
+            <artifactId>concurrent</artifactId>
+            <version>1.3.4</version>
+        </dependency>
+
+        <!-- JSF (MyFaces) -->
+        <dependency>
+            <groupId>org.apache.myfaces.core</groupId>
+            <artifactId>myfaces-api</artifactId>
+            <version>2.1.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.myfaces.core</groupId>
+            <artifactId>myfaces-impl</artifactId>
+            <version>2.1.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+            <version>1.2</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- MyFaces Orchestra -->
+        <dependency>
+            <groupId>org.apache.myfaces.orchestra</groupId>
+            <artifactId>myfaces-orchestra-core20</artifactId>
+            <version>1.5-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-el</groupId>
+            <artifactId>commons-el</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <!-- Primefaces -->
+        <dependency>
+            <groupId>org.primefaces</groupId>
+            <artifactId>primefaces</artifactId>
+            <version>3.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.2.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.4</version>
+        </dependency>
+
+        <!-- Atmosphere (Comet) -->
+        <dependency>
+            <groupId>org.atmosphere</groupId>
+            <artifactId>atmosphere-runtime</artifactId>
+            <version>0.5</version>
+        </dependency>
+
+        <!-- PretyFaces -->
+        <dependency>
+            <groupId>com.ocpsoft</groupId>
+            <artifactId>prettyfaces-jsf2</artifactId>
+            <version>3.3.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.5</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>jsp-api</artifactId>
+            <version>2.2</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Spring -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-taglibs</artifactId>
+            <version>2.0.5.RELEASE</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-context</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-support</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-beans</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-aop</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-web</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- JAX RS -->
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-bundle-jaxrs</artifactId>
+            <version>2.4.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-server</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlbeans</groupId>
+            <artifactId>xmlbeans</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+
+        <!-- Google -->
+        <dependency>
+            <groupId>com.google.gdata</groupId>
+            <artifactId>gdata-projecthosting-2.1</artifactId>
+            <version>1.41.3</version>
+        </dependency>
+
+        <!--&lt;!&ndash; H2 for user management &ndash;&gt;-->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.2.143</version>
+        </dependency>
+
+        <!-- Tests -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.3.1</version>
+            <version>4.10</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>2.19.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <repositories>
-         <repository>
-             <id>intact.nexus</id>
-             <name>IntAct Nexus</name>
-             <url>http://www.ebi.ac.uk/intact/maven/nexus/content/groups/public</url>
-         </repository>
+        <repository>
+            <id>intact.nexus</id>
+            <name>IntAct Nexus</name>
+            <url>http://www.ebi.ac.uk/intact/maven/nexus/content/groups/public</url>
+        </repository>
     </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>intact.nexus</id>
+            <name>IntAct Nexus</name>
+            <url>http://www.ebi.ac.uk/intact/maven/nexus/content/groups/public</url>
+        </pluginRepository>
+
+    </pluginRepositories>
+
 
 </project>
