@@ -81,6 +81,7 @@ public class MiExportServiceImpl implements MiExportService {
         return response;
     }
 
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     public Object exportExperiment(final String ac, final String format) {
         Response response = null;
         try {
@@ -112,6 +113,7 @@ public class MiExportServiceImpl implements MiExportService {
         return response;
     }
 
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     public Object exportInteraction(final String ac, final String format) {
         Response response = null;
         try {
@@ -478,8 +480,6 @@ public class MiExportServiceImpl implements MiExportService {
             return Collections.EMPTY_LIST;
         }
 
-        PublicationConverter publicationConverter = new PublicationConverter();
-        ExperimentConverter experimentConverter = new ExperimentConverter();
         ExpansionStrategy expansionStrategy = new SpokeWithoutBaitExpansion(true, true);
         Intact2BinaryInteractionConverter intactInteractionConverter = new Intact2BinaryInteractionConverter(expansionStrategy);
 
