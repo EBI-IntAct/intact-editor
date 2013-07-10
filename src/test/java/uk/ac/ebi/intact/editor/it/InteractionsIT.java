@@ -28,10 +28,13 @@ public class InteractionsIT extends AbstractAnnotatedObjectIT {
         loginAs("curator");
 
         // When: I import P12345 using the Import... dialog
-        importParticipant("P12345");
+        showImportParticipantsDialog();
+        searchParticipantsUsing("P12345");
+        importSelectedByDefault();
+        waitUntilElementHasText(By.id("interactionTabs:participantsTable:2:participantId"), "P12345");
 
         // Then: the first participant in the table should be the new P12345
-        assertThat(identityForParticipantInFirstRow(), is(equalTo("P12345")));
+        assertThat(identityForParticipantInThirdRow(), is(equalTo("P12345")));
 	}
 
     private void importParticipant(String participantId) {
@@ -334,10 +337,9 @@ public class InteractionsIT extends AbstractAnnotatedObjectIT {
         waitUntilElementIsPresent(By.id("interactionTabs:ipDialogPanel:searchParticipantTxt"));
     }
 
-    private String identityForParticipantInFirstRow() {
-        final By firstIdInRowElement = By.xpath("//span[@id=\"interactionTabs:participantsTable:0:participantId\"]");
-        return driver.findElement(firstIdInRowElement).getText();
+    private String identityForParticipantInThirdRow() {
+        final By idInRowElement = By.id("interactionTabs:participantsTable:2:participantId");
+        return driver.findElement(idInRowElement).getText();
     }
-
 
 }
