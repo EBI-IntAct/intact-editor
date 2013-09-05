@@ -250,12 +250,11 @@
                 <!--<p:tooltip for="newPmid" value="Type a PMID and click on auto-complete" showDelay="2000"-->
                            <!--showEvent="focus" hideEvent="blur"/>-->
 
-
                 <p:commandButton id="autoCompleteBtn"
                                  value="Auto-complete"
                                  process="newPmid"
                                  action="#{publicationController.newAutocomplete}"
-                                 disabled="#{not publicationController.citexploreOnline}"/>
+                                 disabled="#{not publicationController.citexploreOnline}"  update=":editorForm"/>
 
                 <br/>
 
