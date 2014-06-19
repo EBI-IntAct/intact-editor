@@ -31,7 +31,7 @@
 
         <core.version>2.6.5</core.version>
         <spring.version>3.1.2.RELEASE</spring.version>
-        <bridges.version>2.1.9</bridges.version>
+        <bridges.version>2.1.10</bridges.version>
         <dbupdate.version>2.1.6</dbupdate.version>
         <psimi.version>1.8.4</psimi.version>
         <dataexchange.version>2.1.9</dataexchange.version>
