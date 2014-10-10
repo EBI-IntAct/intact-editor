@@ -29,7 +29,7 @@
         <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
 
-        <core.version>2.6.6</core.version>
+        <core.version>2.6.7</core.version>
         <spring.version>3.2.4.RELEASE</spring.version>
         <bridges.version>2.1.11</bridges.version>
         <dbupdate.version>2.1.7</dbupdate.version>
@@ -368,7 +368,7 @@
         <dependency>
             <groupId>uk.ac.ebi.intact.jami</groupId>
             <artifactId>intact-jami</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
 
         <dependency>
