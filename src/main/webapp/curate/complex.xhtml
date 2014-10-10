@@ -218,7 +218,9 @@
                                   valueChangeAwareObject="#{complexController}"
                                   oncomplete="ia_enableSave()"
                                   update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
-                                  selectItems="#{editorOrganismService.organismSelectItems}">
+                                  selectItems="#{editorOrganismService.organismSelectItems}"
+                        rendered="true"
+                        required="Organism is required">
                     <ed:curation/>
                 </ia:inputOrganism>
             </td>

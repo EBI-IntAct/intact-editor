@@ -564,20 +564,24 @@ public class SearchController extends AnnotatedObjectController {
         complexes = LazyDataModelFactory.createLazyDataModel( getJamiEntityManager(),
 
                 "select distinct i " +
-                        "from IntactComplex i left join i.dbXrefs as x left join i.dbAliases as a left join i.organism as o " +
+                        "from IntactComplex i left join i.dbXrefs as x " +
                         "where    i.ac = :ac " +
                         "      or lower(i.shortName) like :query " +
                         "      or lower(x.id) like :query "+
-                        "      or lower(a.name) like :query "+
-                        "      or lower(o.dbTaxid) = :ac ",
+                        "or i.ac in (select distinct i2.ac from IntactComplex i2 left join i2.dbAliases as a " +
+                        "where lower(a.name) like :query )"+
+                        "or i.ac in (select distinct i3.ac from IntactComplex i3 left join i3.organism as o " +
+                        "where lower(o.dbTaxid) = :ac )",
 
                 "select count(distinct i.ac) " +
-                        "from IntactComplex i left join i.dbXrefs as x left join i.dbAliases as a left join i.organism as o " +
+                        "from IntactComplex i left join i.dbXrefs as x " +
                         "where    i.ac = :ac " +
                         "      or lower(i.shortName) like :query " +
                         "      or lower(x.id) like :query "+
-                        "      or lower(a.name) like :query "+
-                        "      or lower(o.dbTaxid) = :ac ",
+                        "or i.ac in (select distinct i2.ac from IntactComplex i2 left join i2.dbAliases as a " +
+                        "where lower(a.name) like :query )"+
+                        "or i.ac in (select distinct i3.ac from IntactComplex i3 left join i3.organism as o " +
+                        "where lower(o.dbTaxid) = :ac )",
 
                 params, "i", "updated", false );
 
