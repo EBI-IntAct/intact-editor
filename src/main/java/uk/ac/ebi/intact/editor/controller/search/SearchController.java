@@ -53,7 +53,7 @@ public class SearchController extends AnnotatedObjectController {
     private String query;
     private String quickQuery;
 
-    private int threadTimeOut = 5;
+    private int threadTimeOut = 10;
 
     private AnnotatedObject annotatedObject;
     private IntactPrimaryObject jamiObject;
@@ -149,10 +149,8 @@ public class SearchController extends AnnotatedObjectController {
         log.info( "Searching for '" + query + "'..." );
 
         if ( !StringUtils.isEmpty( query ) ) {
-            final String originalQuery = query;
-            query = query.toLowerCase().trim();
-
-            String q = query;
+            final String originalQuery = query.trim();
+            String q = query.toLowerCase().trim();
 
             q = q.replaceAll( "\\*", "%" );
             q = q.replaceAll( "\\?", "%" );
@@ -229,21 +227,21 @@ public class SearchController extends AnnotatedObjectController {
             Runnable runnableMol = new Runnable() {
                 @Override
                 public void run() {
-                   loadMolecules( finalQuery, originalQuery );
+                    loadMolecules( finalQuery, originalQuery );
                 }
             };
 
             Runnable runnableCvs = new Runnable() {
                 @Override
                 public void run() {
-                   loadCvObjects( finalQuery, originalQuery );
+                    loadCvObjects( finalQuery, originalQuery );
                 }
             };
 
             Runnable runnableOrganisms = new Runnable() {
                 @Override
                 public void run() {
-                   loadOrganisms( finalQuery, originalQuery );
+                    loadOrganisms( finalQuery, originalQuery );
                 }
             };
 
@@ -265,10 +263,8 @@ public class SearchController extends AnnotatedObjectController {
         log.info( "Searching for '" + query + "'..." );
 
         if ( !StringUtils.isEmpty( query ) ) {
-            final String originalQuery = query;
-            query = query.toLowerCase().trim();
-
-            String q = query;
+            final String originalQuery = query.trim();
+            String q = query.toLowerCase().trim();
 
             q = q.replaceAll( "\\*", "%" );
             q = q.replaceAll( "\\?", "%" );
@@ -421,23 +417,23 @@ public class SearchController extends AnnotatedObjectController {
         // all cvobjects
         cvobjects = LazyDataModelFactory.createLazyDataModel( getCoreEntityManager(),
 
-                                                              "select distinct i " +
-                                                              "from CvObject i left join i.xrefs as x " +
-                                                              "where    ( i.ac = :ac " +
-                                                              "      or lower(i.shortLabel) like :query " +
-                                                              "      or lower(i.fullName) like :query " +
-                                                              "      or lower(i.identifier) like :query " +
-                                                              "      or lower(x.id) like :query ) ",
+                "select distinct i " +
+                        "from CvObject i left join i.xrefs as x " +
+                        "where    ( i.ac = :ac " +
+                        "      or lower(i.shortLabel) like :query " +
+                        "      or lower(i.fullName) like :query " +
+                        "      or lower(i.identifier) like :query " +
+                        "      or lower(x.id) like :query ) ",
 
-                                                              "select count(distinct i) " +
-                                                              "from CvObject i left join i.xrefs as x " +
-                                                              "where   (i.ac = :ac " +
-                                                              "      or lower(i.identifier) like :query " +
-                                                              "      or lower(i.shortLabel) like :query " +
-                                                              "      or lower(i.fullName) like :query " +
-                                                              "      or lower(x.id) like :query )",
+                "select count(distinct i) " +
+                        "from CvObject i left join i.xrefs as x " +
+                        "where   (i.ac = :ac " +
+                        "      or lower(i.identifier) like :query " +
+                        "      or lower(i.shortLabel) like :query " +
+                        "      or lower(i.fullName) like :query " +
+                        "      or lower(x.id) like :query )",
 
-                                                              params, "i", "updated", false);
+                params, "i", "updated", false);
 
         log.info( "CvObject found: " + cvobjects.getRowCount() );
     }
@@ -454,23 +450,23 @@ public class SearchController extends AnnotatedObjectController {
         // all molecules but interactions
         molecules = LazyDataModelFactory.createLazyDataModel( getCoreEntityManager(),
 
-                                                              "select distinct i " +
-                                                              "from InteractorImpl i left join i.xrefs as x " +
-                                                              "where    ( i.ac = :ac " +
-                                                              "      or lower(i.shortLabel) like :query " +
-                                                              "      or lower(i.fullName) like :query " +
-                                                              "      or lower(x.primaryId) like :query ) " +
-                                                              "      and i.category <> :evidence",
+                "select distinct i " +
+                        "from InteractorImpl i left join i.xrefs as x " +
+                        "where    ( i.ac = :ac " +
+                        "      or lower(i.shortLabel) like :query " +
+                        "      or lower(i.fullName) like :query " +
+                        "      or lower(x.primaryId) like :query ) " +
+                        "      and i.category <> :evidence",
 
-                                                              "select count(distinct i) " +
-                                                              "from InteractorImpl i left join i.xrefs as x " +
-                                                              "where   (i.ac = :ac " +
-                                                              "      or lower(i.shortLabel) like :query " +
-                                                              "      or lower(i.fullName) like :query " +
-                                                              "      or lower(x.primaryId) like :query )" +
-                                                              "     and i.category <> :evidence",
+                "select count(distinct i) " +
+                        "from InteractorImpl i left join i.xrefs as x " +
+                        "where   (i.ac = :ac " +
+                        "      or lower(i.shortLabel) like :query " +
+                        "      or lower(i.fullName) like :query " +
+                        "      or lower(x.primaryId) like :query )" +
+                        "     and i.category <> :evidence",
 
-                                                              params, "i", "updated", false );
+                params, "i", "updated", false );
 
         log.info( "Molecules found: " + molecules.getRowCount() );
     }
@@ -488,17 +484,17 @@ public class SearchController extends AnnotatedObjectController {
         return getIntactDao().getModelledParticipantDao().countFeaturesForParticipant(ac);
     }
 
-	public int countParticipantsExpressIn( String biosourceAc ) {
-		return getDaoFactory().getComponentDao().getByExpressedIn(biosourceAc).size();
-	}
+    public int countParticipantsExpressIn( String biosourceAc ) {
+        return getDaoFactory().getComponentDao().getByExpressedIn(biosourceAc).size();
+    }
 
-	public int countExperimentsByHostOrganism( String biosourceAc ) {
-		return getDaoFactory().getExperimentDao().getByHostOrganism(biosourceAc).size();
-	}
+    public int countExperimentsByHostOrganism( String biosourceAc ) {
+        return getDaoFactory().getExperimentDao().getByHostOrganism(biosourceAc).size();
+    }
 
-	public int countInteractorsByOrganism( String biosourceAc ) {
-		return getDaoFactory().getInteractorDao().getByBioSourceAc( biosourceAc).size();
-	}
+    public int countInteractorsByOrganism( String biosourceAc ) {
+        return getDaoFactory().getInteractorDao().getByBioSourceAc( biosourceAc).size();
+    }
 
     public CvExperimentalRole getExperimentalRoleForParticipantAc( Component comp ) {
         return getDaoFactory().getComponentDao().getByAc(comp.getAc()).getCvExperimentalRole();
@@ -534,21 +530,21 @@ public class SearchController extends AnnotatedObjectController {
         // Load experiment eagerly to avoid LazyInitializationException when rendering the view
         interactions = LazyDataModelFactory.createLazyDataModel( getCoreEntityManager(),
 
-                                                                 "select distinct i " +
-                                                                 "from InteractionImpl i left join i.xrefs as x " +
-                                                                 "where    (i.ac = :ac " +
-                                                                 "      or lower(i.shortLabel) like :query " +
-                                                                 "      or lower(x.primaryId) like :query )" +
-                                                                 "      and i.category = :evidence ",
+                "select distinct i " +
+                        "from InteractionImpl i left join i.xrefs as x " +
+                        "where    (i.ac = :ac " +
+                        "      or lower(i.shortLabel) like :query " +
+                        "      or lower(x.primaryId) like :query )" +
+                        "      and i.category = :evidence ",
 
-                                                                 "select count(distinct i.ac) " +
-                                                                 "from InteractionImpl i left join i.xrefs as x " +
-                                                                 "where    (i.ac = :ac " +
-                                                                 "      or lower(i.shortLabel) like :query " +
-                                                                 "      or lower(x.primaryId) like :query )"+
-                                                                  "      and i.category = :evidence ",
+                "select count(distinct i.ac) " +
+                        "from InteractionImpl i left join i.xrefs as x " +
+                        "where    (i.ac = :ac " +
+                        "      or lower(i.shortLabel) like :query " +
+                        "      or lower(x.primaryId) like :query )"+
+                        "      and i.category = :evidence ",
 
-                                                                 params, "i", "updated", false );
+                params, "i", "updated", false );
 
         log.info( "Interactions found: " + interactions.getRowCount() );
     }
@@ -568,20 +564,20 @@ public class SearchController extends AnnotatedObjectController {
                         "where    i.ac = :ac " +
                         "      or lower(i.shortName) like :query " +
                         "      or lower(x.id) like :query "+
-                        "or i.ac in (select distinct i2.ac from IntactComplex i2 left join i2.dbAliases as a " +
-                        "where lower(a.name) like :query )"+
-                        "or i.ac in (select distinct i3.ac from IntactComplex i3 left join i3.organism as o " +
-                        "where lower(o.dbTaxid) = :ac )",
+                        "      or i.ac in (select distinct i2.ac from IntactComplex i2 left join i2.dbAliases as a " +
+                        "      where lower(a.name) like :query ) "+
+                        "      or i.ac in (select distinct i3.ac from IntactComplex i3 left join i3.organism as o " +
+                        "      where lower(o.dbTaxid) = :ac )",
 
-                "select count(distinct i.ac) " +
+                "select count( distinct i.ac ) " +
                         "from IntactComplex i left join i.dbXrefs as x " +
                         "where    i.ac = :ac " +
                         "      or lower(i.shortName) like :query " +
                         "      or lower(x.id) like :query "+
-                        "or i.ac in (select distinct i2.ac from IntactComplex i2 left join i2.dbAliases as a " +
-                        "where lower(a.name) like :query )"+
-                        "or i.ac in (select distinct i3.ac from IntactComplex i3 left join i3.organism as o " +
-                        "where lower(o.dbTaxid) = :ac )",
+                        "      or i.ac in (select distinct i2.ac from IntactComplex i2 left join i2.dbAliases as a " +
+                        "      where lower(a.name) like :query ) "+
+                        "      or i.ac in (select distinct i3.ac from IntactComplex i3 left join i3.organism as o " +
+                        "      where lower(o.dbTaxid) = :ac )",
 
                 params, "i", "updated", false );
 
@@ -595,7 +591,7 @@ public class SearchController extends AnnotatedObjectController {
             exps = interaction.getExperiments();
         } else {
             Query query = getDaoFactory().getEntityManager().createQuery("select e from Experiment e join e.interactions as i " +
-                                                                  "where i.ac = :interactionAc");
+                    "where i.ac = :interactionAc");
             query.setParameter("interactionAc", interaction.getAc());
 
             exps = query.getResultList();
@@ -619,21 +615,21 @@ public class SearchController extends AnnotatedObjectController {
 
         experiments = LazyDataModelFactory.createLazyDataModel( getCoreEntityManager(),
 
-                                                                "select distinct e " +
-                                                                "from Experiment e left join e.xrefs as x " +
-                                                                        "left join e.cvInteraction as d " +
-                                                                "where  d.identifier = :inferred and  (e.ac = :ac " +
-                                                                "      or lower(e.shortLabel) like :query " +
-                                                                "      or lower(x.primaryId) like :query)) ",
+                "select distinct e " +
+                        "from Experiment e left join e.xrefs as x " +
+                        "left join e.cvInteraction as d " +
+                        "where  d.identifier = :inferred and  (e.ac = :ac " +
+                        "      or lower(e.shortLabel) like :query " +
+                        "      or lower(x.primaryId) like :query)) ",
 
-                                                                "select count(distinct e) " +
-                                                                "from Experiment e left join e.xrefs as x " +
-                                                                        "left join e.cvInteraction as d " +
-                                                                "where  d.identifier = :inferred and (e.ac = :ac " +
-                                                                "      or lower(e.shortLabel) like :query " +
-                                                                "      or lower(x.primaryId) like :query) ",
+                "select count(distinct e) " +
+                        "from Experiment e left join e.xrefs as x " +
+                        "left join e.cvInteraction as d " +
+                        "where  d.identifier = :inferred and (e.ac = :ac " +
+                        "      or lower(e.shortLabel) like :query " +
+                        "      or lower(x.primaryId) like :query) ",
 
-                                                                params, "e", "updated", false );
+                params, "e", "updated", false );
 
         log.info( "Experiment found: " + experiments.getRowCount() );
     }
@@ -652,23 +648,23 @@ public class SearchController extends AnnotatedObjectController {
         // TODO add: author
         publications = LazyDataModelFactory.createLazyDataModel( getCoreEntityManager(),
 
-                                                                 "select distinct p " +
-                                                                 "from Publication p left join p.xrefs as x " +
-                                                                 "where  p.shortLabel not in (:intactReleased, :intactOnHold, :pdbOnHold, :chemblOnHold) " +
-                                                                 "and  (p.ac = :ac " +
-                                                                 "      or lower(p.shortLabel) like :query " +
-                                                                 "      or lower(p.fullName) like :query " +
-                                                                 "      or lower(x.primaryId) like :query) ",
+                "select distinct p " +
+                        "from Publication p left join p.xrefs as x " +
+                        "where  p.shortLabel not in (:intactReleased, :intactOnHold, :pdbOnHold, :chemblOnHold) " +
+                        "and  (p.ac = :ac " +
+                        "      or lower(p.shortLabel) like :query " +
+                        "      or lower(p.fullName) like :query " +
+                        "      or lower(x.primaryId) like :query) ",
 
-                                                                 "select count(distinct p) " +
-                                                                 "from Publication p left join p.xrefs as x " +
-                                                                 "where  p.shortLabel not in (:intactReleased, :intactOnHold, :pdbOnHold, :chemblOnHold) " +
-                                                                 "and  (p.ac = :ac " +
-                                                                 "      or lower(p.shortLabel) like :query " +
-                                                                 "      or lower(p.fullName) like :query " +
-                                                                 "      or lower(x.primaryId) like :query) ",
+                "select count(distinct p) " +
+                        "from Publication p left join p.xrefs as x " +
+                        "where  p.shortLabel not in (:intactReleased, :intactOnHold, :pdbOnHold, :chemblOnHold) " +
+                        "and  (p.ac = :ac " +
+                        "      or lower(p.shortLabel) like :query " +
+                        "      or lower(p.fullName) like :query " +
+                        "      or lower(x.primaryId) like :query) ",
 
-                                                                 params, "p", "updated", false );
+                params, "p", "updated", false );
 
         log.info( "Publications found: " + publications.getRowCount() );
     }
@@ -683,21 +679,21 @@ public class SearchController extends AnnotatedObjectController {
 
         features = LazyDataModelFactory.createLazyDataModel( getCoreEntityManager(),
 
-                                                                 "select distinct p " +
-                                                                 "from Feature p left join p.xrefs as x " +
-                                                                 "where  p.category = :evidence and  (p.ac = :ac " +
-                                                                 "      or lower(p.shortLabel) like :query " +
-                                                                 "      or lower(p.fullName) like :query " +
-                                                                 "      or lower(x.primaryId) like :query) ",
+                "select distinct p " +
+                        "from Feature p left join p.xrefs as x " +
+                        "where  p.category = :evidence and  (p.ac = :ac " +
+                        "      or lower(p.shortLabel) like :query " +
+                        "      or lower(p.fullName) like :query " +
+                        "      or lower(x.primaryId) like :query) ",
 
-                                                                 "select count(distinct p) " +
-                                                                 "from Feature p left join p.xrefs as x " +
-                                                                 "where p.category = :evidence and  (p.ac = :ac " +
-                                                                 "      or lower(p.shortLabel) like :query " +
-                                                                 "      or lower(p.fullName) like :query " +
-                                                                 "      or lower(x.primaryId) like :query) ",
+                "select count(distinct p) " +
+                        "from Feature p left join p.xrefs as x " +
+                        "where p.category = :evidence and  (p.ac = :ac " +
+                        "      or lower(p.shortLabel) like :query " +
+                        "      or lower(p.fullName) like :query " +
+                        "      or lower(x.primaryId) like :query) ",
 
-                                                                 params, "p", "updated", false);
+                params, "p", "updated", false);
 
         log.info( "Features found: " + features.getRowCount() );
     }
@@ -712,21 +708,21 @@ public class SearchController extends AnnotatedObjectController {
         // Load experiment eagerly to avoid LazyInitializationException when redering the view
         organisms = LazyDataModelFactory.createLazyDataModel( getCoreEntityManager(),
 
-                                                                 "select distinct b " +
-                                                                 "from BioSource b " +
-                                                                 "where    b.ac = :ac " +
-                                                                 "      or lower(b.shortLabel) like :query " +
-                                                                 "      or lower(b.fullName) like :query " +
-                                                                 "      or lower(b.taxId) like :query ",
+                "select distinct b " +
+                        "from BioSource b " +
+                        "where    b.ac = :ac " +
+                        "      or lower(b.shortLabel) like :query " +
+                        "      or lower(b.fullName) like :query " +
+                        "      or lower(b.taxId) like :query ",
 
-                                                                 "select count(distinct b) " +
-                                                                 "from BioSource b " +
-                                                                 "where    b.ac = :ac " +
-                                                                 "      or lower(b.shortLabel) like :query " +
-                                                                 "      or lower(b.fullName) like :query " +
-                                                                 "      or lower(b.taxId) like :query ",
+                "select count(distinct b) " +
+                        "from BioSource b " +
+                        "where    b.ac = :ac " +
+                        "      or lower(b.shortLabel) like :query " +
+                        "      or lower(b.fullName) like :query " +
+                        "      or lower(b.taxId) like :query ",
 
-                                                                 params, "b", "updated", false);
+                params, "b", "updated", false);
 
         log.info( "Organisms found: " + organisms.getRowCount() );
     }
@@ -759,7 +755,7 @@ public class SearchController extends AnnotatedObjectController {
         log.info( "Participants found: " + participants.getRowCount() );
     }
 
-    private void loadModelledFeatures(String finalQuery, String originalQuery) {
+    private void loadModelledFeatures(String query, String originalQuery) {
         log.info( "Searching for complex features matching '" + query + "' or AC '"+originalQuery+"'..." );
 
         final HashMap<String, String> params = Maps.<String, String>newHashMap();
@@ -851,7 +847,7 @@ public class SearchController extends AnnotatedObjectController {
         return cvobjects;
     }
 
-     public LazyDataModel<Feature> getFeatures() {
+    public LazyDataModel<Feature> getFeatures() {
         return features;
     }
 
