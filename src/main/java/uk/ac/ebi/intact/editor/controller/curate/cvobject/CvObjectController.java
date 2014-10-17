@@ -7,6 +7,8 @@ import org.primefaces.model.DualListModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import uk.ac.ebi.intact.core.context.IntactContext;
 import uk.ac.ebi.intact.editor.controller.curate.AnnotatedObjectController;
 import uk.ac.ebi.intact.editor.controller.curate.cloner.CvObjectIntactCloner;
@@ -87,7 +89,7 @@ public class CvObjectController extends AnnotatedObjectController {
 
     @Override
     public void setJamiObject(IntactPrimaryObject annotatedObject) {
-         // nothing to do
+        // nothing to do
     }
 
     @Override
@@ -95,6 +97,7 @@ public class CvObjectController extends AnnotatedObjectController {
         return clone(cvObject, new CvObjectIntactCloner());
     }
 
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void loadData(ComponentSystemEvent evt) {
         if (!FacesContext.getCurrentInstance().isPostback()) {
             if (ac != null) {
@@ -150,7 +153,7 @@ public class CvObjectController extends AnnotatedObjectController {
             if (this.classMap.containsKey(cvClass)){
                 CvDagObject parent = (CvDagObject)getDaoFactory().getCvObjectDao(cvClass).getByIdentifier(this.classMap.get(cvClass));
                 if (parent != null){
-                     obj.getParents().add(parent);
+                    obj.getParents().add(parent);
                 }
             }
         } catch (Exception e) {
@@ -167,7 +170,7 @@ public class CvObjectController extends AnnotatedObjectController {
     public boolean doSaveDetails() {
         cvObjectService.refresh(null);
         cvTermService.clearAll();
-        
+
         Collection<CvObject> parentsToRemove = CollectionUtils.subtract(cvObject.getParents(), parents.getTarget());
         Collection<CvObject> parentsToAdd = CollectionUtils.subtract(parents.getTarget(), cvObject.getParents());
 
