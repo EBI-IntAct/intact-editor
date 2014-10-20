@@ -19,6 +19,8 @@ import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import uk.ac.ebi.intact.editor.controller.JpaAwareController;
 import uk.ac.ebi.intact.model.*;
 import uk.ac.ebi.intact.model.util.AnnotatedObjectUtils;
@@ -40,20 +42,20 @@ public class ExperimentDetailedViewController extends JpaAwareController {
     private String ac;
     private ExperimentWrapper experimentWrapper;
 
-	private List<String> annotationTopicsForExpOverview =
-			Arrays.asList(
-					CvTopic.ACCEPTED,
-					CvTopic.TO_BE_REVIEWED,
-					CvTopic.ON_HOLD,
-					CvTopic.HIDDEN,
-					CvTopic.COMMENT_MI_REF,
-					CvTopic.REMARK_INTERNAL,
-					CvTopic.CORRECTION_COMMENT,
-					CvTopic.COMMENT,
-					"MI:0591", //experiment description
-					"MI:0627", //experiment modification
-					"MI:0633" //data-processing
-					);
+    private List<String> annotationTopicsForExpOverview =
+            Arrays.asList(
+                    CvTopic.ACCEPTED,
+                    CvTopic.TO_BE_REVIEWED,
+                    CvTopic.ON_HOLD,
+                    CvTopic.HIDDEN,
+                    CvTopic.COMMENT_MI_REF,
+                    CvTopic.REMARK_INTERNAL,
+                    CvTopic.CORRECTION_COMMENT,
+                    CvTopic.COMMENT,
+                    "MI:0591", //experiment description
+                    "MI:0627", //experiment modification
+                    "MI:0633" //data-processing
+            );
 
     @Autowired
     private ExperimentController experimentController;
@@ -61,22 +63,23 @@ public class ExperimentDetailedViewController extends JpaAwareController {
     public ExperimentDetailedViewController() {
     }
 
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void loadData( ComponentSystemEvent event ) {
         if (!FacesContext.getCurrentInstance().isPostback()) {
             if (experimentController.getExperiment() != null) {
                 Experiment experiment = experimentController.getExperiment();
 
-                this.experimentWrapper = new ExperimentWrapper(experiment, getDaoFactory().getEntityManager());
+                this.experimentWrapper = new ExperimentWrapper(experiment, getCoreEntityManager());
                 ac = experiment.getAc();
             }
             else if (ac != null) {
                 Experiment experiment = getDaoFactory().getExperimentDao().getByAc(ac);
                 if (isComplexExperiment(experiment)){
-                   experiment = null;
+                    experiment = null;
                 }
 
                 if (experiment != null) {
-                    this.experimentWrapper = new ExperimentWrapper(experiment, getDaoFactory().getEntityManager());
+                    this.experimentWrapper = new ExperimentWrapper(experiment, getCoreEntityManager());
                     experimentController.setExperiment(experiment);
                 } else {
                     addErrorMessage("No experiment with this AC", "Verify the URL");
@@ -100,7 +103,7 @@ public class ExperimentDetailedViewController extends JpaAwareController {
         return false;
     }
 
-	//Now in experiment_overview we show all the annotations in the interaction not only these two
+    //Now in experiment_overview we show all the annotations in the interaction not only these two
 //	@Deprecated
 //    public String figureLegendForInteraction(Interaction interaction) {
 //        return findAnnotationText(interaction, "MI:0599");
@@ -116,40 +119,40 @@ public class ExperimentDetailedViewController extends JpaAwareController {
 //        return findAnnotationText(interaction, CvTopic.COMMENT_MI_REF);
 //    }
 
-	public List<Annotation> experimentAnnotationsByOverviewCriteria(Experiment experiment) {
+    public List<Annotation> experimentAnnotationsByOverviewCriteria(Experiment experiment) {
 
-		if (experiment == null) return null;
+        if (experiment == null) return null;
 
-		List<Annotation> annotations = new ArrayList<Annotation>();
-		for(String topic: annotationTopicsForExpOverview){
-			Annotation annotation = AnnotatedObjectUtils.findAnnotationByTopicMiOrLabel(experiment, topic);
-			if(annotation!=null){
-				annotations.add(annotation);
-			}
-		}
-		return annotations;
-	}
+        List<Annotation> annotations = new ArrayList<Annotation>();
+        for(String topic: annotationTopicsForExpOverview){
+            Annotation annotation = AnnotatedObjectUtils.findAnnotationByTopicMiOrLabel(experiment, topic);
+            if(annotation!=null){
+                annotations.add(annotation);
+            }
+        }
+        return annotations;
+    }
 
 
-	public static String parameterAsString(Parameter param){
-		if (param == null){
-			return null;
-		}
+    public static String parameterAsString(Parameter param){
+        if (param == null){
+            return null;
+        }
 
-		String value = null;
+        String value = null;
 
-		if (param.getFactor() != null) {
-			value = String.valueOf(param.getFactor());
+        if (param.getFactor() != null) {
+            value = String.valueOf(param.getFactor());
 
-			if ((param.getExponent() != null && param.getExponent() != 0) || (param.getBase() !=null && param.getBase() != 10)) {
-				value = param.getFactor() + "x" + param.getBase() + "^" + param.getExponent();
-			}
-			if (param.getUncertainty()!=null && param.getUncertainty() != 0.0) {
-				value = value + " ~" + param.getUncertainty();
-			}
-		}
-		return value;
-	}
+            if ((param.getExponent() != null && param.getExponent() != 0) || (param.getBase() !=null && param.getBase() != 10)) {
+                value = param.getFactor() + "x" + param.getBase() + "^" + param.getExponent();
+            }
+            if (param.getUncertainty()!=null && param.getUncertainty() != 0.0) {
+                value = value + " ~" + param.getUncertainty();
+            }
+        }
+        return value;
+    }
 
     public String featureAsString(Feature feature) {
         StringBuilder sb = new StringBuilder();
