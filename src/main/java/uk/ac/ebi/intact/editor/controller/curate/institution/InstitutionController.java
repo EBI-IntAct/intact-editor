@@ -1,7 +1,6 @@
 package uk.ac.ebi.intact.editor.controller.curate.institution;
 
 import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
-import org.hibernate.Hibernate;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Propagation;
@@ -14,7 +13,6 @@ import uk.ac.ebi.intact.model.Institution;
 
 import javax.faces.context.FacesContext;
 import javax.faces.event.ComponentSystemEvent;
-import java.util.List;
 
 /**
  * @author Bruno Aranda (baranda@ebi.ac.uk)
@@ -118,47 +116,5 @@ public class InstitutionController extends AnnotatedObjectController {
 
     public void setUrl(String address) {
         updateAnnotation(CvTopic.URL_MI_REF, address);
-    }
-
-    @Override
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectAnnotations() {
-        if (!Hibernate.isInitialized(this.institution.getAnnotations())){
-            Institution reloadedInstitution = getCoreEntityManager().merge(this.institution);
-            setInstitution(reloadedInstitution);
-        }
-
-        List aliases = super.collectAnnotations();
-
-        getCoreEntityManager().detach(this.institution);
-        return aliases;
-    }
-
-    @Override
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectXrefs() {
-        if (!Hibernate.isInitialized(this.institution.getXrefs())){
-            Institution reloadedInstitution = getCoreEntityManager().merge(this.institution);
-            setInstitution(reloadedInstitution);
-        }
-
-        List xrefs = super.collectXrefs();
-
-        getCoreEntityManager().detach(this.institution);
-        return xrefs;
-    }
-
-    @Override
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectAliases() {
-        if (!Hibernate.isInitialized(this.institution.getAnnotations())){
-            Institution reloadedInstitution = getCoreEntityManager().merge(this.institution);
-            setInstitution(reloadedInstitution);
-        }
-
-        List aliases = super.collectAliases();
-
-        getCoreEntityManager().detach(this.institution);
-        return aliases;
     }
 }
