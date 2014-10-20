@@ -14,7 +14,10 @@ import uk.ac.ebi.intact.editor.controller.curate.ChangesController;
 import uk.ac.ebi.intact.editor.controller.curate.PersistenceController;
 import uk.ac.ebi.intact.editor.controller.curate.cloner.BiosourceIntactCloner;
 import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
-import uk.ac.ebi.intact.model.*;
+import uk.ac.ebi.intact.model.AnnotatedObject;
+import uk.ac.ebi.intact.model.BioSource;
+import uk.ac.ebi.intact.model.BioSourceAlias;
+import uk.ac.ebi.intact.model.CvAliasType;
 
 import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
@@ -214,8 +217,17 @@ public class BioSourceController extends AnnotatedObjectController {
     }
 
     @Override
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public List collectAliases() {
-        return super.collectAliases();
+        if (!Hibernate.isInitialized(this.bioSource.getAliases())){
+            BioSource reloadedBiosource = getCoreEntityManager().merge(this.bioSource);
+            setBioSource(reloadedBiosource);
+        }
+
+        List aliases = super.collectAliases();
+
+        getCoreEntityManager().detach(this.bioSource);
+        return aliases;
     }
 
     @Override
