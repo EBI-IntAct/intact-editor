@@ -26,7 +26,7 @@ import java.util.*;
  * @version $Id$
  */
 public class ExperimentWrapper {
-
+    
     private Experiment experiment;
     private List<Interaction> interactions;
     private Map<String, List<Annotation>> interactionAnnotations;
@@ -34,7 +34,7 @@ public class ExperimentWrapper {
     private Map<String, List<Parameter>> interactionsParameters;
 
     private Map<String, List<Component>> componentsMap;
-    private Map<String, List<String>> componentFeatures;
+    private Map<String, List<FeatureSummary>> componentFeatures;
 
     public ExperimentWrapper(Experiment experiment) {
         this.experiment = experiment;
@@ -46,7 +46,7 @@ public class ExperimentWrapper {
         interactionXrefs = new HashMap<String, List<Xref>>(interactions.size());
         interactionsParameters = new HashMap<String, List<Parameter>>(interactions.size());
         componentsMap = new HashMap<String, List<Component>>(interactions.size());
-        componentFeatures = new HashMap<String, List<String>>(interactions.size() * 2);
+        componentFeatures = new HashMap<String, List<FeatureSummary>>(interactions.size() * 2);
 
         for (Interaction inter : interactions){
             String ac = inter.getAc() != null ? inter.getAc() : Integer.toString(inter.hashCode());
@@ -58,10 +58,11 @@ public class ExperimentWrapper {
             for (Component comp : inter.getComponents()){
                 String compAc = comp.getAc() != null ? comp.getAc() : Integer.toString(inter.hashCode());
 
-                List<String> features = new ArrayList<String>(comp.getFeatures().size());
+                List<FeatureSummary> features = new ArrayList<FeatureSummary>(comp.getFeatures().size());
                 componentFeatures.put(compAc, features);
                 for (Feature f : comp.getFeatures()){
-                    features.add(featureAsString(f));
+                    features.add(new FeatureSummary(featureAsString(f),
+                            f.getBoundDomain() != null ? f.getBoundDomain().getShortLabel():null));
                 }
             }
         }
@@ -132,7 +133,7 @@ public class ExperimentWrapper {
         return componentsMap.get(ac);
     }
 
-    public List<String> getFeatures(Component component){
+    public List<FeatureSummary> getFeatures(Component component){
         String ac = component.getAc() != null ? component.getAc() : Integer.toString(component.hashCode());
 
         return componentFeatures.get(ac);
@@ -145,18 +146,18 @@ public class ExperimentWrapper {
             return o1.getShortLabel().compareTo(o2.getShortLabel());
         }
     }
-
+    
     private static class ComponentOrder implements Comparator<Component> {
-
+        
         private static Map<String,Integer> rolePriorities = new HashMap<String, Integer>();
-
+        
         static {
             rolePriorities.put(CvExperimentalRole.BAIT_PSI_REF, 1);
             rolePriorities.put(CvExperimentalRole.ENZYME_PSI_REF, 5);
             rolePriorities.put(CvExperimentalRole.ENZYME_TARGET, 10);
             rolePriorities.put(CvExperimentalRole.PREY_PSI_REF, 15);
         }
-
+        
         @Override
         public int compare(Component o1, Component o2) {
             Integer priority1 = rolePriorities.get(experimentalRoleIdentifierFor(o1));
@@ -179,10 +180,10 @@ public class ExperimentWrapper {
 
             final InteractorXref idXref1 = (idXrefs1.isEmpty())? null : idXrefs1.iterator().next();
             final InteractorXref idXref2 = (idXrefs2.isEmpty())? null : idXrefs2.iterator().next();
-
+            
             String id1 = (idXref1 != null)? idXref1.getPrimaryId() : "";
             String id2 = (idXref2 != null)? idXref2.getPrimaryId() : "";
-
+            
             return id1.compareTo(id2);
         }
 
