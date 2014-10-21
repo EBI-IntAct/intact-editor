@@ -749,7 +749,6 @@ public class PublicationController extends AnnotatedObjectController {
         return new DateTime().isBefore(eventTime.plusMinutes(getEditorConfig().getRevertDecisionTime()));
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void doSaveAndClose(ActionEvent evt) {
         doSave(evt);
         doClose(evt);

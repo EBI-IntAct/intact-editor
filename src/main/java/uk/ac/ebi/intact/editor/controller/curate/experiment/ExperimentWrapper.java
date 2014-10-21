@@ -15,11 +15,9 @@
  */
 package uk.ac.ebi.intact.editor.controller.curate.experiment;
 
-import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
 import uk.ac.ebi.intact.model.*;
 import uk.ac.ebi.intact.model.util.XrefUtils;
 
-import javax.faces.model.DataModel;
 import javax.persistence.EntityManager;
 import java.util.*;
 
@@ -28,24 +26,17 @@ import java.util.*;
  * @version $Id$
  */
 public class ExperimentWrapper {
-    
+
     private Experiment experiment;
-    private DataModel interactionsDataModel;
-    
+    private List<Interaction> interactions;
+
     public ExperimentWrapper(Experiment experiment, EntityManager entityManager) {
         this.experiment = experiment;
-        
-        if (experiment.getAc() != null) {
-            this.interactionsDataModel = LazyDataModelFactory.createLazyDataModel(entityManager,
-                    "select i from InteractionImpl i join i.experiments as exp where exp.ac = '"+experiment.getAc()+"' order by i.shortLabel",
-                    "select count(i) from InteractionImpl i join i.experiments as exp where exp.ac = '"+experiment.getAc()+"'");
-        } else {
-            List<Interaction> sortedInteractions = new ArrayList<Interaction>(experiment.getInteractions());
-            Collections.sort(sortedInteractions, new InteractionAlphabeticalOrder());
-            this.interactionsDataModel = LazyDataModelFactory.createLazyDataModel(experiment.getInteractions());
-        }
+
+        interactions = new ArrayList<Interaction>(experiment.getInteractions());
+        Collections.sort(interactions, new InteractionAlphabeticalOrder());
     }
-    
+
     public List<Component> sortedParticipants(Interaction interaction) {
         if (interaction == null ) return Collections.EMPTY_LIST;
 
@@ -58,8 +49,8 @@ public class ExperimentWrapper {
         return experiment;
     }
 
-    public DataModel getInteractionsDataModel() {
-        return interactionsDataModel;
+    public List<Interaction> getInteractions() {
+        return interactions;
     }
 
     private class InteractionAlphabeticalOrder implements Comparator<Interaction> {
@@ -69,18 +60,18 @@ public class ExperimentWrapper {
             return o1.getShortLabel().compareTo(o2.getShortLabel());
         }
     }
-    
+
     private static class ComponentOrder implements Comparator<Component> {
-        
+
         private static Map<String,Integer> rolePriorities = new HashMap<String, Integer>();
-        
+
         static {
             rolePriorities.put(CvExperimentalRole.BAIT_PSI_REF, 1);
             rolePriorities.put(CvExperimentalRole.ENZYME_PSI_REF, 5);
             rolePriorities.put(CvExperimentalRole.ENZYME_TARGET, 10);
             rolePriorities.put(CvExperimentalRole.PREY_PSI_REF, 15);
         }
-        
+
         @Override
         public int compare(Component o1, Component o2) {
             Integer priority1 = rolePriorities.get(experimentalRoleIdentifierFor(o1));
@@ -103,10 +94,10 @@ public class ExperimentWrapper {
 
             final InteractorXref idXref1 = (idXrefs1.isEmpty())? null : idXrefs1.iterator().next();
             final InteractorXref idXref2 = (idXrefs2.isEmpty())? null : idXrefs2.iterator().next();
-            
+
             String id1 = (idXref1 != null)? idXref1.getPrimaryId() : "";
             String id2 = (idXref2 != null)? idXref2.getPrimaryId() : "";
-            
+
             return id1.compareTo(id2);
         }
 
