@@ -1331,6 +1331,7 @@ public class PublicationController extends AnnotatedObjectController {
         publication.setFullName(publicationTitle);
     }
 
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getFirstAuthor() {
         final String authors = getAuthors();
 
