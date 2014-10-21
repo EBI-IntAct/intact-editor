@@ -71,7 +71,7 @@ public class ExperimentDetailedViewController extends JpaAwareController {
             if (experimentController.getExperiment() != null) {
                 Experiment experiment = experimentController.getExperiment();
 
-                this.experimentWrapper = new ExperimentWrapper(experiment, getCoreEntityManager());
+                this.experimentWrapper = new ExperimentWrapper(experiment);
                 ac = experiment.getAc();
             }
             else if (ac != null) {
@@ -81,7 +81,7 @@ public class ExperimentDetailedViewController extends JpaAwareController {
                 }
 
                 if (experiment != null) {
-                    this.experimentWrapper = new ExperimentWrapper(experiment, getCoreEntityManager());
+                    this.experimentWrapper = new ExperimentWrapper(experiment);
                     experimentController.setExperiment(experiment);
                 } else {
                     addErrorMessage("No experiment with this AC", "Verify the URL");
