@@ -89,7 +89,7 @@
 
                         <p:accordionPanel id="interactionsAccPanel" autoHeight="false" multiple="true"
                                           activeIndex="0,1">
-                            <p:tab title="Participants: #{experimentDetailedViewController.experimentWrapper.getParticipants(interaction).size().size()}">
+                            <p:tab title="Participants: #{experimentDetailedViewController.experimentWrapper.getParticipants(interaction).size()}">
 
                                 <p:dataTable var="participant"
                                              value="#{experimentDetailedViewController.experimentWrapper.getParticipants(interaction)}">
