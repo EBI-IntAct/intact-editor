@@ -2,6 +2,8 @@ package uk.ac.ebi.intact.editor.controller.dashboard;
 
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import uk.ac.ebi.intact.editor.controller.UserSessionController;
 import uk.ac.ebi.intact.editor.controller.misc.AbstractUserController;
 import uk.ac.ebi.intact.model.user.User;
@@ -21,25 +23,27 @@ public class UserProfileController extends AbstractUserController {
     private String newPassword1;
     private String newPassword2;
 
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void loadData(ComponentSystemEvent cse) {
         UserSessionController userSessionController = getUserSessionController();
         User user =  getDaoFactory().getUserDao().getByLogin(userSessionController.getCurrentUser().getLogin());
         setUser(user);
     }
 
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String updateProfile() {
         User user = getUser();
 
         // validate password if set
-         if (newPassword1 != null && !newPassword1.isEmpty()) {
-             if (newPassword1.equals(newPassword2)) {
+        if (newPassword1 != null && !newPassword1.isEmpty()) {
+            if (newPassword1.equals(newPassword2)) {
                 user.setPassword(hashedPassword);
-             } else {
-                 addErrorMessage("Wrong password", "Passwords do not match");
-                 FacesContext.getCurrentInstance().renderResponse();
-                 return null;
-             }
-         }
+            } else {
+                addErrorMessage("Wrong password", "Passwords do not match");
+                FacesContext.getCurrentInstance().renderResponse();
+                return null;
+            }
+        }
 
         getDaoFactory().getUserDao().update(user);
 
