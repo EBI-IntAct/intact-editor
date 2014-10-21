@@ -113,7 +113,7 @@
                                     </p:column>
 
                                     <p:column headerText="Features">
-                                        <ui:repeat value="#{participant.features}" var="feature">
+                                        <ui:repeat value="#{experimentDetailedViewController.experimentWrapper.getFeatures(participant)}" var="feature">
                                             <h:outputText
                                                     value="#{experimentDetailedViewController.featureAsString(feature)}"
                                                     styleClass="feature-for-#{participantController.participantPrimaryId(participant)}"/>

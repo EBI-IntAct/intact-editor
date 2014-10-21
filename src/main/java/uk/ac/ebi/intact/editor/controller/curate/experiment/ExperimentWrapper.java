@@ -18,7 +18,6 @@ package uk.ac.ebi.intact.editor.controller.curate.experiment;
 import uk.ac.ebi.intact.model.*;
 import uk.ac.ebi.intact.model.util.XrefUtils;
 
-import javax.persistence.EntityManager;
 import java.util.*;
 
 /**
@@ -34,8 +33,9 @@ public class ExperimentWrapper {
     private Map<String, List<Parameter>> interactionsParameters;
 
     private Map<String, List<Component>> componentsMap;
+    private Map<String, List<Feature>> componentFeatures;
 
-    public ExperimentWrapper(Experiment experiment, EntityManager entityManager) {
+    public ExperimentWrapper(Experiment experiment) {
         this.experiment = experiment;
 
         interactions = new ArrayList<Interaction>(experiment.getInteractions());
@@ -45,6 +45,7 @@ public class ExperimentWrapper {
         interactionXrefs = new HashMap<String, List<Xref>>(interactions.size());
         interactionsParameters = new HashMap<String, List<Parameter>>(interactions.size());
         componentsMap = new HashMap<String, List<Component>>(interactions.size());
+        componentFeatures = new HashMap<String, List<Feature>>(interactions.size() * 2);
 
         for (Interaction inter : interactions){
             String ac = inter.getAc() != null ? inter.getAc() : Integer.toString(inter.hashCode());
@@ -52,6 +53,12 @@ public class ExperimentWrapper {
             interactionsParameters.put(ac, new ArrayList<Parameter>(inter.getParameters()));
             interactionXrefs.put(ac, new ArrayList<Xref>(inter.getXrefs()));
             componentsMap.put(ac, new ArrayList<Component>(sortedParticipants(inter)));
+
+            for (Component comp : inter.getComponents()){
+                String compAc = comp.getAc() != null ? comp.getAc() : Integer.toString(inter.hashCode());
+
+                componentFeatures.put(compAc, new ArrayList<Feature>(comp.getFeatures()));
+            }
         }
     }
 
@@ -93,6 +100,12 @@ public class ExperimentWrapper {
         String ac = interaction.getAc() != null ? interaction.getAc() : Integer.toString(interaction.hashCode());
 
         return componentsMap.get(ac);
+    }
+
+    public List<Feature> getFeatures(Component component){
+        String ac = component.getAc() != null ? component.getAc() : Integer.toString(component.hashCode());
+
+        return componentFeatures.get(ac);
     }
 
     private class InteractionAlphabeticalOrder implements Comparator<Interaction> {
