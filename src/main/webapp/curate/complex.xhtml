@@ -307,6 +307,20 @@
                 </td>
             </h:panelGroup>
         </tr>
+        <tr>
+            <h:panelGroup rendered="#{complexController.complexWithCorrectionComment}">
+
+                <td class="firstCell">
+                    <h:outputLabel value="Correction comment: " for="correctionCommentTxt"/>
+                </td>
+                <td colspan="3">
+                    <p:inputTextarea id="correctionCommentTxt" value="#{complexController.correctionComment}" size="70"
+                                     valueChangeListener="#{complexController.onCorrectionCommentChanged}">
+                        <ed:curation/>
+                    </p:inputTextarea>
+                </td>
+            </h:panelGroup>
+        </tr>
     </table>
 </p:panel>
 
