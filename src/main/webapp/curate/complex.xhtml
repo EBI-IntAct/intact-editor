@@ -218,9 +218,7 @@
                                   valueChangeAwareObject="#{complexController}"
                                   oncomplete="ia_enableSave()"
                                   update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
-                                  selectItems="#{editorOrganismService.organismSelectItems}"
-                        rendered="true"
-                        required="Organism is required">
+                                  selectItems="#{editorOrganismService.organismSelectItems}">
                     <ed:curation/>
                 </ia:inputOrganism>
             </td>
@@ -274,7 +272,7 @@
             <td>
                 <h:panelGroup>
                     <p:inputTextarea id="complexPropertiesTxt" value="#{complexController.complexProperties}" rows="5" cols="60"
-                                 valueChangeListener="#{complexController.onComplexPropertiesChanged}">
+                                     valueChangeListener="#{complexController.onComplexPropertiesChanged}">
                         <ed:curation/>
                     </p:inputTextarea>
                 </h:panelGroup>
@@ -291,6 +289,22 @@
                     <h:panelGroup rendered="#{complexController.onHold}">
                         <p:inputText id="onHoldTxt" value="#{complexController.onHold}" size="70"
                                      valueChangeListener="#{complexController.onHoldChanged}" disabled="#{!complexController.onHold}">
+                            <ed:curation/>
+                        </p:inputText>
+                    </h:panelGroup>
+                </td>
+            </h:panelGroup>
+        </tr>
+        <tr>
+            <h:panelGroup rendered="#{complexController.toBeReviewed}">
+
+                <td class="firstCell">
+                    <h:outputLabel value="To be reviewed: " for="toBeReviewedTxt"/>
+                </td>
+                <td colspan="3">
+                    <h:panelGroup rendered="#{complexController.toBeReviewed}">
+                        <p:inputText id="toBeReviewedTxt" value="#{complexController.toBeReviewed}" size="70"
+                                     valueChangeListener="#{complexController.onToBeReviewedChanged}" disabled="#{!complexController.toBeReviewed}">
                             <ed:curation/>
                         </p:inputText>
                     </h:panelGroup>
