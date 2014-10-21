@@ -24,11 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 import uk.ac.ebi.intact.editor.controller.JpaAwareController;
 import uk.ac.ebi.intact.model.*;
 import uk.ac.ebi.intact.model.util.AnnotatedObjectUtils;
-import uk.ac.ebi.intact.model.util.FeatureUtils;
 
 import javax.faces.context.FacesContext;
 import javax.faces.event.ComponentSystemEvent;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Bruno Aranda (baranda@ebi.ac.uk)
@@ -160,30 +161,6 @@ public class ExperimentDetailedViewController extends JpaAwareController {
             }
         }
         return value;
-    }
-
-    public String featureAsString(Feature feature) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(feature.getShortLabel());
-
-        final Collection<Range> ranges = feature.getRanges();
-        final Iterator<Range> iterator = ranges.iterator();
-
-        while (iterator.hasNext()) {
-            Range next = iterator.next();
-            sb.append("[");
-            sb.append(FeatureUtils.convertRangeIntoString(next));
-            sb.append("]");
-
-            if (iterator.hasNext()) sb.append(", ");
-        }
-
-        if (feature.getCvFeatureType() != null) {
-            sb.append(" ");
-            sb.append(feature.getCvFeatureType().getShortLabel());
-        }
-
-        return sb.toString();
     }
 
 //    @Deprecated

@@ -16,6 +16,7 @@
 package uk.ac.ebi.intact.editor.controller.curate.experiment;
 
 import uk.ac.ebi.intact.model.*;
+import uk.ac.ebi.intact.model.util.FeatureUtils;
 import uk.ac.ebi.intact.model.util.XrefUtils;
 
 import java.util.*;
@@ -33,7 +34,7 @@ public class ExperimentWrapper {
     private Map<String, List<Parameter>> interactionsParameters;
 
     private Map<String, List<Component>> componentsMap;
-    private Map<String, List<Feature>> componentFeatures;
+    private Map<String, List<String>> componentFeatures;
 
     public ExperimentWrapper(Experiment experiment) {
         this.experiment = experiment;
@@ -45,7 +46,7 @@ public class ExperimentWrapper {
         interactionXrefs = new HashMap<String, List<Xref>>(interactions.size());
         interactionsParameters = new HashMap<String, List<Parameter>>(interactions.size());
         componentsMap = new HashMap<String, List<Component>>(interactions.size());
-        componentFeatures = new HashMap<String, List<Feature>>(interactions.size() * 2);
+        componentFeatures = new HashMap<String, List<String>>(interactions.size() * 2);
 
         for (Interaction inter : interactions){
             String ac = inter.getAc() != null ? inter.getAc() : Integer.toString(inter.hashCode());
@@ -57,10 +58,39 @@ public class ExperimentWrapper {
             for (Component comp : inter.getComponents()){
                 String compAc = comp.getAc() != null ? comp.getAc() : Integer.toString(inter.hashCode());
 
-                componentFeatures.put(compAc, new ArrayList<Feature>(comp.getFeatures()));
+                List<String> features = new ArrayList<String>(comp.getFeatures().size());
+                componentFeatures.put(compAc, features);
+                for (Feature f : comp.getFeatures()){
+                    features.add(featureAsString(f));
+                }
             }
         }
     }
+
+    public String featureAsString(Feature feature) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(feature.getShortLabel());
+
+        final Collection<Range> ranges = feature.getRanges();
+        final Iterator<Range> iterator = ranges.iterator();
+
+        while (iterator.hasNext()) {
+            Range next = iterator.next();
+            sb.append("[");
+            sb.append(FeatureUtils.convertRangeIntoString(next));
+            sb.append("]");
+
+            if (iterator.hasNext()) sb.append(", ");
+        }
+
+        if (feature.getCvFeatureType() != null) {
+            sb.append(" ");
+            sb.append(feature.getCvFeatureType().getShortLabel());
+        }
+
+        return sb.toString();
+    }
+
 
     public List<Component> sortedParticipants(Interaction interaction) {
         if (interaction == null ) return Collections.EMPTY_LIST;
@@ -102,7 +132,7 @@ public class ExperimentWrapper {
         return componentsMap.get(ac);
     }
 
-    public List<Feature> getFeatures(Component component){
+    public List<String> getFeatures(Component component){
         String ac = component.getAc() != null ? component.getAc() : Integer.toString(component.hashCode());
 
         return componentFeatures.get(ac);
