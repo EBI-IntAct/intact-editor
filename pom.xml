@@ -858,7 +858,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
-            <version>4.2.12.Final</version>
+            <version>4.1.12.Final</version>
             <exclusions>
                 <!-- using the clib-nodep below, which includes dependencies such as asm -->
                 <exclusion>
