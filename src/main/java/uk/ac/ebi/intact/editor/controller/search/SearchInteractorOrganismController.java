@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.core.context.IntactContext;
 import uk.ac.ebi.intact.editor.controller.JpaAwareController;
 import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
 import uk.ac.ebi.intact.model.InteractorImpl;
@@ -27,55 +26,55 @@ import javax.faces.event.ComponentSystemEvent;
 @SuppressWarnings("unchecked")
 public class SearchInteractorOrganismController extends JpaAwareController {
 
-	private String ac;
-	private String shortLabel;
-	private String numInteractors;
+    private String ac;
+    private String shortLabel;
+    private String numInteractors;
 
-	private LazyDataModel<InteractorImpl> interactors = null;
+    private LazyDataModel<InteractorImpl> interactors = null;
 
-	public String getAc() {
-		return ac;
-	}
+    public String getAc() {
+        return ac;
+    }
 
-	public void setAc(String ac) {
-		this.ac = ac;
-	}
+    public void setAc(String ac) {
+        this.ac = ac;
+    }
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-	public void loadData(ComponentSystemEvent evt) {
-		if (!FacesContext.getCurrentInstance().isPostback()) {
+    public void loadData(ComponentSystemEvent evt) {
+        if (!FacesContext.getCurrentInstance().isPostback()) {
 
-			if (ac != null) {
-				interactors = LazyDataModelFactory.createLazyDataModel(
-						IntactContext.getCurrentInstance().getDaoFactory().getInteractorDao().getByBioSourceAc(ac)
-				);
-			}
-		}
-	}
+            if (ac != null) {
+                interactors = LazyDataModelFactory.createLazyDataModel(
+                        getDaoFactory().getInteractorDao().getByBioSourceAc(ac)
+                );
+            }
+        }
+    }
 
-	public LazyDataModel<InteractorImpl> getInteractors() {
-		return interactors;
-	}
+    public LazyDataModel<InteractorImpl> getInteractors() {
+        return interactors;
+    }
 
-	public void setInteractors(LazyDataModel<InteractorImpl> interactors) {
-		this.interactors = interactors;
-	}
+    public void setInteractors(LazyDataModel<InteractorImpl> interactors) {
+        this.interactors = interactors;
+    }
 
-	public String getShortLabel() {
-		return shortLabel;
-	}
+    public String getShortLabel() {
+        return shortLabel;
+    }
 
-	public void setShortLabel(String shortLabel) {
-		this.shortLabel = shortLabel;
-	}
+    public void setShortLabel(String shortLabel) {
+        this.shortLabel = shortLabel;
+    }
 
-	public void setNumInteractors(String numInteractors) {
-		this.numInteractors = numInteractors;
-	}
+    public void setNumInteractors(String numInteractors) {
+        this.numInteractors = numInteractors;
+    }
 
-	public String getNumInteractors() {
-		return numInteractors;
-	}
+    public String getNumInteractors() {
+        return numInteractors;
+    }
 
 
 }

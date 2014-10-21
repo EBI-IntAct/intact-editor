@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.core.context.IntactContext;
 import uk.ac.ebi.intact.editor.controller.JpaAwareController;
 import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
 import uk.ac.ebi.intact.model.Component;
@@ -27,24 +26,24 @@ import javax.faces.event.ComponentSystemEvent;
 @SuppressWarnings("unchecked")
 public class SearchParticipantExpressInOrganismController extends JpaAwareController {
 
-	private String ac;
-	private String shortLabel;
-	private String numParticipants;
+    private String ac;
+    private String shortLabel;
+    private String numParticipants;
 
-	private LazyDataModel<Component> participants = null;
+    private LazyDataModel<Component> participants = null;
 
 
-	public String getAc() {
-		return ac;
-	}
+    public String getAc() {
+        return ac;
+    }
 
-	public void setAc(String ac) {
-		this.ac = ac;
-	}
+    public void setAc(String ac) {
+        this.ac = ac;
+    }
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-	public void loadData(ComponentSystemEvent evt) {
-		if (!FacesContext.getCurrentInstance().isPostback()) {
+    public void loadData(ComponentSystemEvent evt) {
+        if (!FacesContext.getCurrentInstance().isPostback()) {
 
 //				interactors = IntactContext.getCurrentInstance().getDaoFactory().getInteractorDao().getByBioSourceAc(ac);
 //				final HashMap<String, String> params = Maps.<String, String>newHashMap();
@@ -62,37 +61,37 @@ public class SearchParticipantExpressInOrganismController extends JpaAwareContro
 //
 //						params, "p", "updated", false);
 
-			if (ac != null) {
-				participants = LazyDataModelFactory.createLazyDataModel(
-						IntactContext.getCurrentInstance().getDaoFactory().getComponentDao().getByExpressedIn(ac)
-				);
-			}
-		}
-	}
+            if (ac != null) {
+                participants = LazyDataModelFactory.createLazyDataModel(
+                        getDaoFactory().getComponentDao().getByExpressedIn(ac)
+                );
+            }
+        }
+    }
 
-	public LazyDataModel<Component> getParticipants() {
-		return participants;
-	}
+    public LazyDataModel<Component> getParticipants() {
+        return participants;
+    }
 
-	public void setParticipants(LazyDataModel<Component> participants) {
-		this.participants = participants;
-	}
+    public void setParticipants(LazyDataModel<Component> participants) {
+        this.participants = participants;
+    }
 
-	public String getShortLabel() {
-		return shortLabel;
-	}
+    public String getShortLabel() {
+        return shortLabel;
+    }
 
-	public void setShortLabel(String shortLabel) {
-		this.shortLabel = shortLabel;
-	}
+    public void setShortLabel(String shortLabel) {
+        this.shortLabel = shortLabel;
+    }
 
-	public void setNumParticipants(String numParticipants) {
-		this.numParticipants = numParticipants;
-	}
+    public void setNumParticipants(String numParticipants) {
+        this.numParticipants = numParticipants;
+    }
 
-	public String getNumParticipants() {
-		return numParticipants;
-	}
+    public String getNumParticipants() {
+        return numParticipants;
+    }
 
 
 }

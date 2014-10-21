@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.core.context.IntactContext;
 import uk.ac.ebi.intact.editor.controller.JpaAwareController;
 import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
 import uk.ac.ebi.intact.model.Experiment;
@@ -27,54 +26,54 @@ import javax.faces.event.ComponentSystemEvent;
 @SuppressWarnings("unchecked")
 public class SearchExperimentHostOrganismController extends JpaAwareController {
 
-	private String ac;
-	private String shortLabel;
-	private String numExperiments;
+    private String ac;
+    private String shortLabel;
+    private String numExperiments;
 
-	private LazyDataModel<Experiment> experiments = null;
+    private LazyDataModel<Experiment> experiments = null;
 
-	public String getAc() {
-		return ac;
-	}
+    public String getAc() {
+        return ac;
+    }
 
-	public void setAc(String ac) {
-		this.ac = ac;
-	}
+    public void setAc(String ac) {
+        this.ac = ac;
+    }
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-	public void loadData(ComponentSystemEvent evt) {
-		if (!FacesContext.getCurrentInstance().isPostback()) {
+    public void loadData(ComponentSystemEvent evt) {
+        if (!FacesContext.getCurrentInstance().isPostback()) {
 
-			if (ac != null) {
-				experiments = LazyDataModelFactory.createLazyDataModel(
-						IntactContext.getCurrentInstance().getDaoFactory().getExperimentDao().getByHostOrganism(ac)
-				);
-			}
-		}
-	}
+            if (ac != null) {
+                experiments = LazyDataModelFactory.createLazyDataModel(
+                        getDaoFactory().getExperimentDao().getByHostOrganism(ac)
+                );
+            }
+        }
+    }
 
-	public LazyDataModel<Experiment> getExperiments() {
-		return experiments;
-	}
+    public LazyDataModel<Experiment> getExperiments() {
+        return experiments;
+    }
 
-	public void setExperiments(LazyDataModel<Experiment> experiments) {
-		this.experiments = experiments;
-	}
+    public void setExperiments(LazyDataModel<Experiment> experiments) {
+        this.experiments = experiments;
+    }
 
-	public String getShortLabel() {
-		return shortLabel;
-	}
+    public String getShortLabel() {
+        return shortLabel;
+    }
 
-	public void setShortLabel(String shortLabel) {
-		this.shortLabel = shortLabel;
-	}
+    public void setShortLabel(String shortLabel) {
+        this.shortLabel = shortLabel;
+    }
 
-	public void setNumExperiments(String numExperiments) {
-		this.numExperiments = numExperiments;
-	}
+    public void setNumExperiments(String numExperiments) {
+        this.numExperiments = numExperiments;
+    }
 
-	public String getNumExperiments() {
-		return numExperiments;
-	}
+    public String getNumExperiments() {
+        return numExperiments;
+    }
 }
 

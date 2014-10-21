@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.core.context.IntactContext;
+import uk.ac.ebi.intact.editor.controller.JpaAwareController;
 import uk.ac.ebi.intact.model.Interaction;
 
 import javax.faces.context.FacesContext;
@@ -22,52 +22,52 @@ import java.util.List;
 @Controller
 @Scope( "conversation.access" )
 @ConversationName("search")
-public class SearchInteractionsMoleculeController {
+public class SearchInteractionsMoleculeController extends JpaAwareController {
 
-	private String ac;
-	private List<Interaction> interactions = null;
-	private String shortLabel;
-	private String numInteractions;
+    private String ac;
+    private List<Interaction> interactions = null;
+    private String shortLabel;
+    private String numInteractions;
 
-	public String getAc() {
-		return ac;
-	}
+    public String getAc() {
+        return ac;
+    }
 
-	public void setAc(String ac) {
-		this.ac = ac;
-	}
+    public void setAc(String ac) {
+        this.ac = ac;
+    }
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-	public void loadData(ComponentSystemEvent evt) {
-		if (!FacesContext.getCurrentInstance().isPostback()) {
+    public void loadData(ComponentSystemEvent evt) {
+        if (!FacesContext.getCurrentInstance().isPostback()) {
 
-			if (ac != null) {
-				interactions = IntactContext.getCurrentInstance().getDaoFactory().getInteractionDao().getInteractionsByInteractorAc(ac);
-			}
-		}
-	}
+            if (ac != null) {
+                interactions = getDaoFactory().getInteractionDao().getInteractionsByInteractorAc(ac);
+            }
+        }
+    }
 
-	public List<Interaction> getInteractions() {
-		return interactions;
-	}
+    public List<Interaction> getInteractions() {
+        return interactions;
+    }
 
-	public void setInteractions(List<Interaction> interactions) {
-		this.interactions = interactions;
-	}
+    public void setInteractions(List<Interaction> interactions) {
+        this.interactions = interactions;
+    }
 
-	public String getShortLabel() {
-		return shortLabel;
-	}
+    public String getShortLabel() {
+        return shortLabel;
+    }
 
-	public void setShortLabel(String shortLabel) {
-		this.shortLabel = shortLabel;
-	}
+    public void setShortLabel(String shortLabel) {
+        this.shortLabel = shortLabel;
+    }
 
-	public void setNumInteractions(String numInteractions) {
-		this.numInteractions = numInteractions;
-	}
+    public void setNumInteractions(String numInteractions) {
+        this.numInteractions = numInteractions;
+    }
 
-	public String getNumInteractions() {
-		return numInteractions;
-	}
+    public String getNumInteractions() {
+        return numInteractions;
+    }
 }
