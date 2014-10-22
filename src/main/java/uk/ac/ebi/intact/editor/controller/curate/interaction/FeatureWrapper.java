@@ -27,9 +27,11 @@ public class FeatureWrapper {
 
     private Feature feature;
     private boolean selected;
+    private String ranges;
 
     public FeatureWrapper(Feature feature) {
         this.feature = feature;
+        this.ranges = feature.getRanges().toString();
     }
 
     public Feature getFeature() {
@@ -46,5 +48,9 @@ public class FeatureWrapper {
 
     public void setSelected(boolean selected) {
         this.selected = selected;
+    }
+
+    public String getRanges() {
+        return ranges;
     }
 }
