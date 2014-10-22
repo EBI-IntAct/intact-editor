@@ -1023,6 +1023,7 @@ public class InteractionController extends ParameterizableObjectController {
         return sb.toString();
     }
 
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public boolean isFeaturesAvailable(){
         boolean featuresAvailable = false;
         Interaction interaction = getInteraction();
@@ -1163,5 +1164,44 @@ public class InteractionController extends ParameterizableObjectController {
             setInteraction(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()));
         }
         return findAnnotationText(CvTopic.INTERNAL_REMARK);
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public int getParticipantSize() {
+        if (interaction != null && Hibernate.isInitialized(interaction.getComponents())){
+            return interaction.getComponents().size();
+        }
+        else if (interaction != null){
+            return getDaoFactory().getInteractionDao().countInteractorsByInteractionAc(interaction.getAc());
+        }
+        else {
+            return 0;
+        }
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public int getParameterSize() {
+        if (interaction != null && Hibernate.isInitialized(interaction.getParameters())){
+            return interaction.getParameters().size();
+        }
+        else if (interaction != null){
+            return getDaoFactory().getInteractionParameterDao().getByInteractionAc(interaction.getAc()).size();
+        }
+        else {
+            return 0;
+        }
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public int getConfidenceSize() {
+        if (interaction != null && Hibernate.isInitialized(interaction.getConfidences())){
+            return interaction.getConfidences().size();
+        }
+        else if (interaction != null){
+            return getDaoFactory().getConfidenceDao().getByInteractionAc(interaction.getAc()).size();
+        }
+        else {
+            return 0;
+        }
     }
 }

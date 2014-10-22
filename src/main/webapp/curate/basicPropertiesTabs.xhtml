@@ -9,7 +9,7 @@
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui">
 
-    <p:tab id="xrefsTab" title="Xrefs (#{annotatedObjectController.annotatedObject.xrefs.size()})">
+    <p:tab id="xrefsTab" title="Xrefs (#{annotatedObjectController.objectXrefsSize})">
         <p:outputPanel id="xrefsPanel" autoUpdate="true">
             <ui:decorate template="xrefs_table.xhtml">
 
@@ -29,7 +29,7 @@
 
     </p:tab>
 
-    <p:tab id="annotationsTab" title="Annotations (#{annotatedObjectController.annotatedObject.annotations.size()})">
+    <p:tab id="annotationsTab" title="Annotations (#{annotatedObjectController.objectAnnotationsSize})">
          <p:outputPanel id="annotationsPanel" autoUpdate="true">
              <ui:decorate template="annotations_table.xhtml">
                  <ui:param name="annotatedObjectController" value="#{annotatedObjectController}"/>

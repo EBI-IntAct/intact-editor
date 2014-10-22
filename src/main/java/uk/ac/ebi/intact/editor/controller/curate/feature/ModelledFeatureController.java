@@ -652,7 +652,7 @@ public class ModelledFeatureController extends AnnotatedObjectController {
             return this.feature.getDbXrefs().size();
         }
         else{
-            return getIntactDao().getModelledFeatureDao().countXrefsForFeature(this.ac);
+            return getIntactDao().getModelledParticipantDao().countXrefsForParticipant(this.ac);
         }
     }
 
@@ -727,5 +727,10 @@ public class ModelledFeatureController extends AnnotatedObjectController {
         PersistenceController persistenceController = getPersistenceController();
 
         doSaveJami(refreshCurrentView, changesController, persistenceController);
+    }
+
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public int getFeatureRangeSize() {
+        return this.feature.getRanges().size();
     }
 }

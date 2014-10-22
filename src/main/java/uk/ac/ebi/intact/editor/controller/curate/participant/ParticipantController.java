@@ -815,4 +815,44 @@ public class ParticipantController extends ParameterizableObjectController {
         }
         return findAnnotationText(CvTopic.INTERNAL_REMARK);
     }
+
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public int getFeatureSize() {
+        if (participant != null && Hibernate.isInitialized(participant.getFeatures())){
+            return participant.getFeatures().size();
+        }
+        else if (participant != null){
+            return getDaoFactory().getFeatureDao().getByComponentAc(participant.getAc()).size();
+        }
+        else {
+            return 0;
+        }
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public int getParameterSize() {
+        if (participant != null && Hibernate.isInitialized(participant.getParameters())){
+            return participant.getParameters().size();
+        }
+        else if (participant != null){
+            return getDaoFactory().getComponentParameterDao().getByComponentAc(participant.getAc()).size();
+        }
+        else {
+            return 0;
+        }
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public int getConfidenceSize() {
+        if (participant != null && Hibernate.isInitialized(participant.getConfidences())){
+            return participant.getConfidences().size();
+        }
+        else if (participant != null){
+            return getDaoFactory().getComponentConfidenceDao().getByComponentAc(participant.getAc()).size();
+        }
+        else {
+            return 0;
+        }
+    }
 }
