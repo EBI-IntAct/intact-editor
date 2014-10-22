@@ -36,7 +36,6 @@ import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
 import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
 import uk.ac.ebi.intact.model.*;
 import uk.ac.ebi.intact.model.util.ExperimentUtils;
-import uk.ac.ebi.intact.model.util.PublicationUtils;
 
 import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
@@ -360,11 +359,7 @@ public class ExperimentController extends AnnotatedObjectController {
         }
     }
 
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
     public void acceptExperiment(ActionEvent actionEvent) {
-        if (!Hibernate.isInitialized(this.experiment.getAnnotations())){
-            setExperiment(getCoreEntityManager().merge(this.experiment));
-        }
 
         UserSessionController userSessionController = (UserSessionController) getSpringContext().getBean("userSessionController");
 
@@ -381,11 +376,7 @@ public class ExperimentController extends AnnotatedObjectController {
         globalPublicationDecision();
     }
 
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
     public void rejectExperiment(ActionEvent actionEvent) {
-        if (!Hibernate.isInitialized(this.experiment.getAnnotations())){
-            setExperiment(getCoreEntityManager().merge(this.experiment));
-        }
 
         UserSessionController userSessionController = (UserSessionController) getSpringContext().getBean("userSessionController");
 
@@ -428,27 +419,8 @@ public class ExperimentController extends AnnotatedObjectController {
         boolean allRejected = expRejected == experiments.size();
 
         if (allAccepted) {
-            UserSessionController userSessionController = (UserSessionController) getSpringContext().getBean("userSessionController");
-
-            getAnnotatedObjectHelper().setAnnotation(publicationController.getPublication(), CvTopic.ACCEPTED,
-                    "Accepted " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase());
-
-            addInfoMessage("Publication accepted", "");
-
-            //clear to-be-reviewed
-            getAnnotatedObjectHelper().removeAnnotation(publicationController.getPublication(), CvTopic.TO_BE_REVIEWED);
-
-
-            // refresh experiments with possible changes in publication title, annotations and publication identifier
-            publicationController.copyAnnotationsToExperiments(null);
-            publicationController.copyPublicationTitleToExperiments(null);
-            publicationController.copyPrimaryIdentifierToExperiments();
-
-            publicationController.getLifecycleManager().getReadyForCheckingStatus().accept(publicationController.getPublication(), null);
-
-            if (!PublicationUtils.isOnHold(publicationController.getPublication())) {
-                publicationController.getLifecycleManager().getAcceptedStatus().readyForRelease(publicationController.getPublication(), "Accepted and not on-hold");
-            }
+            publicationController.acceptPublication(null);
+            publicationController.doSave();
 
             addInfoMessage("Publication accepted", "All of its experiments have been accepted");
 
