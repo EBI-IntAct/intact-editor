@@ -1148,4 +1148,20 @@ public class InteractionController extends ParameterizableObjectController {
     public void doSaveIfNecessary(ActionEvent evt) {
         super.doSaveIfNecessary(evt);
     }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public String getCautionMessage() {
+        if (!Hibernate.isInitialized(interaction.getAnnotations())){
+            setInteraction(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()));
+        }
+        return findAnnotationText(CvTopic.CAUTION_MI_REF);
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public String getInternalRemarkMessage() {
+        if (!Hibernate.isInitialized(interaction.getAnnotations())){
+            setInteraction(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()));
+        }
+        return findAnnotationText(CvTopic.INTERNAL_REMARK);
+    }
 }
