@@ -203,7 +203,7 @@ public class InteractionController extends ParameterizableObjectController {
 
             if (interaction != null) {
                 if (!Hibernate.isInitialized(interaction.getComponents())) {
-                    interaction = IntactContext.getCurrentInstance().getDaoFactory().getInteractionDao().getByAc( ac );
+                    interaction = getDaoFactory().getInteractionDao().getByAc( ac );
                 }
                 refreshParticipants();
             }
