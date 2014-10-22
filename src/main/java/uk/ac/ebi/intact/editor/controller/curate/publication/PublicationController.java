@@ -180,6 +180,8 @@ public class PublicationController extends AnnotatedObjectController {
                 publication = loadByAc(getDaoFactory().getPublicationDao(), ac);
                 // initialise annotations
                 Hibernate.initialize(publication.getAnnotations());
+                // initialise lifecycle events
+                Hibernate.initialize(publication.getLifecycleEvents());
                 resetToNullIfComplexPublication();
 
                 if (publication == null) {
