@@ -232,9 +232,6 @@ public class EditorCvTermService extends JpaAwareController {
         if (complexTopicParent != null){
             processTopicAcs.addAll(loadChildren(complexTopicParent, complexTopicSelectItems, false));
         }
-        if (participantTopicParent != null){
-            processTopicAcs.addAll(loadChildren(participantTopicParent, complexTopicSelectItems, false));
-        }
         loadMissingCvsFromIntactCvService(intactCvService, cvDao, processTopicAcs, complexTopicSelectItems, IntactComplex.class.getCanonicalName());
 
 
