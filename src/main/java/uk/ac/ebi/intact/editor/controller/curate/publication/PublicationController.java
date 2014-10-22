@@ -717,8 +717,11 @@ public class PublicationController extends AnnotatedObjectController {
         }
     }
 
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public boolean isAllExperimentsAccepted() {
-        return ExperimentUtils.areAllAccepted(publication.getExperiments());
+        final Collection<Experiment> experiments = IntactCore.ensureInitializedExperiments(publication);
+
+        return ExperimentUtils.areAllAccepted(experiments);
     }
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
