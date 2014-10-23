@@ -687,10 +687,11 @@ public class ParticipantController extends ParameterizableObjectController {
         participant.addConfidence(confidence);
     }
 
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public List<ComponentConfidence> getConfidences() {
         if (participant == null) return Collections.EMPTY_LIST;
 
-        final List<ComponentConfidence> confidences = new ArrayList<ComponentConfidence>( participant.getConfidences() );
+        final List<ComponentConfidence> confidences = new ArrayList<ComponentConfidence>( IntactCore.ensureInitializedComponentConfidences(participant) );
         Collections.sort( confidences, new IntactObjectComparator() );
         return confidences;
     }
@@ -889,5 +890,20 @@ public class ParticipantController extends ParameterizableObjectController {
         else {
             return 0;
         }
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public List collectAnnotations() {
+        return super.collectAnnotations();
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public List collectAliases() {
+        return super.collectAliases();
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public List collectXrefs() {
+        return super.collectXrefs();
     }
 }

@@ -1052,10 +1052,11 @@ public class InteractionController extends ParameterizableObjectController {
         interaction.addConfidence(confidence);
     }
 
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public List<Confidence> getConfidences() {
         if (interaction == null) return Collections.EMPTY_LIST;
 
-        final List<Confidence> confidences = new ArrayList<Confidence>( interaction.getConfidences() );
+        final List<Confidence> confidences = new ArrayList<Confidence>( IntactCore.ensureInitializedConfidences(interaction) );
         Collections.sort( confidences, new IntactObjectComparator() );
         return confidences;
     }
@@ -1213,5 +1214,19 @@ public class InteractionController extends ParameterizableObjectController {
         else {
             return 0;
         }
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public List collectAnnotations() {
+        return super.collectAnnotations();
+    }
+
+    public List collectAliases() {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public List collectXrefs() {
+        return super.collectXrefs();
     }
 }

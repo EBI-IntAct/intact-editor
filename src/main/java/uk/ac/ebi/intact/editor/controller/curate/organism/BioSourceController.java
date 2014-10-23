@@ -22,6 +22,8 @@ import uk.ac.ebi.intact.model.CvAliasType;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
 import javax.faces.event.ComponentSystemEvent;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Bruno Aranda (baranda@ebi.ac.uk)
@@ -231,6 +233,19 @@ public class BioSourceController extends AnnotatedObjectController {
     @Override
     public String getInternalRemarkMessage() {
         return null;
+    }
+
+    public List collectAnnotations() {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public List collectAliases() {
+        return super.collectAliases();
+    }
+
+    public List collectXrefs() {
+        return Collections.EMPTY_LIST;
     }
 
 }

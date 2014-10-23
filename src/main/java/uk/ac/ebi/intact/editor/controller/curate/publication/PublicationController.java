@@ -50,6 +50,7 @@ import uk.ac.ebi.intact.editor.controller.curate.experiment.ExperimentController
 import uk.ac.ebi.intact.editor.util.CurateUtils;
 import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
 import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
+import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleEvent;
 import uk.ac.ebi.intact.model.*;
 import uk.ac.ebi.intact.model.user.Preference;
 import uk.ac.ebi.intact.model.util.AnnotatedObjectUtils;
@@ -1862,5 +1863,38 @@ public class PublicationController extends AnnotatedObjectController {
                     CvTopic.INTERNAL_REMARK, getDaoFactory());
         }
         return findAnnotationText(CvTopic.INTERNAL_REMARK);
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public List collectAnnotations() {
+        return super.collectAnnotations();
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public List collectAliases() {
+        return super.collectAliases();
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public List collectXrefs() {
+        return super.collectXrefs();
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public List<LifecycleEvent> collectLifeCycleEvents() {
+        return new ArrayList<LifecycleEvent>(IntactCore.ensureInitializedLifecycleEvents(this.publication));
+    }
+
+    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public int getExperimentSize() {
+        if (publication != null && Hibernate.isInitialized(publication.getExperiments())){
+            return publication.getExperiments().size();
+        }
+        else if (publication != null){
+            return getDaoFactory().getPublicationDao().countExperimentsForPublicationAc(publication.getAc());
+        }
+        else {
+            return 0;
+        }
     }
 }
