@@ -1836,15 +1836,8 @@ public class PublicationController extends AnnotatedObjectController {
     @Override
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String clone() {
-        if (!getCoreEntityManager().contains(publication)){
-            setPublication(getCoreEntityManager().merge(this.publication));
-        }
-
-        Publication original = this.publication;
 
         String value = super.clone(getAnnotatedObject(), newClonerInstance());
-
-        getCoreEntityManager().detach(original);
 
         return value;
     }
