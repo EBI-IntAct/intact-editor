@@ -113,8 +113,6 @@ public class ExperimentController extends AnnotatedObjectController {
                     Hibernate.initialize(experiment.getXrefs());
                     // initialise xrefs
                     Hibernate.initialize(experiment.getAnnotations());
-                    // initialise xrefs
-                    Hibernate.initialize(experiment.getAliases());
                 }
                 if (experiment == null) {
                     addErrorMessage("No Experiment with this AC", ac);
@@ -140,14 +138,12 @@ public class ExperimentController extends AnnotatedObjectController {
             refreshTabsAndFocusXref();
 
             if (!Hibernate.isInitialized(experiment.getXrefs())
-                    || !Hibernate.isInitialized(experiment.getAnnotations())
-                    || !Hibernate.isInitialized(experiment.getAliases())){
+                    || !Hibernate.isInitialized(experiment.getAnnotations())){
+                experiment = loadByAc(getDaoFactory().getExperimentDao(), experiment.getAc());
                 // initialise xrefs
                 Hibernate.initialize(experiment.getXrefs());
                 // initialise xrefs
                 Hibernate.initialize(experiment.getAnnotations());
-                // initialise xrefs
-                Hibernate.initialize(experiment.getAliases());
             }
         }
 

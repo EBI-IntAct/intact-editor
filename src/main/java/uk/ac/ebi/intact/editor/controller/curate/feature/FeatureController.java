@@ -188,6 +188,7 @@ public class FeatureController extends AnnotatedObjectController {
                     || !Hibernate.isInitialized(feature.getAnnotations())
                     || !Hibernate.isInitialized(feature.getXrefs())
                     || !Hibernate.isInitialized(feature.getAliases())){
+                feature = loadByAc(getDaoFactory().getFeatureDao(), feature.getAc());
                 // initialise ranges
                 Hibernate.initialize(feature.getRanges());
                 // initialise xrefs

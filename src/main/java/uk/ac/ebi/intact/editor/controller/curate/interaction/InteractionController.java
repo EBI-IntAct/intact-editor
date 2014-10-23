@@ -183,6 +183,9 @@ public class InteractionController extends ParameterizableObjectController {
                 if ( interaction == null || !ac.equals( interaction.getAc() ) || !Hibernate.isInitialized(interaction.getExperiments())) {
                     interaction = loadByAc(getDaoFactory().getInteractionDao(), ac);
                     Hibernate.initialize(interaction.getParameters());
+                    Hibernate.initialize(interaction.getConfidences());
+                    Hibernate.initialize(interaction.getAnnotations());
+                    Hibernate.initialize(interaction.getXrefs());
                 }
             } else {
                 ac = interaction.getAc();
@@ -213,6 +216,17 @@ public class InteractionController extends ParameterizableObjectController {
             }
 
             refreshTabsAndFocusXref();
+
+            if (!Hibernate.isInitialized(interaction.getXrefs())
+                    || !Hibernate.isInitialized(interaction.getAnnotations())
+                    || !Hibernate.isInitialized(interaction.getParameters())
+                    || !Hibernate.isInitialized(interaction.getConfidences())){
+                interaction = loadByAc(getDaoFactory().getInteractionDao(), interaction.getAc());
+                Hibernate.initialize(interaction.getParameters());
+                Hibernate.initialize(interaction.getConfidences());
+                Hibernate.initialize(interaction.getAnnotations());
+                Hibernate.initialize(interaction.getXrefs());
+            }
         }
 
         generalLoadChecks();

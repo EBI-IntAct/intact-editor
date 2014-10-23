@@ -132,6 +132,18 @@ public class CvObjectController extends AnnotatedObjectController {
 
             prepareView();
             refreshTabsAndFocusXref();
+
+            if (!Hibernate.isInitialized(cvObject.getXrefs())
+                    || !Hibernate.isInitialized(cvObject.getAnnotations())
+                    || !Hibernate.isInitialized(cvObject.getAliases())){
+                cvObject = (CvDagObject) loadByAc(getDaoFactory().getCvObjectDao(), cvObject.getAc());
+                // initialise xrefs
+                Hibernate.initialize(cvObject.getXrefs());
+                // initialise xrefs
+                Hibernate.initialize(cvObject.getAnnotations());
+                // initialise xrefs
+                Hibernate.initialize(cvObject.getAliases());
+            }
         }
         generalLoadChecks();
     }
