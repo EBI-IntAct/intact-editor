@@ -59,6 +59,8 @@ public class InstitutionController extends AnnotatedObjectController {
             if (ac != null) {
                 institution = loadByAc(getDaoFactory().getInstitutionDao(), ac);
                 Hibernate.initialize(institution.getAnnotations());
+                Hibernate.initialize(institution.getXrefs());
+                Hibernate.initialize(institution.getAliases());
             } else {
                 institution = new Institution();
             }
@@ -69,6 +71,17 @@ public class InstitutionController extends AnnotatedObjectController {
             }
 
             refreshTabsAndFocusXref();
+
+            if (!Hibernate.isInitialized(institution.getAnnotations())
+                    || !Hibernate.isInitialized(institution.getXrefs())
+                    || !Hibernate.isInitialized(institution.getAliases())){
+                // initialise xrefs
+                Hibernate.initialize(institution.getXrefs());
+                // initialise aliases
+                Hibernate.initialize(institution.getAliases());
+                // initialise annotations
+                Hibernate.initialize(institution.getAnnotations());
+            }
         }
 
         generalLoadChecks();

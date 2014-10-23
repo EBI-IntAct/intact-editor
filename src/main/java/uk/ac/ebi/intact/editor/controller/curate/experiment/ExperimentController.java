@@ -109,6 +109,12 @@ public class ExperimentController extends AnnotatedObjectController {
                 if ( experiment == null || !ac.equals( experiment.getAc() ) ) {
                     experiment = loadByAc(getDaoFactory().getExperimentDao(), ac);
                     resetToNullIfComplexExperiment();
+                    // initialise xrefs
+                    Hibernate.initialize(experiment.getXrefs());
+                    // initialise xrefs
+                    Hibernate.initialize(experiment.getAnnotations());
+                    // initialise xrefs
+                    Hibernate.initialize(experiment.getAliases());
                 }
                 if (experiment == null) {
                     addErrorMessage("No Experiment with this AC", ac);
@@ -132,6 +138,17 @@ public class ExperimentController extends AnnotatedObjectController {
             }
 
             refreshTabsAndFocusXref();
+
+            if (!Hibernate.isInitialized(experiment.getXrefs())
+                    || !Hibernate.isInitialized(experiment.getAnnotations())
+                    || !Hibernate.isInitialized(experiment.getAliases())){
+                // initialise xrefs
+                Hibernate.initialize(experiment.getXrefs());
+                // initialise xrefs
+                Hibernate.initialize(experiment.getAnnotations());
+                // initialise xrefs
+                Hibernate.initialize(experiment.getAliases());
+            }
         }
 
         generalLoadChecks();
@@ -467,6 +484,12 @@ public class ExperimentController extends AnnotatedObjectController {
             if ( experiment != null && publicationController.getPublication() == null ) {
                 publicationController.setPublication( experiment.getPublication() );
             }
+            // initialise xrefs
+            Hibernate.initialize(experiment.getXrefs());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAnnotations());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAliases());
         }
 
         if (toBeReviewed == null) {
@@ -506,6 +529,12 @@ public class ExperimentController extends AnnotatedObjectController {
             if ( experiment != null && publicationController.getPublication() == null ) {
                 publicationController.setPublication( experiment.getPublication() );
             }
+            // initialise xrefs
+            Hibernate.initialize(experiment.getXrefs());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAnnotations());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAliases());
         }
         removeAnnotation(CvTopic.TO_BE_REVIEWED);
         getCoreEntityManager().detach(experiment);
@@ -532,6 +561,12 @@ public class ExperimentController extends AnnotatedObjectController {
             if ( experiment != null && publicationController.getPublication() == null ) {
                 publicationController.setPublication( experiment.getPublication() );
             }
+            // initialise xrefs
+            Hibernate.initialize(experiment.getXrefs());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAnnotations());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAliases());
         }
         boolean reviewed = isToBeReviewed(experiment);
         getCoreEntityManager().detach(experiment);
@@ -563,6 +598,12 @@ public class ExperimentController extends AnnotatedObjectController {
             if ( experiment != null && publicationController.getPublication() == null ) {
                 publicationController.setPublication( experiment.getPublication() );
             }
+            // initialise xrefs
+            Hibernate.initialize(experiment.getXrefs());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAnnotations());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAliases());
         }
         updateAnnotation(CvTopic.ACCEPTED, message);
         getCoreEntityManager().detach(experiment);
@@ -598,6 +639,12 @@ public class ExperimentController extends AnnotatedObjectController {
             if ( experiment != null && publicationController.getPublication() == null ) {
                 publicationController.setPublication( experiment.getPublication() );
             }
+            // initialise xrefs
+            Hibernate.initialize(experiment.getXrefs());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAnnotations());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAliases());
         }
 
         CurateUtils.copyPublicationAnnotationsToExperiment(experiment);
@@ -622,6 +669,12 @@ public class ExperimentController extends AnnotatedObjectController {
             if ( experiment != null && publicationController.getPublication() == null ) {
                 publicationController.setPublication( experiment.getPublication() );
             }
+            // initialise xrefs
+            Hibernate.initialize(experiment.getXrefs());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAnnotations());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAliases());
         }
         updateAnnotation(CvTopic.ON_HOLD, reason);
         getCoreEntityManager().detach(experiment);
@@ -636,6 +689,12 @@ public class ExperimentController extends AnnotatedObjectController {
                 if ( experiment != null && publicationController.getPublication() == null ) {
                     publicationController.setPublication( experiment.getPublication() );
                 }
+                // initialise xrefs
+                Hibernate.initialize(experiment.getXrefs());
+                // initialise xrefs
+                Hibernate.initialize(experiment.getAnnotations());
+                // initialise xrefs
+                Hibernate.initialize(experiment.getAliases());
             }
             Publication publication = findPublicationByAcOrLabel(publicationToMoveTo);
 
@@ -778,6 +837,12 @@ public class ExperimentController extends AnnotatedObjectController {
             if ( experiment != null && publicationController.getPublication() == null ) {
                 publicationController.setPublication( experiment.getPublication() );
             }
+            // initialise xrefs
+            Hibernate.initialize(experiment.getXrefs());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAnnotations());
+            // initialise xrefs
+            Hibernate.initialize(experiment.getAliases());
         }
         updateAnnotation(CvTopic.CORRECTION_COMMENT, correctionComment);
         getCoreEntityManager().detach(experiment);

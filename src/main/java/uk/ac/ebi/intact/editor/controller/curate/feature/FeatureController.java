@@ -146,6 +146,12 @@ public class FeatureController extends AnnotatedObjectController {
                     feature = loadByAc(getDaoFactory().getFeatureDao(), ac);
                     // initialise ranges
                     Hibernate.initialize(feature.getRanges());
+                    // initialise xrefs
+                    Hibernate.initialize(feature.getXrefs());
+                    // initialise aliases
+                    Hibernate.initialize(feature.getAliases());
+                    // initialise annotations
+                    Hibernate.initialize(feature.getAnnotations());
                 }
             } else {
                 if ( feature != null ) ac = feature.getAc();
@@ -177,6 +183,20 @@ public class FeatureController extends AnnotatedObjectController {
             }
 
             refreshTabsAndFocusXref();
+
+            if (!Hibernate.isInitialized(feature.getRanges())
+                    || !Hibernate.isInitialized(feature.getAnnotations())
+                    || !Hibernate.isInitialized(feature.getXrefs())
+                    || !Hibernate.isInitialized(feature.getAliases())){
+                // initialise ranges
+                Hibernate.initialize(feature.getRanges());
+                // initialise xrefs
+                Hibernate.initialize(feature.getXrefs());
+                // initialise aliases
+                Hibernate.initialize(feature.getAliases());
+                // initialise annotations
+                Hibernate.initialize(feature.getAnnotations());
+            }
         }
 
         refreshRangeWrappers();
