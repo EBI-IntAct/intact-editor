@@ -155,7 +155,8 @@
                 <h:outputLabel value="Experimental preparation(s): " for="newDeliveryTxt" rendered="#{empty participant.experimentalPreparations}"/>
             </td>
             <td>
-                <p:dataList id="deliveryList" value="#{participant.experimentalPreparations}" var="delivery" type="definition" rendered="#{not empty participant.experimentalPreparations}" styleClass="dataList">
+                <p:dataList id="deliveryList" value="#{participantController.experimentalPreparations}" var="delivery" type="definition"
+                            rendered="#{not participantController.experimentalPreparationsListEmpty}" styleClass="dataList">
                     <f:facet name="description">
                         <h:outputText value=""/>
                     </f:facet>
@@ -181,7 +182,8 @@
                 <h:outputLabel value="Identification method(s): " for="newIdentificationTxt" rendered="#{empty participant.participantDetectionMethods}"/>
             </td>
             <td>
-                <p:dataList id="identificationList" value="#{participant.participantDetectionMethods}" var="identification" type="definition" rendered="#{not empty participant.participantDetectionMethods}" styleClass="dataList">
+                <p:dataList id="identificationList" value="#{participantController.identificationMethods}" var="identification" type="definition"
+                            rendered="#{not participantController.identificationMethodsListEmpty}" styleClass="dataList">
                     <f:facet name="description">
                         <h:outputText value=""/>
                     </f:facet>
