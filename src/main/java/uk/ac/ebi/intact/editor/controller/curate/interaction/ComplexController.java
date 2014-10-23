@@ -231,6 +231,10 @@ public class ComplexController extends AnnotatedObjectController {
                 return;
             }
 
+            if (!getJamiEntityManager().contains(complex)){
+                setComplex(getJamiEntityManager().merge(complex));
+            }
+
             refreshTabsAndFocusXref();
             generalJamiLoadChecks();
         }
@@ -1530,6 +1534,7 @@ public class ComplexController extends AnnotatedObjectController {
     @Override
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
     public void doSave(boolean refreshCurrentView) {
+
         ChangesController changesController = (ChangesController) getSpringContext().getBean("changesController");
         PersistenceController persistenceController = getPersistenceController();
 
