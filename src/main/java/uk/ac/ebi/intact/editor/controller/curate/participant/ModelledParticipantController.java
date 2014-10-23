@@ -131,8 +131,18 @@ public class ModelledParticipantController extends AnnotatedObjectController {
                 return;
             }
 
+            // in case the participant is newly loaded and is not attached to parent complex
             if (participant.getInteraction() != interactionController.getComplex()){
-                interactionController.setComplex((IntactComplex) participant.getInteraction());
+                if (participant.getInteraction() != null && ((IntactComplex)participant.getInteraction()).getAc() != null
+                        && !getJamiEntityManager().contains(participant.getInteraction())){
+                    interactionController.setComplex((IntactComplex)getJamiEntityManager().merge(participant.getInteraction()));
+                    if (interactionController.getComplex() != null){
+                        participant.setInteraction(interactionController.getComplex());
+                    }
+                }
+                else{
+                    interactionController.setComplex((IntactComplex) participant.getInteraction());
+                }
             }
 
             if (participant.getInteractor() != null) {
@@ -756,5 +766,4 @@ public class ModelledParticipantController extends AnnotatedObjectController {
             return getIntactDao().getModelledParticipantDao().countFeaturesForParticipant(this.ac);
         }
     }
-
 }

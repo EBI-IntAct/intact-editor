@@ -189,16 +189,34 @@ public class ModelledFeatureController extends AnnotatedObjectController {
                 return;
             }
 
-            final ModelledEntity participant = feature.getParticipant();
+            final ModelledParticipant participant = (ModelledParticipant)feature.getParticipant();
 
             if (modelledParticipantController.getParticipant() != feature.getParticipant()) {
-                modelledParticipantController.setParticipant((IntactModelledParticipant)participant);
+                if (participant != null && ((IntactModelledParticipant)participant).getAc() != null
+                        && !getJamiEntityManager().contains(feature.getParticipant())){
+                    modelledParticipantController.setParticipant(
+                            (IntactModelledParticipant)getJamiEntityManager().merge(feature.getParticipant()));
+                    if (modelledParticipantController.getParticipant() != null){
+                        feature.setParticipant(modelledParticipantController.getParticipant());
+                    }
+                }
+                else{
+                    modelledParticipantController.setParticipant((IntactModelledParticipant)participant);
+                }
             }
 
-            if( feature.getParticipant() != null &&
-                    ((ModelledParticipant)feature.getParticipant()).getInteraction() != complexController.getComplex() ) {
-                final Complex interaction = (Complex)((IntactModelledParticipant)participant).getInteraction();
-                complexController.setComplex((IntactComplex) interaction);
+            // in case the participant is newly loaded and is not attached to parent complex
+            if (participant.getInteraction() != complexController.getComplex()){
+                if (participant.getInteraction() != null && ((IntactComplex)participant.getInteraction()).getAc() != null
+                        && !getJamiEntityManager().contains(participant.getInteraction())){
+                    complexController.setComplex((IntactComplex)getJamiEntityManager().merge(participant.getInteraction()));
+                    if (complexController.getComplex() != null){
+                        participant.setInteraction(complexController.getComplex());
+                    }
+                }
+                else{
+                    complexController.setComplex((IntactComplex) participant.getInteraction());
+                }
             }
 
             refreshTabsAndFocusXref();
@@ -652,7 +670,7 @@ public class ModelledFeatureController extends AnnotatedObjectController {
             return this.feature.getDbXrefs().size();
         }
         else{
-            return getIntactDao().getModelledParticipantDao().countXrefsForParticipant(this.ac);
+            return getIntactDao().getModelledFeatureDao().countXrefsForFeature(this.ac);
         }
     }
 
