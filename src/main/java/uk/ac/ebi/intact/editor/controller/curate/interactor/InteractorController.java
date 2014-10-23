@@ -70,9 +70,11 @@ public class InteractorController extends AnnotatedObjectController {
         if (!getCoreEntityManager().contains(interactor)){
             setInteractor(getCoreEntityManager().merge(this.interactor));
         }
+        Interactor originalInteractor = this.interactor;
+
         String value = clone(interactor, new InteractorIntactCloner());
 
-        getCoreEntityManager().detach(this.interactor);
+        getCoreEntityManager().detach(originalInteractor);
         return value;
     }
 
@@ -302,7 +304,8 @@ public class InteractorController extends AnnotatedObjectController {
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getCautionMessage() {
         if (!Hibernate.isInitialized(interactor.getAnnotations())){
-            setInteractor(getDaoFactory().getInteractionDao().getByAc(interactor.getAc()));
+            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getInteractorDao().getByAc(interactor.getAc()),
+                    CvTopic.CAUTION_MI_REF, getDaoFactory());
         }
         return findAnnotationText(CvTopic.CAUTION_MI_REF);
     }
@@ -310,7 +313,8 @@ public class InteractorController extends AnnotatedObjectController {
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getInternalRemarkMessage() {
         if (!Hibernate.isInitialized(interactor.getAnnotations())){
-            setInteractor(getDaoFactory().getInteractionDao().getByAc(interactor.getAc()));
+            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getInteractorDao().getByAc(interactor.getAc()),
+                    CvTopic.INTERNAL_REMARK, getDaoFactory());
         }
         return findAnnotationText(CvTopic.INTERNAL_REMARK);
     }

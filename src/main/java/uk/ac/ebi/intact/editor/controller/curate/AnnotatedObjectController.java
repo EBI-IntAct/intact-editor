@@ -1194,7 +1194,7 @@ public abstract class AnnotatedObjectController extends JpaAwareController imple
     public String getCautionMessage(AnnotatedObject ao) {
         if (ao == null) return null;
         if (!Hibernate.isInitialized(ao.getAnnotations())){
-            setAnnotatedObject(getDaoFactory().getAnnotatedObjectDao(ao.getClass()).getByAc(ao.getAc()));
+            ao = getDaoFactory().getAnnotatedObjectDao(ao.getClass()).getByAc(ao.getAc());
         }
         return newAnnotatedObjectHelper(ao).findAnnotationText(CvTopic.CAUTION_MI_REF);
     }

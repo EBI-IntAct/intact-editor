@@ -141,13 +141,16 @@ public class InteractionController extends ParameterizableObjectController {
         if (!getCoreEntityManager().contains(interaction)){
             setInteraction(getCoreEntityManager().merge(this.interaction));
         }
+
+        Interaction originalInteraction = this.interaction;
+
         String value = clone(getAnnotatedObject(), newClonerInstance());
 
         refreshParticipants();
         refreshExperimentLists();
         refreshParentControllers();
 
-        getCoreEntityManager().detach(this.interaction);
+        getCoreEntityManager().detach(originalInteraction);
 
         return value;
     }
@@ -927,8 +930,13 @@ public class InteractionController extends ParameterizableObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void setImexId(String imexId) {
-        if (!Hibernate.isInitialized(interaction.getAnnotations())){
+        if (!getCoreEntityManager().contains(interaction) &&
+                !Hibernate.isInitialized(interaction.getAnnotations())){
             setInteraction(getCoreEntityManager().merge(interaction));
+
+            refreshParentControllers();
+            refreshExperimentLists();
+            refreshParticipants();
         }
         updateXref(CvDatabase.IMEX_MI_REF, CvXrefQualifier.IMEX_PRIMARY_MI_REF, imexId);
         getCoreEntityManager().detach(interaction);
@@ -1153,7 +1161,8 @@ public class InteractionController extends ParameterizableObjectController {
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getCautionMessage() {
         if (!Hibernate.isInitialized(interaction.getAnnotations())){
-            setInteraction(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()));
+            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()),
+                    CvTopic.CAUTION_MI_REF, getDaoFactory());
         }
         return findAnnotationText(CvTopic.CAUTION_MI_REF);
     }
@@ -1161,7 +1170,8 @@ public class InteractionController extends ParameterizableObjectController {
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getInternalRemarkMessage() {
         if (!Hibernate.isInitialized(interaction.getAnnotations())){
-            setInteraction(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()));
+            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()),
+                    CvTopic.INTERNAL_REMARK, getDaoFactory());
         }
         return findAnnotationText(CvTopic.INTERNAL_REMARK);
     }

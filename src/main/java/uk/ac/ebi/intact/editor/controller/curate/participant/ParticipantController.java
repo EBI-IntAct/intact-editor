@@ -24,7 +24,7 @@ import org.primefaces.event.TabChangeEvent;
 import org.primefaces.model.SelectableDataModelWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import uk.ac.ebi.intact.core.context.IntactContext;
@@ -46,6 +46,7 @@ import uk.ac.ebi.intact.editor.controller.curate.util.IntactObjectComparator;
 import uk.ac.ebi.intact.editor.util.SelectableCollectionDataModel;
 import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
 import uk.ac.ebi.intact.model.*;
+import uk.ac.ebi.intact.model.Component;
 import uk.ac.ebi.intact.model.clone.IntactCloner;
 import uk.ac.ebi.intact.model.util.XrefUtils;
 
@@ -536,8 +537,38 @@ public class ParticipantController extends ParameterizableObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void setAuthorGivenName( String name ) {
-        if (!Hibernate.isInitialized(participant.getAnnotations())){
+        if (!getCoreEntityManager().contains(participant)
+        && !Hibernate.isInitialized(participant.getAnnotations())){
             setParticipant(getCoreEntityManager().merge(participant));
+            Hibernate.initialize(participant.getFeatures());
+            Hibernate.initialize(participant.getExperimentalPreparations());
+            Hibernate.initialize(participant.getParticipantDetectionMethods());
+            featuresDataModel = new SelectableDataModelWrapper(new SelectableCollectionDataModel<Feature>(participant.getFeatures()), participant.getFeatures());
+            if (participant.getInteraction() != null){
+                Collection<Experiment> experiments = participant.getInteraction().getExperiments();
+
+                if (!Hibernate.isInitialized(participant.getInteraction().getExperiments())){
+                    experiments = getDaoFactory().getExperimentDao().getByInteractionAc(participant.getInteraction().getAc());
+                }
+                if (!Hibernate.isInitialized(participant.getInteraction().getComponents())){
+                    Hibernate.initialize(participant.getInteraction().getComponents());
+                }
+
+                if( experiments.isEmpty()) {
+                    addWarningMessage( "The parent interaction of this participant isn't attached to an experiment",
+                            "Abort experiment loading." );
+                    return;
+                }
+                else{
+                    if ( publicationController.getPublication() == null ) {
+                        Publication publication = experiments.iterator().next().getPublication();
+                        publicationController.setPublication( publication );
+                    }
+                    if ( experimentController.getExperiment() == null ) {
+                        experimentController.setExperiment( experiments.iterator().next() );
+                    }
+                }
+            }
         }
         addOrReplace(CvAliasType.AUTHOR_ASSIGNED_NAME_MI_REF, name  );
         getCoreEntityManager().detach(participant);
@@ -793,9 +824,11 @@ public class ParticipantController extends ParameterizableObjectController {
         if (!getCoreEntityManager().contains(participant)){
             setParticipant(getCoreEntityManager().merge(this.participant));
         }
+        Component originalParticipant = this.participant;
+
         String value = super.clone(getAnnotatedObject(), newClonerInstance());
 
-        getCoreEntityManager().detach(this.participant);
+        getCoreEntityManager().detach(originalParticipant);
 
         return value;
     }
@@ -803,7 +836,8 @@ public class ParticipantController extends ParameterizableObjectController {
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getCautionMessage() {
         if (!Hibernate.isInitialized(participant.getAnnotations())){
-            setParticipant(getDaoFactory().getComponentDao().getByAc(participant.getAc()));
+            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getComponentDao().getByAc(participant.getAc()),
+                    CvTopic.CAUTION_MI_REF, getDaoFactory());
         }
         return findAnnotationText(CvTopic.CAUTION_MI_REF);
     }
@@ -811,7 +845,8 @@ public class ParticipantController extends ParameterizableObjectController {
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getInternalRemarkMessage() {
         if (!Hibernate.isInitialized(participant.getAnnotations())){
-            setParticipant(getDaoFactory().getComponentDao().getByAc(participant.getAc()));
+            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getComponentDao().getByAc(participant.getAc()),
+                    CvTopic.INTERNAL_REMARK, getDaoFactory());
         }
         return findAnnotationText(CvTopic.INTERNAL_REMARK);
     }

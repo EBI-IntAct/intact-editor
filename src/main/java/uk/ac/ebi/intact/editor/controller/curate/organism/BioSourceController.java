@@ -88,9 +88,12 @@ public class BioSourceController extends AnnotatedObjectController {
         if (!getCoreEntityManager().contains(bioSource)){
             setBioSource(getCoreEntityManager().merge(this.bioSource));
         }
+
+        BioSource originalBiosource = this.bioSource;
+
         String value = clone(bioSource, new BiosourceIntactCloner());
 
-        getCoreEntityManager().detach(this.bioSource);
+        getCoreEntityManager().detach(originalBiosource);
 
         return value;
     }
