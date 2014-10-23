@@ -108,11 +108,11 @@ public class ExperimentController extends AnnotatedObjectController {
             if ( ac != null ) {
                 if ( experiment == null || !ac.equals( experiment.getAc() ) ) {
                     experiment = loadByAc(getDaoFactory().getExperimentDao(), ac);
-                    resetToNullIfComplexExperiment();
                     // initialise xrefs
                     Hibernate.initialize(experiment.getXrefs());
                     // initialise xrefs
                     Hibernate.initialize(experiment.getAnnotations());
+                    resetToNullIfComplexExperiment();
                 }
                 if (experiment == null) {
                     addErrorMessage("No Experiment with this AC", ac);
