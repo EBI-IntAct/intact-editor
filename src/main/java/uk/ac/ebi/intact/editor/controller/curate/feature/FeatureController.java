@@ -542,6 +542,9 @@ public class FeatureController extends AnnotatedObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getCautionMessage() {
+        if (feature == null){
+            return null;
+        }
         if (!Hibernate.isInitialized(feature.getAnnotations())){
             return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getFeatureDao().getByAc(feature.getAc()),
                     CvTopic.CAUTION_MI_REF, getDaoFactory());
@@ -551,6 +554,9 @@ public class FeatureController extends AnnotatedObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getInternalRemarkMessage() {
+        if (feature == null){
+            return null;
+        }
         if (!Hibernate.isInitialized(feature.getAnnotations())){
             return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getFeatureDao().getByAc(feature.getAc()),
                     CvTopic.INTERNAL_REMARK, getDaoFactory());

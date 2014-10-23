@@ -324,6 +324,9 @@ public class CvObjectController extends AnnotatedObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getCautionMessage() {
+        if (cvObject == null){
+            return null;
+        }
         if (!Hibernate.isInitialized(cvObject.getAnnotations())){
             return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getCvObjectDao().getByAc(cvObject.getAc()),
                     CvTopic.CAUTION_MI_REF, getDaoFactory());
@@ -333,6 +336,9 @@ public class CvObjectController extends AnnotatedObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getInternalRemarkMessage() {
+        if (cvObject == null){
+            return null;
+        }
         if (!Hibernate.isInitialized(cvObject.getAnnotations())){
             return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getCvObjectDao().getByAc(cvObject.getAc()),
                     CvTopic.INTERNAL_REMARK, getDaoFactory());

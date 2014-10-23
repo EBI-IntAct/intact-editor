@@ -1159,6 +1159,9 @@ public class InteractionController extends ParameterizableObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getCautionMessage() {
+        if (interaction == null){
+            return null;
+        }
         if (!Hibernate.isInitialized(interaction.getAnnotations())){
             return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()),
                     CvTopic.CAUTION_MI_REF, getDaoFactory());
@@ -1168,6 +1171,9 @@ public class InteractionController extends ParameterizableObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getInternalRemarkMessage() {
+        if (interaction == null){
+            return null;
+        }
         if (!Hibernate.isInitialized(interaction.getAnnotations())){
             return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()),
                     CvTopic.INTERNAL_REMARK, getDaoFactory());

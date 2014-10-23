@@ -136,6 +136,9 @@ public class InstitutionController extends AnnotatedObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getCautionMessage() {
+        if (institution == null){
+            return null;
+        }
         if (!Hibernate.isInitialized(institution.getAnnotations())){
             return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getInstitutionDao().getByAc(institution.getAc()),
                     CvTopic.CAUTION_MI_REF, getDaoFactory());
@@ -145,6 +148,9 @@ public class InstitutionController extends AnnotatedObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getInternalRemarkMessage() {
+        if (institution == null){
+            return null;
+        }
         if (!Hibernate.isInitialized(institution.getAnnotations())){
             return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getInstitutionDao().getByAc(institution.getAc()),
                     CvTopic.INTERNAL_REMARK, getDaoFactory());

@@ -858,6 +858,9 @@ public class ExperimentController extends AnnotatedObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getCautionMessage() {
+        if (experiment == null){
+            return null;
+        }
         if (!Hibernate.isInitialized(experiment.getAnnotations())){
             return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getExperimentDao().getByAc(experiment.getAc()),
                     CvTopic.CAUTION_MI_REF, getDaoFactory());
@@ -867,6 +870,9 @@ public class ExperimentController extends AnnotatedObjectController {
 
     @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getInternalRemarkMessage() {
+        if (experiment == null){
+            return null;
+        }
         if (!Hibernate.isInitialized(experiment.getAnnotations())){
             return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getExperimentDao().getByAc(experiment.getAc()),
                     CvTopic.INTERNAL_REMARK, getDaoFactory());
