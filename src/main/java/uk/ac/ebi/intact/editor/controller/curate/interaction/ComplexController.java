@@ -171,7 +171,7 @@ public class ComplexController extends AnnotatedObjectController {
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String clone() {
 
-        if (!getJamiEntityManager().contains(getComplex())){
+        if (complex.getAc() != null && !getJamiEntityManager().contains(getComplex())){
             IntactComplex reloadedComplex = getJamiEntityManager().merge(this.complex);
             setComplex(reloadedComplex);
         }
@@ -231,7 +231,7 @@ public class ComplexController extends AnnotatedObjectController {
                 return;
             }
 
-            if (!getJamiEntityManager().contains(complex)){
+            if (complex.getAc() != null && !getJamiEntityManager().contains(complex)){
                 setComplex(getJamiEntityManager().merge(complex));
             }
 
@@ -1534,7 +1534,6 @@ public class ComplexController extends AnnotatedObjectController {
     @Override
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
     public void doSave(boolean refreshCurrentView) {
-
         ChangesController changesController = (ChangesController) getSpringContext().getBean("changesController");
         PersistenceController persistenceController = getPersistenceController();
 
