@@ -35,7 +35,7 @@
         <dbupdate.version>2.1.7</dbupdate.version>
         <psimi.version>1.8.5</psimi.version>
         <jami.version>1.0.0</jami.version>
-        <jami.core.version>1.1.0</jami.core.version>
+        <jami.core.version>1.1.1</jami.core.version>
         <dataexchange.version>2.1.10</dataexchange.version>
         <h2.version>1.3.162</h2.version>
 
