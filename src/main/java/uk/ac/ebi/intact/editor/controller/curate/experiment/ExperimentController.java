@@ -333,7 +333,28 @@ public class ExperimentController extends AnnotatedObjectController {
         String pmid = null;
 
         if (experiment != null) {
-            pmid = ExperimentUtils.getPubmedId(experiment);
+            Publication publication = experiment.getPublication();
+            if (publication != null) {
+                if (!Hibernate.isInitialized(publication.getXrefs())){
+                    publication = getDaoFactory().getPublicationDao().getByAc(publication.getAc());
+                }
+                PublicationXref xref = PublicationUtils.getPubmedPrimaryReferenceXref(publication);
+                if (xref != null){
+                    pmid = xref.getPrimaryId();
+                }
+            }
+
+            if (pmid == null) {
+                Experiment tempExp = experiment;
+                if (!Hibernate.isInitialized(experiment.getXrefs())){
+                    tempExp = getDaoFactory().getExperimentDao().getByAc(experiment.getAc());
+                }
+                ExperimentXref xref = ExperimentUtils.getPubmedPrimaryReferenceXref(tempExp);
+
+                if (xref != null) {
+                    pmid = xref.getPrimaryId();
+                }
+            }
         } else if (publicationController.getPublication() != null) {
             pmid = publicationController.getPublication().getShortLabel();
         }
