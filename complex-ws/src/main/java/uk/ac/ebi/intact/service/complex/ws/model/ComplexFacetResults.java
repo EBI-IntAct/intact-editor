@@ -1,4 +1,4 @@
-package uk.ac.ebi.intact.service.complex.ws;
+package uk.ac.ebi.intact.service.complex.ws.model;
 
 import org.apache.solr.client.solrj.response.FacetField;
 

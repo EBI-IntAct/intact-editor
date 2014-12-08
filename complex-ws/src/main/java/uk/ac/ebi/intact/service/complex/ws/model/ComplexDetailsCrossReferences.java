@@ -1,4 +1,4 @@
-package uk.ac.ebi.intact.service.complex.ws;
+package uk.ac.ebi.intact.service.complex.ws.model;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

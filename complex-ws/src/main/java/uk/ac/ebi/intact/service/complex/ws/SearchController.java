@@ -18,14 +18,13 @@ import uk.ac.ebi.intact.core.persistence.dao.InteractionDao;
 import uk.ac.ebi.intact.dataexchange.psimi.solr.complex.ComplexFieldNames;
 import uk.ac.ebi.intact.model.*;
 import uk.ac.ebi.intact.model.util.*;
+import uk.ac.ebi.intact.service.complex.ws.model.*;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 @Controller
@@ -108,7 +107,8 @@ public class SearchController {
      - Does not change the query.
      */
     @RequestMapping(value = "/search/{query}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody ComplexRestResult search(@PathVariable String query,
+	public @ResponseBody
+    ComplexRestResult search(@PathVariable String query,
                                     @RequestParam (required = false) String first,
                                     @RequestParam (required = false) String number,
                                     @RequestParam (required = false) String filters,
@@ -225,6 +225,14 @@ public class SearchController {
             throw new Exception();
         }
         return details;
+    }
+
+    @RequestMapping(value = "/export/{ac}", method = RequestMethod.GET)
+//    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+    public @ResponseBody ComplexExport exportComplex(@PathVariable String ac) {
+        ComplexExport export = null;
+        //TODO
+        return export;
     }
 
     /*******************************/
