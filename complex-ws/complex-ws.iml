@@ -190,6 +190,11 @@
     <orderEntry type="library" name="Maven: uk.ac.ebi.intact.bridges:intact-ontologies:2.1.9" level="project" />
     <orderEntry type="library" name="Maven: org.geneontology:obo:2.000-beta38" level="project" />
     <orderEntry type="library" name="Maven: org.geneontology:bbop:2.000-beta38" level="project" />
+    <orderEntry type="library" name="Maven: uk.ac.ebi.intact.jami:intact-jami:1.0.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: psidev.psi.mi.jami:jami-core:1.0.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: net.sf.jgrapht:jgrapht:0.8.3" level="project" />
+    <orderEntry type="library" name="Maven: psidev.psi.mi.jami:jami-enricher:1.0.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: psidev.psi.mi.jami.bridges:bridges-core:1.0.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-web:3.2.4.RELEASE" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: javax.servlet.jsp:jsp-api:2.2" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-webmvc:3.2.4.RELEASE" level="project" />

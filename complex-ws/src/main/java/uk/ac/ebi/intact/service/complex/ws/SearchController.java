@@ -13,18 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
-import uk.ac.ebi.intact.core.persistence.dao.DaoFactory;
-import uk.ac.ebi.intact.core.persistence.dao.InteractionDao;
 import uk.ac.ebi.intact.dataexchange.psimi.solr.complex.ComplexFieldNames;
-import uk.ac.ebi.intact.model.*;
-import uk.ac.ebi.intact.model.util.*;
+import uk.ac.ebi.intact.jami.dao.IntactDao;
+import uk.ac.ebi.intact.jami.model.extension.IntactComplex;
 import uk.ac.ebi.intact.service.complex.ws.model.*;
+import uk.ac.ebi.intact.service.complex.ws.utils.IntactComplexUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 @Controller
@@ -64,10 +61,8 @@ public class SearchController {
     /********************************/
     @Autowired
     private DataProvider dataProvider ;
-    @PersistenceContext(unitName="intact-core-default")
-    private EntityManager complexManager;
-    @Autowired
-    private DaoFactory daoFactory;
+    @Resource("intactDao")
+    private IntactDao intactDao;
     private static final Log log = LogFactory.getLog(SearchController.class);
 
     /****************************/
@@ -198,28 +193,27 @@ public class SearchController {
      - Query the information in our database about the ac of the complex.
      */
     @RequestMapping(value = "/details/{ac}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public @ResponseBody ComplexDetails retrieveComplex(@PathVariable String ac) throws Exception {
-        InteractionDao interactionDao = daoFactory.getInteractionDao();
-        InteractionImpl complex = interactionDao.getByAc(ac);
+        IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
         ComplexDetails details = null;
         // Function
         if ( complex != null ) {
             details = new ComplexDetails();
             details.setAc(complex.getAc());
-            details.setFunction         ( ComplexUtils.getFunction          ( complex ) );
-            details.setProperties       ( ComplexUtils.getProperties        ( complex ) );
-            details.setDisease          ( ComplexUtils.getDisease           ( complex ) );
-            details.setLigand           ( ComplexUtils.getLigand            ( complex ) );
-            details.setComplexAssembly  ( ComplexUtils.getComplexAssembly   ( complex ) );
-            details.setName             ( getComplexName                    ( complex ) );
-            details.setSynonyms         ( getComplexSynonyms                ( complex ) );
-            details.setSystematicName   ( ComplexUtils.getSystematicName    ( complex ) );
-            details.setSpecies          ( ComplexUtils.getSpeciesName       ( complex ) + "; " +
-                                          ComplexUtils.getSpeciesTaxId      ( complex ) );
+            details.setFunction         ( IntactComplexUtils.getFunction(complex) );
+            details.setProperties       ( IntactComplexUtils.getProperties(complex) );
+            details.setDisease          ( IntactComplexUtils.getDisease(complex) );
+            details.setLigand           ( IntactComplexUtils.getLigand(complex) );
+            details.setComplexAssembly  ( IntactComplexUtils.getComplexAssembly(complex) );
+            details.setName             ( IntactComplexUtils.getComplexName(complex) );
+            details.setSynonyms         ( IntactComplexUtils.getComplexSynonyms(complex) );
+            details.setSystematicName   ( IntactComplexUtils.getSystematicName(complex) );
+            details.setSpecies          ( IntactComplexUtils.getSpeciesName(complex) + "; " +
+                                          IntactComplexUtils.getSpeciesTaxId(complex) );
 
-            setParticipants(complex, details);
-            setCrossReferences(complex, details);
+            IntactComplexUtils.setParticipants(complex, details);
+            IntactComplexUtils.setCrossReferences(complex, details);
         }
         else{
             throw new Exception();
@@ -238,28 +232,6 @@ public class SearchController {
     /*******************************/
     /*      Protected methods      */
     /*******************************/
-    protected static List<String> getComplexSynonyms(InteractionImpl complex) {
-        List<String> synosyms = new ArrayList<String>();
-        for (Alias alias : complex.getAliases()) {
-            if (alias.getName() != null && alias.getCvAliasType() != null && alias.getCvAliasType().getIdentifier().equals(CvAliasType.COMPLEX_SYNONYM_NAME_MI_REF)) {
-                synosyms.add(alias.getName());
-            }
-        }
-        return synosyms;
-    }
-
-    protected String getComplexName(InteractionImpl complex){
-        String name = ComplexUtils.getRecommendedName(complex);
-        if (name != null) return name;
-        name = ComplexUtils.getSystematicName(complex);
-        if (name != null) return name;
-        List<String> synonyms = getComplexSynonyms(complex);
-        if (! synonyms.isEmpty()) return synonyms.get(0);
-        name = ComplexUtils.getFirstAlias(complex);
-        if (name != null) return name;
-        return complex.getShortLabel();
-    }
-
     // This method controls the first and number parameters and retrieve data
     protected ComplexRestResult query(String query, String first, String number, String filters, String facets) throws SolrServerException {
         // Get parameters (if we have them)
@@ -288,180 +260,7 @@ public class SearchController {
         return improvedQuery.toString();
     }
 
-    // This method fills the cross references table for the view
-    protected void setCrossReferences(InteractionImpl complex, ComplexDetails details) {
-        Collection<ComplexDetailsCrossReferences> crossReferences = details.getCrossReferences();
-        ComplexDetailsCrossReferences cross;
-        for ( Xref xref : complex.getXrefs()) {
-            cross = new ComplexDetailsCrossReferences();
-            CvDatabase cvDatabase = xref.getCvDatabase();
-            CvXrefQualifier cvXrefQualifier = xref.getCvXrefQualifier();
-            String primaryId = xref.getPrimaryId();
-            String secondayId = xref.getSecondaryId();
-            cross.setIdentifier(primaryId);
-            cross.setDescription(secondayId);
-            cross.setDatabase(cvDatabase.getFullName() != null ? cvDatabase.getFullName() : cvDatabase.getShortLabel());
-            cross.setDbMI(cvDatabase.getIdentifier());
-            for ( Annotation annotation : cvDatabase.getAnnotations() ) {
-                if ( annotation.getCvTopic() != null && CvTopic.SEARCH_URL_MI_REF.equals(annotation.getCvTopic().getIdentifier()) ) {
-                    cross.setSearchURL(annotation.getAnnotationText().replaceAll("\\$*\\{ac\\}",primaryId));
-                }
-                else if( annotation.getCvTopic().getShortLabel().equalsIgnoreCase(CvTopic.DEFINITION) ){
-                    cross.setDbdefinition(annotation.getAnnotationText());
-                }
-            }
-            if( cvXrefQualifier != null ) {
-                setXrefQualifier(cross, cvXrefQualifier);
-            }
-            crossReferences.add(cross);
-        }
-    }
 
-    // This method fills the participants table for the view
-    protected void setParticipants(InteractionImpl complex, ComplexDetails details) {
-        Collection<ComplexDetailsParticipants> participants = details.getParticipants();
-        ComplexDetailsParticipants part;
-        for ( Component component : complex.getComponents() ) {
-            part = new ComplexDetailsParticipants();
-            Interactor interactor = component.getInteractor();
-            if ( interactor != null ) {
-                part.setInteractorAC(interactor.getAc());
-                part.setDescription(interactor.getFullName());
-                Xref xref = null;
-                if (CvObjectUtils.isProteinType(interactor.getCvInteractorType())) {
-                    xref = ProteinUtils.getUniprotXref(interactor);
-
-                    String geneName = null;
-                    for (Alias alias : interactor.getAliases()) {
-                        if ( alias.getCvAliasType() != null && CvAliasType.GENE_NAME_MI_REF.equals(alias.getCvAliasType().getIdentifier())) {
-                            geneName = alias.getName();
-                            break;
-                        }
-                    }
-                    part.setName(geneName !=null ? geneName : interactor.getShortLabel());
-
-                }
-                else if( CvObjectUtils.isSmallMoleculeType(interactor.getCvInteractorType()) || CvObjectUtils.isPolysaccharideType(interactor.getCvInteractorType()) ){
-                    xref = SmallMoleculeUtils.getChebiXref(interactor);
-                    part.setName(interactor.getShortLabel());
-                }
-                else {
-                    part.setName(interactor.getShortLabel());
-                    xref = XrefUtils.getIdentityXref(interactor, CvDatabase.ENSEMBL_MI_REF);
-                    xref = xref != null ? xref : XrefUtils.getIdentityXref(interactor, "MI:1013");
-                }
-                if (xref != null) {
-                    part.setIdentifier(xref.getPrimaryId());
-                    for ( Annotation annotation : xref.getCvDatabase().getAnnotations() ) {
-                        if ( annotation.getCvTopic() != null && CvTopic.SEARCH_URL_MI_REF.equals(annotation.getCvTopic().getIdentifier()) ) {
-                            part.setIdentifierLink(annotation.getAnnotationText().replaceAll("\\$*\\{ac\\}", xref.getPrimaryId()));
-                        }
-                    }
-                }
-                setInteractorType(part, interactor.getCvInteractorType());
-            }
-            part.setStochiometry(component.getStoichiometry() == 0.0f ? null : Float.toString(component.getStoichiometry()));
-            if (component.getCvBiologicalRole() != null) {
-                setBiologicalRole(part, component.getCvBiologicalRole());
-            }
-
-            setFeatures(part, component);
-
-            participants.add(part);
-        }
-    }
-
-    // this method fills the linked features and the other features cells in the participants table
-    protected void setFeatures(ComplexDetailsParticipants part, Component component) {
-        for( Feature feature : component.getFeatures() ) {
-            ComplexDetailsFeatures complexDetailsFeatures = new ComplexDetailsFeatures();
-            if ( feature.getBoundDomain() != null ) {
-                part.getLinkedFeatures().add(complexDetailsFeatures);
-                Component featureComponent = feature.getBoundDomain().getComponent();
-                if (featureComponent != null) {
-                    Interactor linkedInteractor = featureComponent.getInteractor();
-                    if ( linkedInteractor != null ) {
-                        Xref xref = null;
-                        if (CvObjectUtils.isProteinType(linkedInteractor.getCvInteractorType())) {
-                            xref = ProteinUtils.getUniprotXref(linkedInteractor);
-                        }
-                        else if( CvObjectUtils.isSmallMoleculeType(linkedInteractor.getCvInteractorType()) || CvObjectUtils.isPolysaccharideType(linkedInteractor.getCvInteractorType()) ){
-                            xref = SmallMoleculeUtils.getChebiXref(linkedInteractor);
-                        }
-                        else {
-                            xref = XrefUtils.getIdentityXref(linkedInteractor, CvDatabase.ENSEMBL_MI_REF);
-                            xref = xref != null ? xref : XrefUtils.getIdentityXref(linkedInteractor, "MI:1013");
-                        }
-                        if (xref != null) {
-                            complexDetailsFeatures.setParticipantId(xref.getPrimaryId());
-                        }
-                    }
-                }
-            }
-            else {
-                part.getOtherFeatures().add(complexDetailsFeatures);
-            }
-            if (feature.getCvFeatureType() != null) {
-                setFeatureType(complexDetailsFeatures, feature.getCvFeatureType(), component);
-            }
-            for ( Range range : feature.getRanges() ) {
-                complexDetailsFeatures.getRanges().add(FeatureUtils.convertRangeIntoString(range));
-            }
-        }
-    }
-
-
-    // This method is a generic method to get the annotations of a CvDagObject
-    protected String getAnnotation(CvDagObject cv) {
-        if (cv != null){
-            for ( Annotation annotation : cv.getAnnotations() ) {
-                if( annotation.getCvTopic().getShortLabel().equalsIgnoreCase(CvTopic.DEFINITION) ){
-                    return annotation.getAnnotationText();
-                }
-            }
-        }
-        return null;
-    }
-
-    // This method sets the interactor type information
-    protected void setInteractorType(ComplexDetailsParticipants part, CvInteractorType cvInteractorType) {
-        part.setInteractorType(cvInteractorType.getFullName() != null ? cvInteractorType.getFullName() : cvInteractorType.getShortLabel());
-        part.setInteractorTypeMI(cvInteractorType.getIdentifier());
-        String annotation = getAnnotation(cvInteractorType);
-        if (annotation != null) {
-            part.setInteractorTypeDefinition(annotation);
-        }
-    }
-
-    // This method sets the biological role information
-    protected void setBiologicalRole(ComplexDetailsParticipants part, CvBiologicalRole cvBiologicalRole) {
-        part.setBioRole(cvBiologicalRole.getFullName() != null ? cvBiologicalRole.getFullName() : cvBiologicalRole.getShortLabel());
-        part.setBioRoleMI(cvBiologicalRole.getIdentifier());
-        String annotation = getAnnotation(cvBiologicalRole);
-        if (annotation != null) {
-            part.setBioRoleDefinition(annotation);
-        }
-    }
-
-    // This method sets the feature type information
-    protected void setFeatureType(ComplexDetailsFeatures complexDetailsFeatures, CvFeatureType feature, Component component) {
-        complexDetailsFeatures.setFeatureType(feature.getFullName() != null ? feature.getFullName() : feature.getShortLabel());
-        complexDetailsFeatures.setFeatureTypeMI(feature.getIdentifier());
-        String annotation = getAnnotation(component.getCvBiologicalRole());
-        if (annotation != null) {
-            complexDetailsFeatures.setFeatureTypeDefinition(annotation);
-        }
-    }
-
-    // This method sets the xref qualifier information
-    protected void setXrefQualifier(ComplexDetailsCrossReferences cross, CvXrefQualifier cvXrefQualifier) {
-        cross.setQualifier(cvXrefQualifier.getFullName() != null ? cvXrefQualifier.getFullName() : cvXrefQualifier.getShortLabel());
-        cross.setQualifierMI(cvXrefQualifier.getIdentifier());
-        String annotation = getAnnotation(cvXrefQualifier);
-        if (annotation != null) {
-            cross.setQualifierDefinition(annotation);
-        }
-    }
 
     @ExceptionHandler(SolrServerException.class)
     public ModelAndView handleSolrServerException(SolrServerException e, HttpServletResponse response){
