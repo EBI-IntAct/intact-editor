@@ -6,6 +6,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Propagation;
@@ -61,7 +62,7 @@ public class SearchController {
     /********************************/
     @Autowired
     private DataProvider dataProvider ;
-    @Resource("intactDao")
+    @Qualifier("intactDao")
     private IntactDao intactDao;
     private static final Log log = LogFactory.getLog(SearchController.class);
 
