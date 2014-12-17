@@ -8,6 +8,7 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +63,7 @@ public class SearchController {
     /********************************/
     @Autowired
     private DataProvider dataProvider ;
+    @Autowired
     @Qualifier("intactDao")
     private IntactDao intactDao;
     private static final Log log = LogFactory.getLog(SearchController.class);
@@ -103,8 +105,7 @@ public class SearchController {
      - Does not change the query.
      */
     @RequestMapping(value = "/search/{query}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody
-    ComplexRestResult search(@PathVariable String query,
+	public @ResponseBody ComplexRestResult search(@PathVariable String query,
                                     @RequestParam (required = false) String first,
                                     @RequestParam (required = false) String number,
                                     @RequestParam (required = false) String filters,
@@ -194,7 +195,7 @@ public class SearchController {
      - Query the information in our database about the ac of the complex.
      */
     @RequestMapping(value = "/details/{ac}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED, value = "jamiTransactionManager")
     public @ResponseBody ComplexDetails retrieveComplex(@PathVariable String ac) throws Exception {
         IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
         ComplexDetails details = null;
@@ -223,11 +224,13 @@ public class SearchController {
     }
 
     @RequestMapping(value = "/export/{ac}", method = RequestMethod.GET)
-//    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
-    public @ResponseBody ComplexExport exportComplex(@PathVariable String ac) {
-        ComplexExport export = null;
-        //TODO
-        return export;
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED, value = "jamiTransactionManager")
+    public @ResponseBody IntactComplex exportComplex(@PathVariable String ac) throws Exception {
+        IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
+        if (complex != null) {
+            return complex;
+        }
+        throw new Exception("Complex " + ac + " not found");
     }
 
     /*******************************/

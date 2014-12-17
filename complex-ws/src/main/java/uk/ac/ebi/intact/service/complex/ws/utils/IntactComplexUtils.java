@@ -296,23 +296,43 @@ public class IntactComplexUtils {
     // ANNOTATIONS
     //
     public static String getProperties(IntactComplex complex) {
-        return AnnotationUtils.collectFirstAnnotationWithTopic(complex.getAnnotations(), COMPLEX_PROPERTIES_MI, COMPLEX_PROPERTIES).getValue();
+        Annotation annotation = AnnotationUtils.collectFirstAnnotationWithTopic(complex.getAnnotations(), COMPLEX_PROPERTIES_MI, COMPLEX_PROPERTIES);
+        if (annotation != null)
+            return annotation.getValue();
+        else
+            return null;
     }
 
     public static String getDisease(IntactComplex complex) {
-        return AnnotationUtils.collectFirstAnnotationWithTopic(complex.getAnnotations(), COMPLEX_DISEASE_MI, COMPLEX_DISEASE).getValue();
+        Annotation annotation = AnnotationUtils.collectFirstAnnotationWithTopic(complex.getAnnotations(), COMPLEX_DISEASE_MI, COMPLEX_DISEASE);
+        if (annotation != null)
+            return annotation.getValue();
+        else
+            return null;
     }
 
     public static String getLigand(IntactComplex complex) {
-        return AnnotationUtils.collectFirstAnnotationWithTopic(complex.getAnnotations(), COMPLEX_LIGAND_IA, COMPLEX_LIGAND).getValue();
+        Annotation annotation = AnnotationUtils.collectFirstAnnotationWithTopic(complex.getAnnotations(), COMPLEX_LIGAND_IA, COMPLEX_LIGAND);
+        if (annotation != null)
+            return annotation.getValue();
+        else
+            return null;
     }
 
     public static String getComplexAssembly(IntactComplex complex) {
-        return AnnotationUtils.collectFirstAnnotationWithTopic(complex.getAnnotations(), COMPLEX_ASSEMBLY_IA, COMPLEX_ASSEMBLY).getValue();
+        Annotation annotation = AnnotationUtils.collectFirstAnnotationWithTopic(complex.getAnnotations(), COMPLEX_ASSEMBLY_IA, COMPLEX_ASSEMBLY);
+        if (annotation != null)
+            return annotation.getValue();
+        else
+            return null;
     }
 
     public static String getFunction(IntactComplex complex) {
-        return AnnotationUtils.collectFirstAnnotationWithTopic(complex.getAnnotations(), CURATED_COMPLEX_IA, CURATED_COMPLEX).getValue();
+        Annotation annotation = AnnotationUtils.collectFirstAnnotationWithTopic(complex.getAnnotations(), CURATED_COMPLEX_IA, CURATED_COMPLEX);
+        if (annotation != null)
+            return annotation.getValue();
+        else
+            return null;
     }
 
 }

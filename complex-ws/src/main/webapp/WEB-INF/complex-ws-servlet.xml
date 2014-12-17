@@ -43,7 +43,6 @@
         <qualifier value="jamiTransactionManager"/>
     </bean>
 
-
     <!-- The LocalContainerEntityManagerFactoryBean gives full control over EntityManagerFactory configuration
     and is appropriate for environments where fine-grained customization is required-->
     <bean id="intactEntityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
