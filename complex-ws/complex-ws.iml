@@ -167,8 +167,10 @@
     <orderEntry type="library" name="Maven: psidev.psi.mi.jami:jami-core:1.0.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: net.sf.jgrapht:jgrapht:0.8.3" level="project" />
     <orderEntry type="library" name="Maven: psidev.psi.mi.jami:jami-enricher:1.0.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" name="Maven: psidev.psi.mi.jami.bridges:bridges-core:1.0.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-expression:3.2.4.RELEASE" level="project" />
+    <orderEntry type="library" name="Maven: psidev.psi.mi.jami:jami-interactionviewer-json:1.1.1-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: psidev.psi.mi.jami.bridges:bridges-core:1.1.1-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: com.googlecode.json-simple:json-simple:1.1.1" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-core:3.2.4.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-web:3.2.4.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: aopalliance:aopalliance:1.0" level="project" />

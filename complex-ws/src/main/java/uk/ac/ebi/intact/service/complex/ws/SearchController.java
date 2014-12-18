@@ -7,7 +7,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Propagation;
@@ -15,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import psidev.psi.mi.jami.factory.options.InteractionWriterOptions;
+import psidev.psi.mi.jami.json.InteractionViewerJson;
+import psidev.psi.mi.jami.json.nary.MIJsonModelledWriter;
 import uk.ac.ebi.intact.dataexchange.psimi.solr.complex.ComplexFieldNames;
 import uk.ac.ebi.intact.jami.dao.IntactDao;
 import uk.ac.ebi.intact.jami.model.extension.IntactComplex;
@@ -23,8 +29,11 @@ import uk.ac.ebi.intact.service.complex.ws.utils.IntactComplexUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
+import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class SearchController {
@@ -203,16 +212,16 @@ public class SearchController {
         if ( complex != null ) {
             details = new ComplexDetails();
             details.setAc(complex.getAc());
-            details.setFunction         ( IntactComplexUtils.getFunction(complex) );
-            details.setProperties       ( IntactComplexUtils.getProperties(complex) );
-            details.setDisease          ( IntactComplexUtils.getDisease(complex) );
-            details.setLigand           ( IntactComplexUtils.getLigand(complex) );
-            details.setComplexAssembly  ( IntactComplexUtils.getComplexAssembly(complex) );
-            details.setName             ( IntactComplexUtils.getComplexName(complex) );
-            details.setSynonyms         ( IntactComplexUtils.getComplexSynonyms(complex) );
-            details.setSystematicName   ( IntactComplexUtils.getSystematicName(complex) );
-            details.setSpecies          ( IntactComplexUtils.getSpeciesName(complex) + "; " +
-                                          IntactComplexUtils.getSpeciesTaxId(complex) );
+            details.setFunction         ( IntactComplexUtils.getFunction        (complex) );
+            details.setProperties       ( IntactComplexUtils.getProperties      (complex) );
+            details.setDisease          ( IntactComplexUtils.getDisease         (complex) );
+            details.setLigand           ( IntactComplexUtils.getLigand          (complex) );
+            details.setComplexAssembly  ( IntactComplexUtils.getComplexAssembly (complex) );
+            details.setName             ( IntactComplexUtils.getComplexName     (complex) );
+            details.setSynonyms         ( IntactComplexUtils.getComplexSynonyms (complex) );
+            details.setSystematicName   ( IntactComplexUtils.getSystematicName  (complex) );
+            details.setSpecies          ( IntactComplexUtils.getSpeciesName     (complex) + "; " +
+                                          IntactComplexUtils.getSpeciesTaxId    (complex) );
 
             IntactComplexUtils.setParticipants(complex, details);
             IntactComplexUtils.setCrossReferences(complex, details);
@@ -225,10 +234,20 @@ public class SearchController {
 
     @RequestMapping(value = "/export/{ac}", method = RequestMethod.GET)
     @Transactional(readOnly = true, propagation = Propagation.REQUIRED, value = "jamiTransactionManager")
-    public @ResponseBody IntactComplex exportComplex(@PathVariable String ac) throws Exception {
+    public ResponseEntity<String> exportComplex(@PathVariable String ac) throws Exception {
         IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
         if (complex != null) {
-            return complex;
+            StringWriter answer = new StringWriter();
+            HttpHeaders httpHeaders = new HttpHeaders();
+            Map<String, Object> options = new HashMap<String, Object>();
+            options.put(InteractionWriterOptions.OUTPUT_OPTION_KEY, answer);
+            MIJsonModelledWriter writer = new MIJsonModelledWriter();
+            writer.initialiseContext(options);
+            writer.start();
+            writer.write(complex);
+            writer.end();
+            writer.close();
+            return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
         }
         throw new Exception("Complex " + ac + " not found");
     }
