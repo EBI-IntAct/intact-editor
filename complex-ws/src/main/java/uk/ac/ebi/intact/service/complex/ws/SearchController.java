@@ -92,6 +92,10 @@ public class SearchController {
     public String showDetailsHelp(){
         return "details";
     }
+    @RequestMapping(value = "/export/", method = RequestMethod.GET)
+    public String showExportHelp(){
+        return "export";
+    }
     @RequestMapping(value = "/count/{query}", method = RequestMethod.GET, produces = MediaType.TEXT_PLAIN_VALUE)
     public String count(@PathVariable String query, ModelMap model) throws SolrServerException {
         String q = null;
