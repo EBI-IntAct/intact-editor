@@ -247,6 +247,7 @@ public class SearchController {
             writer.write(complex);
             writer.end();
             writer.close();
+            httpHeaders.add("Content-Type:","application/json");
             return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
         }
         throw new Exception("Complex " + ac + " not found");
