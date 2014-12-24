@@ -21,6 +21,8 @@ import org.springframework.web.servlet.ModelAndView;
 import psidev.psi.mi.jami.factory.options.InteractionWriterOptions;
 import psidev.psi.mi.jami.json.InteractionViewerJson;
 import psidev.psi.mi.jami.json.nary.MIJsonModelledWriter;
+import psidev.psi.mi.jami.xml.PsiXmlVersion;
+import psidev.psi.mi.jami.xml.io.writer.compact.CompactXmlModelledWriter;
 import uk.ac.ebi.intact.dataexchange.psimi.solr.complex.ComplexFieldNames;
 import uk.ac.ebi.intact.jami.dao.IntactDao;
 import uk.ac.ebi.intact.jami.model.extension.IntactComplex;
@@ -29,6 +31,7 @@ import uk.ac.ebi.intact.service.complex.ws.utils.IntactComplexUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.stream.XMLStreamException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -238,23 +241,68 @@ public class SearchController {
 
     @RequestMapping(value = "/export/{ac}", method = RequestMethod.GET)
     @Transactional(readOnly = true, propagation = Propagation.REQUIRED, value = "jamiTransactionManager")
-    public ResponseEntity<String> exportComplex(@PathVariable String ac) throws Exception {
+    public ResponseEntity<String> exportComplex(@PathVariable String ac, @RequestParam (required = false) String format) throws Exception {
         IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
+        ResponseEntity<String> responseEntity = null;
         if (complex != null) {
-            StringWriter answer = new StringWriter();
-            HttpHeaders httpHeaders = new HttpHeaders();
-            Map<String, Object> options = new HashMap<String, Object>();
-            options.put(InteractionWriterOptions.OUTPUT_OPTION_KEY, answer);
-            MIJsonModelledWriter writer = new MIJsonModelledWriter();
-            writer.initialiseContext(options);
-            writer.start();
-            writer.write(complex);
-            writer.end();
-            writer.close();
-            httpHeaders.add("Content-Type:","application/json");
-            return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
+            if (format != null) {
+                switch (ComplexExportFormat.formatOf(format)) {
+                    case XML25:
+                        responseEntity = createXml25Response(complex);
+                        break;
+                    case XML30:
+                        responseEntity = createXml30Response(complex);
+                        break;
+                    case JSON:
+                    default:
+                        responseEntity = createJsonResponse(complex);
+                        break;
+                }
+            }
+            else {
+                responseEntity = createJsonResponse(complex);
+            }
+            return responseEntity;
         }
         throw new Exception("Complex " + ac + " not found");
+    }
+
+    private ResponseEntity<String> createXml25Response(IntactComplex complex) throws XMLStreamException {
+        return createXmlResponse(complex, PsiXmlVersion.v2_5_4);
+    }
+
+    private ResponseEntity<String> createXml30Response(IntactComplex complex) throws XMLStreamException {
+        return createXmlResponse(complex, PsiXmlVersion.v3_0_0);
+    }
+
+    private ResponseEntity<String> createXmlResponse(IntactComplex complex, PsiXmlVersion version) throws XMLStreamException {
+        StringWriter answer = new StringWriter();
+        HttpHeaders httpHeaders = new HttpHeaders();
+        Map<String, Object> options = new HashMap<String, Object>();
+        CompactXmlModelledWriter writer = new CompactXmlModelledWriter(answer);
+        writer.setVersion(version);
+        writer.initialiseContext(null);
+        writer.start();
+        writer.write(complex);
+        writer.end();
+        writer.close();
+        httpHeaders.add("Content-Type:", "application/xml");
+        return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
+    }
+
+    private ResponseEntity<String> createJsonResponse(IntactComplex complex) {
+        StringWriter answer = new StringWriter();
+        HttpHeaders httpHeaders = new HttpHeaders();
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put(InteractionWriterOptions.OUTPUT_OPTION_KEY, answer);
+        MIJsonModelledWriter writer = new MIJsonModelledWriter();
+        writer.initialiseContext(options);
+        writer.start();
+        writer.write(complex);
+        writer.end();
+        writer.close();
+        httpHeaders.add("Content-Type:", "application/json");
+        return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
     }
 
     /*******************************/

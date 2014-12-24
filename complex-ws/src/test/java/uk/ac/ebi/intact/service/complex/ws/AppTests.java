@@ -13,7 +13,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
-import uk.ac.ebi.intact.core.unit.IntactBasicTestCase;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -24,7 +23,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(locations = {"file:src/main/webapp/WEB-INF/complex-ws-servlet.xml"})
-public class AppTests extends IntactBasicTestCase {
+public class AppTests {
     private MockMvc mockMvc;
 
     @SuppressWarnings("SpringJavaAutowiringInspection")
