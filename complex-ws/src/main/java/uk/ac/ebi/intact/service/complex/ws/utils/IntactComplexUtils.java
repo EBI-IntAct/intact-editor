@@ -41,6 +41,9 @@ public class IntactComplexUtils {
     public static final String INTACT = "intact";
     public static final String INTACT_MI = "MI:0469";
 
+    public static final String SEARCH = "search-url";
+    public static final String SEARCH_MI = "MI:0615";
+
     public static List<String> getComplexSynonyms(IntactComplex complex) {
         List<String> synosyms = new ArrayList<String>();
         for (Alias alias : AliasUtils.collectAllAliasesHavingType(complex.getAliases(), Alias.COMPLEX_SYNONYM_MI, Alias.COMPLEX_SYNONYM)) {
@@ -66,28 +69,24 @@ public class IntactComplexUtils {
         ComplexDetailsCrossReferences cross;
         for (Xref xref : complex.getXrefs()) {
             cross = new ComplexDetailsCrossReferences();
-            for (Xref id : xref.getDatabase().getIdentifiers()) {
-                System.out.println("ID = " + id);
+            if (xref.getDatabase() != null) {
+                cross.setDatabase(xref.getDatabase().getFullName());
+//            TODO check how I have to get the definition from an annotation
+//            cross.setDbdefinition(xref.getDatabase().getAnnotations());
+                cross.setDbMI(xref.getDatabase().getMIIdentifier());
             }
-//            CvDatabase cvDatabase = xref.getCvDatabase();
-//            CvXrefQualifier cvXrefQualifier = xref.getCvXrefQualifier();
-//            String primaryId = xref.getPrimaryId();
-//            String secondayId = xref.getSecondaryId();
-//            cross.setIdentifier(primaryId);
-//            cross.setDescription(secondayId);
-//            cross.setDatabase(cvDatabase.getFullName() != null ? cvDatabase.getFullName() : cvDatabase.getShortLabel());
-//            cross.setDbMI(cvDatabase.getIdentifier());
-//            for ( Annotation annotation : cvDatabase.getAnnotations() ) {
-//                if ( annotation.getCvTopic() != null && CvTopic.SEARCH_URL_MI_REF.equals(annotation.getCvTopic().getIdentifier()) ) {
-//                    cross.setSearchURL(annotation.getAnnotationText().replaceAll("\\$*\\{ac\\}",primaryId));
-//                }
-//                else if( annotation.getCvTopic().getShortLabel().equalsIgnoreCase(CvTopic.DEFINITION) ){
-//                    cross.setDbdefinition(annotation.getAnnotationText());
-//                }
-//            }
-//            if( cvXrefQualifier != null ) {
-//                setXrefQualifier(cross, cvXrefQualifier);
-//            }
+            if (xref.getQualifier() != null) {
+                cross.setQualifier(xref.getQualifier().getFullName());
+//            TODO check how I have to get the definition from an annotation
+//            cross.setQualifierDefinition(xref.getQualifier().getAnnotations());
+                cross.setQualifierMI(xref.getQualifier().getMIIdentifier());
+            }
+            cross.setIdentifier(xref.getId());
+            Annotation searchUrl = AnnotationUtils.collectFirstAnnotationWithTopic(xref.getDatabase().getAnnotations(), SEARCH_MI, SEARCH);
+            if (searchUrl != null) {
+                //TODO check why IntAct has to search url
+                cross.setSearchURL(searchUrl.getValue().replaceAll("\\$*\\{ac\\}",cross.getIdentifier()));
+            }
             crossReferences.add(cross);
         }
     }
@@ -175,18 +174,6 @@ public class IntactComplexUtils {
         if (annotation != null) {
             part.setBioRoleDefinition(annotation.getValue());
         }
-    }
-
-    // This method sets the xref qualifier information
-    protected static void setXrefQualifier(ComplexDetailsCrossReferences cross, Xref xref) {
-        cross.setQualifier(xref.getQualifier().getFullName() != null ? xref.getQualifier().getFullName() : xref.getQualifier().getShortName());
-        cross.setQualifierMI(xref.getQualifier().getMIIdentifier());
-//        cross.setQualifier(cvXrefQualifier.getFullName() != null ? cvXrefQualifier.getFullName() : cvXrefQualifier.getShortLabel());
-//        cross.setQualifierMI(cvXrefQualifier.getIdentifier());
-//        String annotation = getAnnotation(cvXrefQualifier);
-//        if (annotation != null) {
-//            cross.setQualifierDefinition(annotation);
-//        }
     }
 
     //
