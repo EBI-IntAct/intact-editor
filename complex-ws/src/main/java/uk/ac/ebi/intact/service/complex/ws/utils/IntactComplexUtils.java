@@ -67,6 +67,7 @@ public class IntactComplexUtils {
     public static void setCrossReferences(IntactComplex complex, ComplexDetails details) {
         Collection<ComplexDetailsCrossReferences> crossReferences = details.getCrossReferences();
         ComplexDetailsCrossReferences cross;
+        //TODO check why wwpdb and Reactome cross references are not shown here
         for (Xref xref : complex.getXrefs()) {
             cross = new ComplexDetailsCrossReferences();
             if (xref.getDatabase() != null) {
