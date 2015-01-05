@@ -280,8 +280,8 @@ public class SearchController {
         HttpHeaders httpHeaders = new HttpHeaders();
         Map<String, Object> options = new HashMap<String, Object>();
         CompactXmlModelledWriter writer = new CompactXmlModelledWriter(answer);
+        writer.initialiseContext(options);
         writer.setVersion(version);
-        writer.initialiseContext(null);
         writer.start();
         writer.write(complex);
         writer.end();

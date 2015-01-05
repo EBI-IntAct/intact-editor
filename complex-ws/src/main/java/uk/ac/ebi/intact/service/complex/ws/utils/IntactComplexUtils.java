@@ -3,6 +3,7 @@ package uk.ac.ebi.intact.service.complex.ws.utils;
 import psidev.psi.mi.jami.model.*;
 import psidev.psi.mi.jami.utils.AliasUtils;
 import psidev.psi.mi.jami.utils.AnnotationUtils;
+import psidev.psi.mi.jami.utils.XrefUtils;
 import uk.ac.ebi.intact.jami.model.extension.IntactComplex;
 import uk.ac.ebi.intact.service.complex.ws.model.ComplexDetails;
 import uk.ac.ebi.intact.service.complex.ws.model.ComplexDetailsCrossReferences;
@@ -37,8 +38,8 @@ public class IntactComplexUtils {
     public static final String BIO_ROLE = "biological role";
     public static final String BIO_ROLE_MI = "MI:0500";
 
-    public static final String FEATURE_TYPE = "feature type";
-    public static final String FEATURE_TYPE_MI = "MI:0116";
+    public static final String INTACT = "intact";
+    public static final String INTACT_MI = "MI:0469";
 
     public static List<String> getComplexSynonyms(IntactComplex complex) {
         List<String> synosyms = new ArrayList<String>();
@@ -93,115 +94,71 @@ public class IntactComplexUtils {
 
     // This method fills the participants table for the view
     public static void setParticipants(IntactComplex complex, ComplexDetails details) {
-//        Collection<ComplexDetailsParticipants> participants = details.getParticipants();
-//        ComplexDetailsParticipants part;
-//        for ( Component component : complex.getComponents() ) {
-//            part = new ComplexDetailsParticipants();
-//            Interactor interactor = component.getInteractor();
-//            if ( interactor != null ) {
-//                part.setInteractorAC(interactor.getAc());
-//                part.setDescription(interactor.getFullName());
-//                Xref xref = null;
-//                if (CvObjectUtils.isProteinType(interactor.getCvInteractorType())) {
-//                    xref = ProteinUtils.getUniprotXref(interactor);
-//
-//                    String geneName = null;
-//                    for (Alias alias : interactor.getAliases()) {
-//                        if ( alias.getCvAliasType() != null && CvAliasType.GENE_NAME_MI_REF.equals(alias.getCvAliasType().getIdentifier())) {
-//                            geneName = alias.getName();
-//                            break;
-//                        }
-//                    }
-//                    part.setName(geneName !=null ? geneName : interactor.getShortLabel());
-//
-//                }
-//                else if( CvObjectUtils.isSmallMoleculeType(interactor.getCvInteractorType()) || CvObjectUtils.isPolysaccharideType(interactor.getCvInteractorType()) ){
-//                    xref = SmallMoleculeUtils.getChebiXref(interactor);
-//                    part.setName(interactor.getShortLabel());
-//                }
-//                else {
-//                    part.setName(interactor.getShortLabel());
-//                    xref = XrefUtils.getIdentityXref(interactor, CvDatabase.ENSEMBL_MI_REF);
-//                    xref = xref != null ? xref : XrefUtils.getIdentityXref(interactor, "MI:1013");
-//                }
-//                if (xref != null) {
-//                    part.setIdentifier(xref.getPrimaryId());
-//                    for ( Annotation annotation : xref.getCvDatabase().getAnnotations() ) {
-//                        if ( annotation.getCvTopic() != null && CvTopic.SEARCH_URL_MI_REF.equals(annotation.getCvTopic().getIdentifier()) ) {
-//                            part.setIdentifierLink(annotation.getAnnotationText().replaceAll("\\$*\\{ac\\}", xref.getPrimaryId()));
-//                        }
+        Collection<ComplexDetailsParticipants> participants = details.getParticipants();
+        ComplexDetailsParticipants part;
+        for (Participant participant : complex.getParticipants()) {
+            part = new ComplexDetailsParticipants();
+            Interactor interactor = participant.getInteractor();
+            if (interactor != null) {
+                part.setInteractorAC(XrefUtils.collectFirstIdentifierWithDatabase(interactor.getIdentifiers(), INTACT_MI, INTACT).getId());
+                setInteractorType(part, interactor);
+                part.setDescription(interactor.getFullName());
+                if (interactor instanceof Protein) {
+                    Alias alias = AliasUtils.collectFirstAliasWithType(interactor.getAliases(), Alias.COMPLEX_SYNONYM_MI, Alias.COMPLEX_SYNONYM);
+                    part.setName(alias != null ? alias.getName() : ((Protein) interactor).getGeneName());
+                    part.setIdentifier(interactor.getPreferredIdentifier().getId());
+                }
+                else if (interactor instanceof BioactiveEntity) {
+                    part.setName(interactor.getShortName());
+                    part.setIdentifier(((BioactiveEntity) interactor).getChebi());
+                }
+                else {
+                    part.setName(interactor.getShortName());
+                    part.setIdentifier(interactor.getFullName());
+                }
+                //TODO Identifier Link
+//                part.setIdentifier(xref.getPrimaryId());
+//                for ( Annotation annotation : xref.getCvDatabase().getAnnotations() ) {
+//                    if ( annotation.getCvTopic() != null && CvTopic.SEARCH_URL_MI_REF.equals(annotation.getCvTopic().getIdentifier()) ) {
+//                        part.setIdentifierLink(annotation.getAnnotationText().replaceAll("\\$*\\{ac\\}", xref.getPrimaryId()));
 //                    }
 //                }
-//                setInteractorType(part, interactor.getCvInteractorType());
-//            }
-//            part.setStochiometry(component.getStoichiometry() == 0.0f ? null : Float.toString(component.getStoichiometry()));
-//            if (component.getCvBiologicalRole() != null) {
-//                setBiologicalRole(part, component.getCvBiologicalRole());
-//            }
-//
-//            setFeatures(part, component);
-//
-//            participants.add(part);
-//        }
+                part.setStochiometry(participant.getStoichiometry().toString());
+                if (participant.getBiologicalRole() != null) {
+                    setBiologicalRole(part, participant);
+                }
+            }
+            setFeatures(part, participant);
+            participants.add(part);
+        }
     }
 
     // this method fills the linked features and the other features cells in the participants table
-    protected static void setFeatures(ComplexDetailsParticipants part, Interactor interactor) {
-//        for( Feature feature : component.getFeatures() ) {
-//            ComplexDetailsFeatures complexDetailsFeatures = new ComplexDetailsFeatures();
-//            if ( feature.getBoundDomain() != null ) {
-//                part.getLinkedFeatures().add(complexDetailsFeatures);
-//                Component featureComponent = feature.getBoundDomain().getComponent();
-//                if (featureComponent != null) {
-//                    Interactor linkedInteractor = featureComponent.getInteractor();
-//                    if ( linkedInteractor != null ) {
-//                        Xref xref = null;
-//                        if (CvObjectUtils.isProteinType(linkedInteractor.getCvInteractorType())) {
-//                            xref = ProteinUtils.getUniprotXref(linkedInteractor);
-//                        }
-//                        else if( CvObjectUtils.isSmallMoleculeType(linkedInteractor.getCvInteractorType()) || CvObjectUtils.isPolysaccharideType(linkedInteractor.getCvInteractorType()) ){
-//                            xref = SmallMoleculeUtils.getChebiXref(linkedInteractor);
-//                        }
-//                        else {
-//                            xref = XrefUtils.getIdentityXref(linkedInteractor, CvDatabase.ENSEMBL_MI_REF);
-//                            xref = xref != null ? xref : XrefUtils.getIdentityXref(linkedInteractor, "MI:1013");
-//                        }
-//                        if (xref != null) {
-//                            complexDetailsFeatures.setParticipantId(xref.getPrimaryId());
-//                        }
-//                    }
-//                }
-//            }
-//            else {
-//                part.getOtherFeatures().add(complexDetailsFeatures);
-//            }
-//            if (feature.getCvFeatureType() != null) {
-//                setFeatureType(complexDetailsFeatures, feature.getCvFeatureType(), component);
-//            }
-//            for ( Range range : feature.getRanges() ) {
-//                complexDetailsFeatures.getRanges().add(FeatureUtils.convertRangeIntoString(range));
-//            }
-//        }
+    protected static void setFeatures(ComplexDetailsParticipants part, Participant participant) {
+        for (Feature feature : (List<Feature>) participant.getFeatures()) {
+            for (Feature linked : (List<Feature>) feature.getLinkedFeatures()) {
+                ComplexDetailsFeatures complexDetailsFeatures = new ComplexDetailsFeatures();
+                part.getLinkedFeatures().add(complexDetailsFeatures);
+                complexDetailsFeatures.setFeatureType(linked.getType().getShortName());
+                //TODO check how I have to get the definition from an annotation
+                //complexDetailsFeatures.setFeatureTypeDefinition(linked.getType().getAnnotations().toString());
+                complexDetailsFeatures.setFeatureTypeMI(linked.getType().getMIIdentifier());
+                complexDetailsFeatures.setParticipantId(linked.getParticipant().getInteractor().getPreferredIdentifier().getId());
+                for (Range range : (List<Range>) linked.getRanges()) {
+                    complexDetailsFeatures.getRanges().add(range.getStart().getStart() + ".." + range.getStart().getEnd() + " - " + range.getEnd().getStart() + ".." + range.getEnd().getEnd());
+                }
+            }
+            //TODO Other features
+            //What about other features?
+        }
     }
-
-
-    // This method is a generic method to get the annotations of a CvDagObject
-//    protected static String getAnnotation(CvDagObject cv) {
-//        if (cv != null){
-//            for ( Annotation annotation : cv.getAnnotations() ) {
-//                if( annotation.getCvTopic().getShortLabel().equalsIgnoreCase(CvTopic.DEFINITION) ){
-//                    return annotation.getAnnotationText();
-//                }
-//            }
-//        }
-//        return null;
-//    }
 
     // This method sets the interactor type information
     protected static void setInteractorType(ComplexDetailsParticipants part, Interactor interactor) {
         CvTerm term = interactor.getInteractorType();
         part.setInteractorType(term.getFullName());
         part.setInteractorTypeMI(term.getMIIdentifier());
+        //TODO check how I have to get the definition from an annotation
         Annotation annotation = AnnotationUtils.collectFirstAnnotationWithTopic(term.getAnnotations(), Annotation.COMPLEX_PROPERTIES, Annotation.COMPLEX_PROPERTIES_MI);
         if (annotation != null) {
             part.setInteractorTypeDefinition(annotation.getValue());
@@ -209,36 +166,14 @@ public class IntactComplexUtils {
     }
 
     // This method sets the biological role information
-    protected static void setBiologicalRole(ComplexDetailsParticipants part, Interactor interactor) {
-//        part.setBioRole(cvBiologicalRole.getFullName() != null ? cvBiologicalRole.getFullName() : cvBiologicalRole.getShortLabel());
-//        part.setBioRoleMI(cvBiologicalRole.getIdentifier());
-//        String annotation = getAnnotation(cvBiologicalRole);
-//        if (annotation != null) {
-//            part.setBioRoleDefinition(annotation);
-//        }
-        CvTerm term = interactor.getInteractorType();
+    protected static void setBiologicalRole(ComplexDetailsParticipants part, Participant participant) {
+        CvTerm term = participant.getBiologicalRole();
         part.setBioRole(term.getFullName());
         part.setBioRoleMI(term.getMIIdentifier());
+        //TODO check how I have to get the definition from an annotation
         Annotation annotation = AnnotationUtils.collectFirstAnnotationWithTopic(term.getAnnotations(), BIO_ROLE_MI, BIO_ROLE);
         if (annotation != null) {
             part.setBioRoleDefinition(annotation.getValue());
-        }
-    }
-
-    // This method sets the feature type information
-    protected static void setFeatureType(ComplexDetailsFeatures complexDetailsFeatures, Interactor interactor) {
-//        complexDetailsFeatures.setFeatureType(feature.getFullName() != null ? feature.getFullName() : feature.getShortLabel());
-//        complexDetailsFeatures.setFeatureTypeMI(feature.getIdentifier());
-//        String annotation = getAnnotation(component.getCvBiologicalRole());
-//        if (annotation != null) {
-//            complexDetailsFeatures.setFeatureTypeDefinition(annotation);
-//        }
-        CvTerm term = interactor.getInteractorType();
-        complexDetailsFeatures.setFeatureType(term.getFullName());
-        complexDetailsFeatures.setFeatureTypeMI(term.getMIIdentifier());
-        Annotation annotation = AnnotationUtils.collectFirstAnnotationWithTopic(term.getAnnotations(), FEATURE_TYPE_MI, FEATURE_TYPE);
-        if (annotation != null) {
-            complexDetailsFeatures.setFeatureTypeDefinition(annotation.getValue());
         }
     }
 
