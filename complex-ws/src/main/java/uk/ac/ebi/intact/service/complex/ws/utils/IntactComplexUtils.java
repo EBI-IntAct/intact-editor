@@ -154,24 +154,33 @@ public class IntactComplexUtils {
     // this method fills the linked features and the other features cells in the participants table
     protected static void setFeatures(ComplexDetailsParticipants part, Participant participant) {
         for (Feature feature : (List<Feature>) participant.getFeatures()) {
-            for (Feature linked : (List<Feature>) feature.getLinkedFeatures()) {
-                ComplexDetailsFeatures complexDetailsFeatures = new ComplexDetailsFeatures();
-                part.getLinkedFeatures().add(complexDetailsFeatures);
-                complexDetailsFeatures.setFeatureType(linked.getType().getShortName());
-                if (linked.getType() instanceof OntologyTerm) {
-                    OntologyTerm ontologyTerm = (OntologyTerm) linked.getType();
-                    if (ontologyTerm.getDefinition() != null)
-                        complexDetailsFeatures.setFeatureTypeDefinition(ontologyTerm.getDefinition());
-                }
-                complexDetailsFeatures.setFeatureTypeMI(linked.getType().getMIIdentifier());
-                complexDetailsFeatures.setParticipantId(linked.getParticipant().getInteractor().getPreferredIdentifier().getId());
-                for (Range range : (List<Range>) linked.getRanges()) {
-                    complexDetailsFeatures.getRanges().add(range.getStart().getStart() + ".." + range.getStart().getEnd() + " - " + range.getEnd().getStart() + ".." + range.getEnd().getEnd());
+            if (feature.getLinkedFeatures().size() != 0) {
+                for (Feature linked : (List<Feature>) feature.getLinkedFeatures()) {
+                    ComplexDetailsFeatures complexDetailsFeatures = createFeature(linked);
+                    part.getLinkedFeatures().add(complexDetailsFeatures);
                 }
             }
-            //TODO Other features
-            //What about other features?
+            else {
+                ComplexDetailsFeatures complexDetailsFeatures = createFeature(feature);
+                part.getOtherFeatures().add(complexDetailsFeatures);
+            }
         }
+    }
+
+    private static ComplexDetailsFeatures createFeature(Feature feature) {
+        ComplexDetailsFeatures complexDetailsFeatures = new ComplexDetailsFeatures();
+        complexDetailsFeatures.setFeatureType(feature.getType().getShortName());
+        if (feature.getType() instanceof OntologyTerm) {
+            OntologyTerm ontologyTerm = (OntologyTerm) feature.getType();
+            if (ontologyTerm.getDefinition() != null)
+                complexDetailsFeatures.setFeatureTypeDefinition(ontologyTerm.getDefinition());
+        }
+        complexDetailsFeatures.setFeatureTypeMI(feature.getType().getMIIdentifier());
+        complexDetailsFeatures.setParticipantId(feature.getParticipant().getInteractor().getPreferredIdentifier().getId());
+        for (Range range : (List<Range>) feature.getRanges()) {
+            complexDetailsFeatures.getRanges().add(range.getStart().getStart() + ".." + range.getStart().getEnd() + " - " + range.getEnd().getStart() + ".." + range.getEnd().getEnd());
+        }
+        return complexDetailsFeatures;
     }
 
     // This method sets the interactor type information
