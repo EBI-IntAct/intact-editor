@@ -5,6 +5,8 @@ import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
@@ -17,24 +19,28 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import psidev.psi.mi.jami.commons.MIWriterOptionFactory;
 import psidev.psi.mi.jami.datasource.InteractionWriter;
 import psidev.psi.mi.jami.factory.InteractionWriterFactory;
-import psidev.psi.mi.jami.factory.options.InteractionWriterOptions;
 import psidev.psi.mi.jami.json.InteractionViewerJson;
-import psidev.psi.mi.jami.json.nary.MIJsonModelledWriter;
+import psidev.psi.mi.jami.json.MIJsonOptionFactory;
+import psidev.psi.mi.jami.json.MIJsonType;
 import psidev.psi.mi.jami.model.ComplexType;
 import psidev.psi.mi.jami.model.InteractionCategory;
+import psidev.psi.mi.jami.xml.PsiXmlVersion;
 import uk.ac.ebi.intact.dataexchange.psimi.solr.complex.ComplexFieldNames;
+import uk.ac.ebi.intact.dataexchange.psimi.xml.IntactPsiXml;
 import uk.ac.ebi.intact.jami.dao.IntactDao;
 import uk.ac.ebi.intact.jami.model.extension.IntactComplex;
 import uk.ac.ebi.intact.service.complex.ws.model.*;
 import uk.ac.ebi.intact.service.complex.ws.utils.IntactComplexUtils;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.stream.XMLStreamException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -121,85 +127,17 @@ public class SearchController {
      - Does not change the query.
      */
     @RequestMapping(value = "/search/{query}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody ComplexRestResult search(@PathVariable String query,
+	public ResponseEntity<String> search(@PathVariable String query,
                                     @RequestParam (required = false) String first,
                                     @RequestParam (required = false) String number,
                                     @RequestParam (required = false) String filters,
-                                    @RequestParam (required = false) String facets) throws SolrServerException {
-        return query(query, first, number, filters, facets);
+                                    @RequestParam (required = false) String facets) throws SolrServerException, IOException {
+        ComplexRestResult searchResult = query(query, first, number, filters, facets);
+        StringWriter writer = new StringWriter();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(writer, searchResult);
+        return new ResponseEntity<String>(writer.toString(), HttpStatus.OK);
 	}
-
-    /*
-     - We can access to that method using:
-         http://<servername>:<port>/interactor/<something to query>
-       and
-         http://<servername>:<port>/interactor/<something to query>?format=<type>
-     - If we do not use the format parameter we will receive the answer in json
-     - Only listen request via GET never via POST.
-     - Force to query only in the id, alias and pxref fields.
-     */
-    @RequestMapping(value = "/interactor/{query}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody ComplexRestResult searchInteractor(@PathVariable String query,
-                                              @RequestParam (required = false) String first,
-                                              @RequestParam (required = false) String number) throws SolrServerException {
-
-        // Query improvement. Force to query only in the id, alias and pxref
-        // fields.
-        List<String> fields = new ArrayList<String>();
-        fields.add(ComplexFieldNames.INTERACTOR_ID);
-        fields.add(ComplexFieldNames.INTERACTOR_ALIAS);
-        fields.add(ComplexFieldNames.INTERACTOR_XREF);
-        // Retrieve data using that parameters and return it
-        return query(improveQuery(query, fields), first, number, null, null);
-    }
-
-    /*
-     - We can access to that method using:
-         http://<servername>:<port>/complex/<something to query>
-       and
-         http://<servername>:<port>/complex/<something to query>?format=<type>
-     - If we do not use the format parameter we will receive the answer in json
-     - Only listen request via GET never via POST.
-     - Force to query only in the complex_id, complex_alias and complex_xref
-       fields.
-     */
-    @RequestMapping(value = "/complex/{query}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody ComplexRestResult searchInteraction(@PathVariable String query,
-                                               @RequestParam (required = false) String first,
-                                               @RequestParam (required = false) String number) throws SolrServerException {
-
-        // Query improvement. Force to query only in the complex_id,
-        // complex_alias and complex_xref fields.
-        List<String> fields = new ArrayList<String>();
-        fields.add(ComplexFieldNames.COMPLEX_ID);
-        fields.add(ComplexFieldNames.COMPLEX_ALIAS);
-        fields.add(ComplexFieldNames.COMPLEX_XREF);
-        // Retrieve data using that parameters and return it
-        return query(improveQuery(query, fields), first, number, null, null);
-    }
-
-    /*
-     - We can access to that method using:
-         http://<servername>:<port>/organism/<something to query>
-       and
-         http://<servername>:<port>/organism/<something to query>?format=<type>
-     - If we do not use the format parameter we will receive the answer in json
-     - Only listen request via GET never via POST.
-     - Force to query only in the organism_name and species fields.
-     */
-    @RequestMapping(value = "/organism/{query}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody ComplexRestResult searchOrganism(@PathVariable String query,
-                                            @RequestParam (required = false) String first,
-                                            @RequestParam (required = false) String number) throws SolrServerException {
-
-        // Query improvement. Force to query only in the organism_name and
-        // species (complex_organism) fields.
-        List<String> fields = new ArrayList<String>();
-        fields.add(ComplexFieldNames.ORGANISM_NAME);
-        fields.add(ComplexFieldNames.COMPLEX_ORGANISM);
-        // Retrieve data using that parameters and return it
-        return query(improveQuery(query, fields), first, number, null, null);
-    }
 
     /*
      - We can access to that method using:
@@ -212,7 +150,7 @@ public class SearchController {
      */
     @RequestMapping(value = "/details/{ac}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     @Transactional(readOnly = true, propagation = Propagation.REQUIRED, value = "jamiTransactionManager")
-    public @ResponseBody ComplexDetails retrieveComplex(@PathVariable String ac) throws Exception {
+    public ResponseEntity<String> retrieveComplex(@PathVariable String ac) throws Exception {
         IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
         ComplexDetails details = null;
         // Function
@@ -236,75 +174,86 @@ public class SearchController {
         else{
             throw new Exception();
         }
-        return details;
+        StringWriter writer = new StringWriter();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(writer, details);
+        return new ResponseEntity<String>(writer.toString(), HttpStatus.OK);
     }
 
-//    @RequestMapping(value = "/export/{ac}", method = RequestMethod.GET)
-//    @Transactional(readOnly = true, propagation = Propagation.REQUIRED, value = "jamiTransactionManager")
-//    public ResponseEntity<String> exportComplex(@PathVariable String ac, @RequestParam (required = false) String format) throws Exception {
-//        IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
-//        ResponseEntity<String> responseEntity = null;
-//        if (complex != null) {
-//
-//            InteractionWriterFactory writerFactory = InteractionWriterFactory.getInstance();
-//            if (format != null) {
-//                switch (ComplexExportFormat.formatOf(format)) {
-//                    case XML25:
-//                        responseEntity = createXml25Response(complex, writerFactory);
-//                        break;
-//                    case XML30:
-//                        responseEntity = createXml30Response(complex, writerFactory);
-//                        break;
-//                    case JSON:
-//                    default:
-//                        responseEntity = createJsonResponse(complex, writerFactory);
-//                        break;
-//                }
-//            }
-//            else {
-//                responseEntity = createJsonResponse(complex, writerFactory);
-//            }
-//            return responseEntity;
-//        }
-//        throw new Exception("Complex " + ac + " not found");
-//    }
-//
-//    private ResponseEntity<String> createXml25Response(IntactComplex complex, InteractionWriterFactory writerFactory) throws XMLStreamException {
-//        return createXmlResponse(complex, writerFactory, PsiXmlVersion.v2_5_4);
-//    }
-//
-//    private ResponseEntity<String> createXml30Response(IntactComplex complex, InteractionWriterFactory writerFactory) throws XMLStreamException {
-//        return createXmlResponse(complex, writerFactory, PsiXmlVersion.v3_0_0);
-//    }
-//
-//    private ResponseEntity<String> createXmlResponse(IntactComplex complex, InteractionWriterFactory writerFactory, PsiXmlVersion version) throws XMLStreamException {
-//        IntactPsiXml.initialiseAllIntactXmlWriters();
-//        MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
-//        StringWriter answer = new StringWriter();
-//        InteractionWriter writer = writerFactory.getInteractionWriterWith(optionFactory.getDefaultCompactXmlOptions(complex, InteractionCategory.complex, ComplexType.n_ary, version)) ;
-//        HttpHeaders httpHeaders = new HttpHeaders();
-//        writer.start();
-//        writer.write(complex);
-//        writer.end();
-//        writer.close();
-//        httpHeaders.add("Content-Type:", "application/xml");
-//        return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
-//    }
-//
-//    private ResponseEntity<String> createJsonResponse(IntactComplex complex, InteractionWriterFactory writerFactory) {
-//        StringWriter answer = new StringWriter();
-//        HttpHeaders httpHeaders = new HttpHeaders();
-//        Map<String, Object> options = new HashMap<String, Object>();
-//        options.put(InteractionWriterOptions.OUTPUT_OPTION_KEY, answer);
-//        MIJsonModelledWriter writer = new MIJsonModelledWriter();
-//        writer.initialiseContext(options);
-//        writer.start();
-//        writer.write(complex);
-//        writer.end();
-//        writer.close();
-//        httpHeaders.add("Content-Type:", "application/json");
-//        return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
-//    }
+    @RequestMapping(value = "/export/{ac}", method = RequestMethod.GET)
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED, value = "jamiTransactionManager")
+    public ResponseEntity<String> exportComplex(@PathVariable String ac, @RequestParam (required = false) String format) throws Exception {
+        IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
+        ResponseEntity<String> responseEntity = null;
+        if (complex != null) {
+            InteractionWriterFactory writerFactory = InteractionWriterFactory.getInstance();
+            if (format != null) {
+                switch (ComplexExportFormat.formatOf(format)) {
+                    case XML25:
+                        responseEntity = createXml25Response(complex, writerFactory);
+                        break;
+                    case XML30:
+                        responseEntity = createXml30Response(complex, writerFactory);
+                        break;
+                    case JSON:
+                    default:
+                        responseEntity = createJsonResponse(complex, writerFactory);
+                        break;
+                }
+            }
+            else {
+                responseEntity = createJsonResponse(complex, writerFactory);
+            }
+            return responseEntity;
+        }
+        throw new Exception("Complex " + ac + " not found");
+    }
+
+    private ResponseEntity<String> createXml25Response(IntactComplex complex, InteractionWriterFactory writerFactory) {
+        return createXmlResponse(complex, writerFactory, PsiXmlVersion.v2_5_4);
+    }
+
+    private ResponseEntity<String> createXml30Response(IntactComplex complex, InteractionWriterFactory writerFactory) {
+        return createXmlResponse(complex, writerFactory, PsiXmlVersion.v3_0_0);
+    }
+
+    private ResponseEntity<String> createXmlResponse(IntactComplex complex, InteractionWriterFactory writerFactory, PsiXmlVersion version) {
+        IntactPsiXml.initialiseAllIntactXmlWriters();
+        MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+        StringWriter answer = new StringWriter();
+        Map<String, Object> options = optionFactory.getDefaultCompactXmlOptions(answer, InteractionCategory.complex, ComplexType.n_ary, version);
+        InteractionWriter writer = writerFactory.getInteractionWriterWith(options) ;
+        try {
+            writer.start();
+            writer.write(complex);
+            writer.end();
+        }
+        finally {
+            writer.close();
+        }
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Content-Type:", "application/xml");
+        return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
+    }
+
+    private ResponseEntity<String> createJsonResponse(IntactComplex complex, InteractionWriterFactory writerFactory) {
+        InteractionViewerJson.initialiseAllMIJsonWriters();
+        MIJsonOptionFactory optionFactory = MIJsonOptionFactory.getInstance();
+        StringWriter answer = new StringWriter();
+        Map<String, Object> options = optionFactory.getJsonOptions(answer, InteractionCategory.modelled, null, MIJsonType.n_ary_only, null, null);
+        InteractionWriter writer = writerFactory.getInteractionWriterWith(options);
+        try {
+            writer.start();
+            writer.write(complex);
+            writer.end();
+        }
+        finally {
+            writer.close();
+        }
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Content-Type:", "application/json");
+        return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
+    }
 
     /*******************************/
     /*      Protected methods      */
