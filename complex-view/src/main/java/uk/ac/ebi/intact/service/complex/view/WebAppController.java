@@ -154,6 +154,8 @@ public class WebAppController {
                                     HttpServletRequest request) throws Exception {
         ComplexDetails details = restConnection.getDetails(cleanQuery(ac), QueryTypes.DETAILS.value);
         session.setAttribute("details", details);
+        String json = restConnection.getJsonToVisualize(ac);
+        model.addAttribute("json_rest", json);
         setDefaultModelMapValues(model, request);
         model.addAttribute("complex_search_form", request.getRequestURL().toString().split("details/")[0]);
         model.addAttribute("page_title", "Complex Details");

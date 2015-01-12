@@ -7,6 +7,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -15,6 +16,7 @@ import org.apache.commons.logging.LogFactory;
 import uk.ac.ebi.intact.dataexchange.psimi.solr.complex.ComplexSearchResults;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -77,14 +79,8 @@ public class RestConnection {
         StringBuilder q = new StringBuilder() .append(this.WS_URL);
         queryType = queryType != null ? queryType : QueryTypes.DEFAULT.value;
         switch (QueryTypes.getByValue(queryType)) {
-            case INTERACTOR:
-                q.append("interactor/");
-                break;
-            case COMPLEX:
-                q.append("complex/");
-                break;
-            case ORGANISM:
-                q.append("organism/");
+            case EXPORT:
+                q.append("export/");
                 break;
             case DETAILS:
                 q.append("details/");
@@ -216,7 +212,11 @@ public class RestConnection {
                     participant.setName((String) part.get("name"));
                     participant.setDescription((String) part.get("description"));
                     String stochiometry = (String) part.get("stochiometry");
-                    participant.setStochiometry( stochiometry != null ? String.valueOf( new Double(stochiometry).intValue() ) : null );
+                    if (stochiometry != null) {
+                        String[] stochiometry_values = stochiometry.split(",");
+                        String svalues = stochiometry_values[0].split(":")[1].trim();
+                        participant.setStochiometry(svalues);
+                    }
                     participant.setBioRole((String) part.get("bioRole"));
                     participant.setBioRoleMI((String) part.get("bioRoleMI"));
                     participant.setBioRoleDefinition((String) part.get("bioRoleDefinition"));
@@ -303,6 +303,21 @@ public class RestConnection {
     public ComplexDetails getDetails( String ac, String queryType ) throws Exception {
         String q = createDetailsQuery(ac, queryType);
         return JSONToComplexDetails(getDataFromWS(q));
+    }
+
+    public String getJsonToVisualize(String ac) throws Exception {
+        String url = getBaseURL(QueryTypes.EXPORT.value) + ac;
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpGet request = new HttpGet(url);
+        HttpResponse response = client.execute(request);
+        if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_SERVICE_UNAVAILABLE) //503
+                throw new ComplexPortalException();
+            else{ //404
+                throw new Exception();
+            }
+        }
+        return EntityUtils.toString(response.getEntity(),"UTF-8");
     }
 
     public String getFtpUrl() {

@@ -232,9 +232,15 @@
                 </tbody>
             </table>
         </div>
+        <div id="networkContainer"></div>
+        <script type="text/javascript">
+            var data = '${json_rest}';
+            var targetDiv = document.getElementById('networkContainer');
+            xlv = new xiNET(targetDiv);
+            xlv.readMIJSON(data, false);
+        </script>
     </div>
 </div>
-
 
 <%@include file="footer.jsp"%>
 </html>
