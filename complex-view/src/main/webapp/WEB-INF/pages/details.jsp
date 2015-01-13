@@ -239,6 +239,11 @@
             xlv = new xiNET(targetDiv);
             xlv.readMIJSON(data, false);
         </script>
+        <div id="networkControls" class="networkControls">
+            <button id="AutoLayout" class="submit networkButton" onclick="xlv.autoLayout();">Auto layout</button>
+            <button id="ResetZoom" class="submit networkButton" onclick="xlv.resetZoom();">Reset Zoom</button>
+            <%--<button id="ExportSVG" class="submit networkButton" onclick="xlv.exportSVG('networkSVG')">Export SVG</button>--%>
+        </div>
     </div>
 </div>
 
