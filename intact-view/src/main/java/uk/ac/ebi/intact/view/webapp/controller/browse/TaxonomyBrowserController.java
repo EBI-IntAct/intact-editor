@@ -69,4 +69,9 @@ public class TaxonomyBrowserController extends OntologyBrowserController {
     public void setSkipIntermediateTaxons(boolean skipIntermediateTaxons) {
         this.skipIntermediateTaxons = skipIntermediateTaxons;
     }
+
+    @Override
+    protected String createIdentifierQuery(OntologyTermWrapper otw) {
+        return "taxid:"+super.createIdentifierQuery(otw);
+    }
 }

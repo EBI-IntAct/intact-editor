@@ -123,16 +123,24 @@ public abstract class OntologyBrowserController extends BaseController {
         userQuery = (UserQuery) getBean("userQuery");
 
         if (otw.isUseName()){
-            userQuery.doAddParamToQuery("AND", getFieldName(), otw.getTerm().getName());
+            userQuery.doAddParamToQuery("AND", getFieldName(), createNameQuery(otw));
         }
         else {
-            userQuery.doAddParamToQuery("AND", getFieldName(), otw.getTerm().getId());
+            userQuery.doAddParamToQuery("AND", getFieldName(), createIdentifierQuery(otw));
         }
         // reset tree node
         resetTreeNode();
 
         FacesContext.getCurrentInstance().getApplication().getNavigationHandler()
                 .handleNavigation(FacesContext.getCurrentInstance(), null, searchController.doBinarySearchAction());
+    }
+
+    protected String createIdentifierQuery(OntologyTermWrapper otw) {
+        return otw.getTerm().getId();
+    }
+
+    protected String createNameQuery(OntologyTermWrapper otw) {
+        return otw.getTerm().getName();
     }
 
     public void doSelectCvTerm(NodeSelectEvent evt) {
