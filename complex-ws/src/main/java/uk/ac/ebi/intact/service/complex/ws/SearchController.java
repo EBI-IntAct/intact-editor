@@ -35,6 +35,7 @@ import uk.ac.ebi.intact.jami.model.extension.IntactComplex;
 import uk.ac.ebi.intact.service.complex.ws.model.*;
 import uk.ac.ebi.intact.service.complex.ws.utils.IntactComplexUtils;
 
+import javax.print.attribute.standard.Media;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
@@ -136,7 +137,9 @@ public class SearchController {
         StringWriter writer = new StringWriter();
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(writer, searchResult);
-        return new ResponseEntity<String>(writer.toString(), HttpStatus.OK);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+        return new ResponseEntity<String>(writer.toString(), headers, HttpStatus.OK);
 	}
 
     /*
@@ -177,7 +180,9 @@ public class SearchController {
         StringWriter writer = new StringWriter();
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(writer, details);
-        return new ResponseEntity<String>(writer.toString(), HttpStatus.OK);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+        return new ResponseEntity<String>(writer.toString(), headers, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/export/{ac}", method = RequestMethod.GET)
@@ -232,7 +237,7 @@ public class SearchController {
             writer.close();
         }
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Content-Type:", "application/xml");
+        httpHeaders.add("Content-Type", MediaType.APPLICATION_XML_VALUE);
         return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
     }
 
@@ -251,7 +256,7 @@ public class SearchController {
             writer.close();
         }
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Content-Type:", "application/json");
+        httpHeaders.add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
         return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
     }
 

@@ -3,6 +3,7 @@ package uk.ac.ebi.intact.service.complex.ws.utils;
 import psidev.psi.mi.jami.model.*;
 import psidev.psi.mi.jami.utils.AliasUtils;
 import psidev.psi.mi.jami.utils.AnnotationUtils;
+import psidev.psi.mi.jami.utils.RangeUtils;
 import uk.ac.ebi.intact.jami.model.extension.IntactComplex;
 import uk.ac.ebi.intact.jami.model.extension.IntactModelledParticipant;
 import uk.ac.ebi.intact.jami.model.extension.InteractorXref;
@@ -141,7 +142,10 @@ public class IntactComplexUtils {
                 if (searchUrl != null) {
                     part.setIdentifierLink(searchUrl.getValue().replaceAll("\\$*\\{ac\\}", part.getIdentifier()));
                 }
-                part.setStochiometry(participant.getStoichiometry().toString());
+                if (participant.getStoichiometry().getMinValue() == 0 && participant.getStoichiometry().getMaxValue() == 0)
+                    part.setStochiometry(null);
+                else
+                    part.setStochiometry(participant.getStoichiometry().toString());
                 if (participant.getBiologicalRole() != null) {
                     setBiologicalRole(part, participant);
                 }
@@ -178,7 +182,7 @@ public class IntactComplexUtils {
         complexDetailsFeatures.setFeatureTypeMI(feature.getType().getMIIdentifier());
         complexDetailsFeatures.setParticipantId(feature.getParticipant().getInteractor().getPreferredIdentifier().getId());
         for (Range range : (List<Range>) feature.getRanges()) {
-            complexDetailsFeatures.getRanges().add(range.getStart().getStart() + ".." + range.getStart().getEnd() + " - " + range.getEnd().getStart() + ".." + range.getEnd().getEnd());
+            complexDetailsFeatures.getRanges().add(RangeUtils.convertRangeToString(range));
         }
         return complexDetailsFeatures;
     }
