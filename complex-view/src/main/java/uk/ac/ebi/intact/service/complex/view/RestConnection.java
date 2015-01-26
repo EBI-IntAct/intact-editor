@@ -215,7 +215,10 @@ public class RestConnection {
                     if (stochiometry != null) {
                         String[] stochiometry_values = stochiometry.split(",");
                         String svalues = stochiometry_values[0].split(":")[1].trim();
-                        participant.setStochiometry(svalues);
+                        if (svalues.equals("0"))
+                            participant.setIdentifier(null);
+                        else
+                            participant.setStochiometry(svalues);
                     }
                     participant.setBioRole((String) part.get("bioRole"));
                     participant.setBioRoleMI((String) part.get("bioRoleMI"));

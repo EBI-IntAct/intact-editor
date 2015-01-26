@@ -189,16 +189,17 @@ div#networkContainer{
     /*bottom:0px;*/
     /*top:0px;*/
     /*width:65%;*/
-    height: 65%;
-    width: 65%;
+    /*height: 65%;*/
+    /*width: 65%;*/
     margin-left: auto;
     margin-right: auto;
     overflow: hidden;
+    max-height: 800px;
     /*margin: 8px;*/
     /*margin-right:35%;*/
 }
 div#networkControls {
     clear: both;
     float: left;
-    margin-left: 18%;
+    margin-left: 5%;
 }
