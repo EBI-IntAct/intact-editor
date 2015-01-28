@@ -2,6 +2,7 @@ package uk.ac.ebi.intact.service.complex.view;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.util.URIUtil;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -320,7 +321,7 @@ public class RestConnection {
                 throw new Exception();
             }
         }
-        return EntityUtils.toString(response.getEntity(),"UTF-8");
+        return StringEscapeUtils.escapeJavaScript(EntityUtils.toString(response.getEntity(),"UTF-8"));
     }
 
     public String getFtpUrl() {

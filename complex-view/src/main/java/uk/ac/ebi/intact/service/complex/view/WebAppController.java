@@ -103,9 +103,7 @@ public class WebAppController {
         if ( q !=null && !q.equals("") && q.length()> 0 ) {
             model.addAttribute("page_title", "Complex Search");
             q = cleanQuery(q);
-//            String[] speciesFilter  = species  != null ? species.split(",")  : null;
-//            String[] typesFilter    = types    != null ? types.split(",")    : null;
-//            String[] biorolesFilter = bioroles != null ? bioroles.split(",") : null;
+            session.setAttribute("htmlOriginalQuery", HtmlUtils.htmlEscape(q));
             String filters = buildFilters(species, types, bioroles);
             Page pageInfo = restConnection.getPage(page, q, filters, facets);
             if (pageInfo.getTotalNumberOfElements() != 0) {
@@ -113,7 +111,6 @@ public class WebAppController {
                 session.setAttribute("pageInfo", pageInfo);
                 session.setAttribute("results", results);
                 if (results != null) {
-                    session.setAttribute("htmlOriginalQuery", HtmlUtils.htmlEscape(results.getOriginaQuery()));
                     Map<String, List<ComplexFacetResults>> facetResults = results.getFacets();
                     session.setAttribute("species", facetResults.get(ComplexFieldNames.COMPLEX_ORGANISM_F));
                     session.setAttribute("types", facetResults.get(ComplexFieldNames.INTERACTOR_TYPE_F));
@@ -212,7 +209,7 @@ public class WebAppController {
         model.addAttribute("complex_download_url", request.getContextPath() + "/download/");
         model.addAttribute("complex_help_url", request.getContextPath() + "/help/");
         model.addAttribute("complex_documentation_url", request.getContextPath() + "/documentation/");
-        model.addAttribute("complex_contact_url", "http://www.ebi.ac.uk/support/index.php?query=intact");//"mailto:intact-help@ebi.ac.uk?Subject=Complex%20Portal");
+        model.addAttribute("complex_contact_url", "http://www.ebi.ac.uk/support/index.php?query=intact");
         model.addAttribute("complex_about_url", request.getContextPath() + "/about/" );
         model.addAttribute("intact_url", "http://www.ebi.ac.uk/intact/");
         model.addAttribute("complex_ftp_url", this.restConnection.getFtpUrl());
@@ -254,14 +251,14 @@ public class WebAppController {
     }
 
     @ExceptionHandler(ComplexPortalException.class)
-    public ModelAndView handleComplexPortalException(ComplexPortalException e, HttpServletResponse response, HttpServletRequest request){
+    public ModelAndView handleComplexPortalException(ComplexPortalException e, HttpServletResponse response, HttpServletRequest request, HttpSession session){
         ModelAndView model = new ModelAndView("error/503");
         setDefaultModelMapValues(model.getModelMap(), request);
         return model;
     }
 
     @ExceptionHandler(Exception.class)
-    public ModelAndView allExceptions(Exception e, HttpServletResponse response, HttpServletRequest request){
+    public ModelAndView allExceptions(Exception e, HttpServletResponse response, HttpServletRequest request, HttpSession session){
         ModelAndView model = new ModelAndView("error/404");
         setDefaultModelMapValues(model.getModelMap(), request);
         return model;
