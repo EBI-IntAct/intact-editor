@@ -5,6 +5,7 @@ import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.xpath.operations.Bool;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -186,6 +187,7 @@ public class SearchController {
     public ResponseEntity<String> exportComplex(@PathVariable String query,
                                                 @RequestParam (required = false) String filters,
                                                 @RequestParam (required = false) String format) throws Exception {
+        Boolean exportAsFile = false;
         List<IntactComplex> complexes;
         if(isQueryASingleId(query)) {
             complexes = new ArrayList<IntactComplex>(1);
@@ -201,6 +203,7 @@ public class SearchController {
                 if (complex != null)
                     complexes.add(complex);
             }
+            exportAsFile = true;
         }
         ResponseEntity<String> responseEntity = null;
         if (!complexes.isEmpty()) {
@@ -208,19 +211,19 @@ public class SearchController {
             if (format != null) {
                 switch (ComplexExportFormat.formatOf(format)) {
                     case XML25:
-                        responseEntity = createXml25Response(complexes, writerFactory);
+                        responseEntity = createXml25Response(complexes, writerFactory, exportAsFile);
                         break;
                     case XML30:
-                        responseEntity = createXml30Response(complexes, writerFactory);
+                        responseEntity = createXml30Response(complexes, writerFactory, exportAsFile);
                         break;
                     case JSON:
                     default:
-                        responseEntity = createJsonResponse(complexes, writerFactory);
+                        responseEntity = createJsonResponse(complexes, writerFactory, exportAsFile);
                         break;
                 }
             }
             else {
-                responseEntity = createJsonResponse(complexes, writerFactory);
+                responseEntity = createJsonResponse(complexes, writerFactory, exportAsFile);
             }
             return responseEntity;
         }
@@ -231,15 +234,15 @@ public class SearchController {
         return query.startsWith("EBI-") && query.split(" ").length == 1;
     }
 
-    private ResponseEntity<String> createXml25Response(List<IntactComplex> complexes, InteractionWriterFactory writerFactory) {
-        return createXmlResponse(complexes, writerFactory, PsiXmlVersion.v2_5_4);
+    private ResponseEntity<String> createXml25Response(List<IntactComplex> complexes, InteractionWriterFactory writerFactory, Boolean exportAsFile) {
+        return createXmlResponse(complexes, writerFactory, PsiXmlVersion.v2_5_4, exportAsFile);
     }
 
-    private ResponseEntity<String> createXml30Response(List<IntactComplex> complexes, InteractionWriterFactory writerFactory) {
-        return createXmlResponse(complexes, writerFactory, PsiXmlVersion.v3_0_0);
+    private ResponseEntity<String> createXml30Response(List<IntactComplex> complexes, InteractionWriterFactory writerFactory, Boolean exportAsFile) {
+        return createXmlResponse(complexes, writerFactory, PsiXmlVersion.v3_0_0, exportAsFile);
     }
 
-    private ResponseEntity<String> createXmlResponse(List<IntactComplex> complexes, InteractionWriterFactory writerFactory, PsiXmlVersion version) {
+    private ResponseEntity<String> createXmlResponse(List<IntactComplex> complexes, InteractionWriterFactory writerFactory, PsiXmlVersion version, Boolean exportAsFile) {
         IntactPsiXml.initialiseAllIntactXmlWriters();
         MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
         StringWriter answer = new StringWriter();
@@ -256,10 +259,13 @@ public class SearchController {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Content-Type", MediaType.APPLICATION_XML_VALUE);
         enableCORS(httpHeaders);
+        if (exportAsFile) {
+            httpHeaders.set("Content-Disposition", "attachment; filename=" + complexes.toString());
+        }
         return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
     }
 
-    private ResponseEntity<String> createJsonResponse(List<IntactComplex> complexes, InteractionWriterFactory writerFactory) {
+    private ResponseEntity<String> createJsonResponse(List<IntactComplex> complexes, InteractionWriterFactory writerFactory, Boolean exportAsFile) {
         InteractionViewerJson.initialiseAllMIJsonWriters();
         MIJsonOptionFactory optionFactory = MIJsonOptionFactory.getInstance();
         StringWriter answer = new StringWriter();
@@ -276,6 +282,9 @@ public class SearchController {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
         enableCORS(httpHeaders);
+        if (exportAsFile) {
+            httpHeaders.set("Content-Disposition", "attachment; filename=" + complexes.toString());
+        }
         return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
     }
 
