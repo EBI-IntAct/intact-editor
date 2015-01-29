@@ -231,7 +231,7 @@ public class SearchController {
     }
 
     private boolean isQueryASingleId(String query) {
-        return query.startsWith("EBI-") && query.split(" ").length == 1;
+        return query.startsWith("EBI-") && query.trim().split(" ").length == 1;
     }
 
     private ResponseEntity<String> createXml25Response(List<IntactComplex> complexes, InteractionWriterFactory writerFactory, Boolean exportAsFile) {
