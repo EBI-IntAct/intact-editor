@@ -181,17 +181,25 @@ public class SearchController {
         return new ResponseEntity<String>(writer.toString(), headers, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/export/{acs}", method = RequestMethod.GET)
+    @RequestMapping(value = "/export/{query}", method = RequestMethod.GET)
     @Transactional(readOnly = true, propagation = Propagation.REQUIRED, value = "jamiTransactionManager")
-    public ResponseEntity<String> exportComplex(@PathVariable String acs,
+    public ResponseEntity<String> exportComplex(@PathVariable String query,
                                                 @RequestParam (required = false) String filters,
                                                 @RequestParam (required = false) String format) throws Exception {
-        String[] sacs = acs.split(" ");
-        List<IntactComplex> complexes = new ArrayList<IntactComplex>(sacs.length);
-        for (String ac : sacs) {
-            IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
-            if (complex != null) {
+        List<IntactComplex> complexes;
+        if(isQueryASingleId(query)) {
+            complexes = new ArrayList<IntactComplex>(1);
+            IntactComplex complex = intactDao.getComplexDao().getByAc(query);
+            if (complex != null)
                 complexes.add(complex);
+        }
+        else {
+            ComplexRestResult searchResult = query(query, null, null, filters, null);
+            complexes = new ArrayList<IntactComplex>(searchResult.getElements().size());
+            for (ComplexSearchResults result : searchResult.getElements()) {
+                IntactComplex complex = intactDao.getComplexDao().getByAc(result.getComplexAC());
+                if (complex != null)
+                    complexes.add(complex);
             }
         }
         ResponseEntity<String> responseEntity = null;
@@ -216,7 +224,11 @@ public class SearchController {
             }
             return responseEntity;
         }
-        throw new Exception("Export failed " + acs + ". No complexes result");
+        throw new Exception("Export failed " + query + ". No complexes result");
+    }
+
+    private boolean isQueryASingleId(String query) {
+        return query.startsWith("EBI-") && query.split(" ").length == 1;
     }
 
     private ResponseEntity<String> createXml25Response(List<IntactComplex> complexes, InteractionWriterFactory writerFactory) {
