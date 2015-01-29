@@ -327,4 +327,8 @@ public class RestConnection {
     public String getFtpUrl() {
         return ftpUrl;
     }
+
+    public String getWSUrl() {
+        return WS_URL;
+    }
 }
