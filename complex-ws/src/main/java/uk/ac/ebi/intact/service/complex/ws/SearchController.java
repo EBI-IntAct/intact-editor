@@ -5,7 +5,6 @@ import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,18 +27,15 @@ import psidev.psi.mi.jami.json.MIJsonType;
 import psidev.psi.mi.jami.model.ComplexType;
 import psidev.psi.mi.jami.model.InteractionCategory;
 import psidev.psi.mi.jami.xml.PsiXmlVersion;
-import uk.ac.ebi.intact.dataexchange.psimi.solr.complex.ComplexFieldNames;
+import uk.ac.ebi.intact.dataexchange.psimi.solr.complex.ComplexSearchResults;
 import uk.ac.ebi.intact.dataexchange.psimi.xml.IntactPsiXml;
 import uk.ac.ebi.intact.jami.dao.IntactDao;
 import uk.ac.ebi.intact.jami.model.extension.IntactComplex;
 import uk.ac.ebi.intact.service.complex.ws.model.*;
 import uk.ac.ebi.intact.service.complex.ws.utils.IntactComplexUtils;
 
-import javax.print.attribute.standard.Media;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -185,44 +181,53 @@ public class SearchController {
         return new ResponseEntity<String>(writer.toString(), headers, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/export/{ac}", method = RequestMethod.GET)
+    @RequestMapping(value = "/export/{acs}", method = RequestMethod.GET)
     @Transactional(readOnly = true, propagation = Propagation.REQUIRED, value = "jamiTransactionManager")
-    public ResponseEntity<String> exportComplex(@PathVariable String ac, @RequestParam (required = false) String format) throws Exception {
-        IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
+    public ResponseEntity<String> exportComplex(@PathVariable String acs,
+                                                @RequestParam (required = false) String filters,
+                                                @RequestParam (required = false) String format) throws Exception {
+        String[] sacs = acs.split(" ");
+        List<IntactComplex> complexes = new ArrayList<IntactComplex>(sacs.length);
+        for (String ac : sacs) {
+            IntactComplex complex = intactDao.getComplexDao().getByAc(ac);
+            if (complex != null) {
+                complexes.add(complex);
+            }
+        }
         ResponseEntity<String> responseEntity = null;
-        if (complex != null) {
+        if (!complexes.isEmpty()) {
             InteractionWriterFactory writerFactory = InteractionWriterFactory.getInstance();
             if (format != null) {
                 switch (ComplexExportFormat.formatOf(format)) {
                     case XML25:
-                        responseEntity = createXml25Response(complex, writerFactory);
+                        responseEntity = createXml25Response(complexes, writerFactory);
                         break;
                     case XML30:
-                        responseEntity = createXml30Response(complex, writerFactory);
+                        responseEntity = createXml30Response(complexes, writerFactory);
                         break;
                     case JSON:
                     default:
-                        responseEntity = createJsonResponse(complex, writerFactory);
+                        responseEntity = createJsonResponse(complexes, writerFactory);
                         break;
                 }
             }
             else {
-                responseEntity = createJsonResponse(complex, writerFactory);
+                responseEntity = createJsonResponse(complexes, writerFactory);
             }
             return responseEntity;
         }
-        throw new Exception("Complex " + ac + " not found");
+        throw new Exception("Export failed " + acs + ". No complexes result");
     }
 
-    private ResponseEntity<String> createXml25Response(IntactComplex complex, InteractionWriterFactory writerFactory) {
-        return createXmlResponse(complex, writerFactory, PsiXmlVersion.v2_5_4);
+    private ResponseEntity<String> createXml25Response(List<IntactComplex> complexes, InteractionWriterFactory writerFactory) {
+        return createXmlResponse(complexes, writerFactory, PsiXmlVersion.v2_5_4);
     }
 
-    private ResponseEntity<String> createXml30Response(IntactComplex complex, InteractionWriterFactory writerFactory) {
-        return createXmlResponse(complex, writerFactory, PsiXmlVersion.v3_0_0);
+    private ResponseEntity<String> createXml30Response(List<IntactComplex> complexes, InteractionWriterFactory writerFactory) {
+        return createXmlResponse(complexes, writerFactory, PsiXmlVersion.v3_0_0);
     }
 
-    private ResponseEntity<String> createXmlResponse(IntactComplex complex, InteractionWriterFactory writerFactory, PsiXmlVersion version) {
+    private ResponseEntity<String> createXmlResponse(List<IntactComplex> complexes, InteractionWriterFactory writerFactory, PsiXmlVersion version) {
         IntactPsiXml.initialiseAllIntactXmlWriters();
         MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
         StringWriter answer = new StringWriter();
@@ -230,7 +235,7 @@ public class SearchController {
         InteractionWriter writer = writerFactory.getInteractionWriterWith(options) ;
         try {
             writer.start();
-            writer.write(complex);
+            writer.write(complexes);
             writer.end();
         }
         finally {
@@ -238,10 +243,11 @@ public class SearchController {
         }
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Content-Type", MediaType.APPLICATION_XML_VALUE);
+        enableCORS(httpHeaders);
         return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
     }
 
-    private ResponseEntity<String> createJsonResponse(IntactComplex complex, InteractionWriterFactory writerFactory) {
+    private ResponseEntity<String> createJsonResponse(List<IntactComplex> complexes, InteractionWriterFactory writerFactory) {
         InteractionViewerJson.initialiseAllMIJsonWriters();
         MIJsonOptionFactory optionFactory = MIJsonOptionFactory.getInstance();
         StringWriter answer = new StringWriter();
@@ -249,7 +255,7 @@ public class SearchController {
         InteractionWriter writer = writerFactory.getInteractionWriterWith(options);
         try {
             writer.start();
-            writer.write(complex);
+            writer.write(complexes);
             writer.end();
         }
         finally {
@@ -257,6 +263,7 @@ public class SearchController {
         }
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+        enableCORS(httpHeaders);
         return new ResponseEntity<String>(answer.toString(), httpHeaders, HttpStatus.OK);
     }
 
@@ -291,7 +298,12 @@ public class SearchController {
         return improvedQuery.toString();
     }
 
-
+    protected void enableCORS(HttpHeaders headers) {
+        headers.add("Access-Control-Allow-Origin", "*");
+        headers.add("Access-Control-Allow-Methods", "GET");
+        headers.add("Access-Control-Max-Age", "3600");
+        headers.add("Access-Control-Allow-Headers", "x-requested-with");
+    }
 
     @ExceptionHandler(SolrServerException.class)
     public ModelAndView handleSolrServerException(SolrServerException e, HttpServletResponse response){
