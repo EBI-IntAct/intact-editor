@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
-@Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+@Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW, value = "jamiTransactionManager")
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(locations = {"file:src/main/webapp/WEB-INF/complex-ws-servlet.xml"})
@@ -37,29 +37,20 @@ public class AppTests {
         this.mockMvc = webAppContextSetup(this.wac).build();
     }
 
-    @Ignore
     @Test
     public void searchHeader() throws Exception {
         // Without Header -> It must be a Json response
         mockMvc.perform(get("/search/*"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                 // this test is dependent on the number of indexed complexes
-                .andExpect(jsonPath("$.complexRestResult.size").value(numberOfComplexes))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
         ;
         // Test Header Json
         mockMvc.perform(get("/search/*").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         ;
-        // Test Header XML and return a Json
-        mockMvc.perform(get("/search/*").accept(MediaType.APPLICATION_XML))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_XML))
-        ;
     }
 
-    @Ignore
     @Test
     public void searchFormatParameter() throws Exception {
         // Test Parameter Json
@@ -76,7 +67,6 @@ public class AppTests {
         ;
     }
 
-    @Ignore
     @Test
     public void searchFirstParameter() throws Exception {
         int offset = 21; // random value
@@ -90,7 +80,6 @@ public class AppTests {
         ;
     }
 
-    @Ignore
     @Test
     public void searchNumberParameter() throws Exception {
         int number = 50; // random value
@@ -104,7 +93,6 @@ public class AppTests {
         ;
     }
 
-    @Ignore
     @Test
     public void searchFirstAndNumberParameters() throws Exception {
         int offset = 21;
@@ -175,10 +163,9 @@ public class AppTests {
         ;
     }
 
-    @Ignore
     @Test
     public void testDetails() throws Exception {
-        mockMvc.perform(get("/details/EBI-1245484?format=json"))
+        mockMvc.perform(get("/details/EBI-1163476?format=json"))
                .andExpect(status().isOk())
                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
