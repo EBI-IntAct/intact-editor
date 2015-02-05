@@ -156,7 +156,7 @@
                 <div id="networkControls" class="networkControls">
                     <button id="AutoLayout" class="submit networkButton" onclick="xlv.autoLayout();">Auto layout</button>
                     <button id="ResetZoom" class="submit networkButton" onclick="xlv.resetZoom();">Reset Zoom</button>
-                        <%--<button id="ExportSVG" class="submit networkButton" onclick="xlv.exportSVG('networkSVG')">Export SVG</button>--%>
+                    <button id="ExportSVG" class="submit networkButton" onclick="xlv.exportSVG('networkSVG');">Export SVG</button>
                 </div>
             </div>
             <br>
@@ -186,8 +186,7 @@
                             <td><c:if test="${not empty part.stochiometry}"><c:out value="${part.stochiometry}"/></c:if></td>
                             <td><c:if test="${not empty part.bioRole}"><c:out value="${part.bioRole}"/></c:if></td>
                             <td><c:if test="${not empty part.interactorType}"><c:out value="${part.interactorType}"/></c:if></td>
-                            <td><div class="detailsTable" rel="tooltip" data-placement="left" title="<c:if test="${not empty part.linkedFeatures}"><c:forEach var="linked" items="${part.linkedFeatures}"><c:out value="${linked.featureType}"/><c:out value="${linked.participantId}"/><c:forEach var="range" items="${linked.ranges}">[<c:out value="${range}"/>]</c:forEach>
-</c:forEach></c:if>">
+                            <td><div class="detailsTable" rel="tooltip" data-placement="left" title="<c:if test="${not empty part.linkedFeatures}"><c:forEach var="linked" items="${part.linkedFeatures}"><c:out value="${linked.featureType}"/><c:out value="${linked.participantId}"/><c:forEach var="range" items="${linked.ranges}">[<c:out value="${range}"/>]</c:forEach></c:forEach></c:if>">
                                 <c:if test="${not empty part.linkedFeatures}">
                                 <c:forEach var="linked" items="${part.linkedFeatures}">
                                     <c:out value="${linked.featureType}"/> <c:out value="${linked.participantId}"/>
@@ -198,8 +197,7 @@
                                     </c:forEach>
                                 </c:if>
                             </div></td>
-                            <td><div class="detailsTable" rel="tooltip" data-placement="right" title="<c:if test="${not empty part.otherFeatures}"><c:forEach var="other" items="${part.otherFeatures}"><c:out value="${other.featureType}"/><c:out value="${other.participantId}"/><c:forEach var="range" items="${other.ranges}">[<c:out value="${range}"/>]</c:forEach>
-</c:forEach></c:if>">
+                            <td><div class="detailsTable" rel="tooltip" data-placement="right" title="<c:if test="${not empty part.otherFeatures}"><c:forEach var="other" items="${part.otherFeatures}"><c:out value="${other.featureType}"/><c:out value="${other.participantId}"/><c:forEach var="range" items="${other.ranges}">[<c:out value="${range}"/>]</c:forEach></c:forEach></c:if>">
                                 <c:if test="${not empty part.otherFeatures}">
                                     <c:forEach var="other" items="${part.otherFeatures}">
                                         <c:out value="${other.featureType}"/> <c:out value="${other.participantId}"/>
