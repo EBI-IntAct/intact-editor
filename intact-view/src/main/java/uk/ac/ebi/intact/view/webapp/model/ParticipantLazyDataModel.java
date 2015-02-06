@@ -4,6 +4,7 @@ import org.apache.commons.collections.map.LRUMap;
 import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortOrder;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import sun.misc.LRUCache;
 import uk.ac.ebi.intact.core.context.DataContext;
 import uk.ac.ebi.intact.core.persistence.dao.DaoFactory;
@@ -43,10 +44,14 @@ public class ParticipantLazyDataModel extends LazyDataModel<ParticipantWrapper> 
 
         String key = first+"_"+pageSize;
         if (participantCache.containsKey(key)){
-           return (List<ParticipantWrapper>)participantCache.get(key);
+            return (List<ParticipantWrapper>)participantCache.get(key);
         }
 
-        TransactionStatus status = dataContext.beginTransaction();
+        TransactionStatus status = null;
+        if (!TransactionSynchronizationManager.isActualTransactionActive()){
+            status = dataContext.beginTransaction();
+            entityManager = dataContext.getDaoFactory().getEntityManager();
+        }
 
         List<Component> components = entityManager.createQuery("select p from InteractionImpl i join i.components as p join p.experimentalRoles as expRole " +
                 "where i.ac = :ac order by expRole.shortLabel, p.ac").setParameter("ac", interactionAc)
@@ -57,7 +62,9 @@ public class ParticipantLazyDataModel extends LazyDataModel<ParticipantWrapper> 
             participants.add(new ParticipantWrapper(comp));
         }
 
-        dataContext.commitTransaction(status);
+        if (status != null){
+            dataContext.commitTransaction(status);
+        }
 
         participantCache.put(key, participants);
 
