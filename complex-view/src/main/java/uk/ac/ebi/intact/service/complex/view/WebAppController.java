@@ -203,6 +203,21 @@ public class WebAppController {
         return "about";
     }
 
+    // STATISTICS
+    @RequestMapping(value = "/stats/", method = RequestMethod.GET)
+    public String goStatistics(ModelMap model,
+                               HttpServletRequest request,
+                               HttpSession session) throws Exception {
+        setDefaultModelMapValues(model, request);
+        Page total = restConnection.getPage(null, "*", null, this.facets);
+        ComplexRestResult result = restConnection.query("*", total, null, this.facets, null);
+        session.setAttribute("stats_total", total.getTotalNumberOfElements());
+        session.setAttribute("stats_rest", result);
+        model.addAttribute("page_title", "Complex Statistics");
+        model.addAttribute("complex_search_form", request.getRequestURL().toString().split("stats/")[0]);
+        return "stats";
+    }
+
     // DOWNLOAD
     @RequestMapping(value = "/download/", method = RequestMethod.GET)
     public String goDownload(ModelMap model,
@@ -225,6 +240,7 @@ public class WebAppController {
         model.addAttribute("complex_documentation_url", request.getContextPath() + "/documentation/");
         model.addAttribute("complex_contact_url", "http://www.ebi.ac.uk/support/index.php?query=intact");
         model.addAttribute("complex_about_url", request.getContextPath() + "/about/" );
+        model.addAttribute("complex_stats_url", request.getContextPath() + "/stats/");
         model.addAttribute("intact_url", "http://www.ebi.ac.uk/intact/");
         model.addAttribute("complex_ftp_url", this.restConnection.getFtpUrl());
         model.addAttribute("complex_download_form", this.restConnection.getWSUrl() + "export/");
