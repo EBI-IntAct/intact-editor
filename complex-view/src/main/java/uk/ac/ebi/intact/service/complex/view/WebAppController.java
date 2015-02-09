@@ -140,6 +140,20 @@ public class WebAppController {
             }
         }
         model.addAttribute("page_title", "Complex Home");
+        Page total = restConnection.getPage(null, "*", null, this.facets);
+        ComplexRestResult result = restConnection.query("*", total, null, this.facets, null);
+        session.setAttribute("stats_total", total.getTotalNumberOfElements());
+        for (String key : result.getFacets().keySet()) {
+            if (key.equalsIgnoreCase(ComplexFieldNames.COMPLEX_ORGANISM_F)) {
+                session.setAttribute("stats_species", result.getFacets().get(key).size());
+            }
+            if (key.equalsIgnoreCase(ComplexFieldNames.INTERACTOR_TYPE_F)) {
+                session.setAttribute("stats_interactor", result.getFacets().get(key).size());
+            }
+            if (key.equalsIgnoreCase(ComplexFieldNames.BIOROLE_F)) {
+                session.setAttribute("stats_biorole", result.getFacets().get(key).size());
+            }
+        }
         return "home";
     }
 

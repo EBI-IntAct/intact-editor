@@ -8,7 +8,10 @@
 <html>
 
 <%@include file="header.jsp"%>
-
+<jsp:useBean id="stats_total" type="java.lang.Integer" scope="session"/>
+<jsp:useBean id="stats_species" type="java.lang.Integer" scope="session"/>
+<jsp:useBean id="stats_interactor" type="java.lang.Integer" scope="session"/>
+<jsp:useBean id="stats_biorole" type="java.lang.Integer" scope="session"/>
 
 <nav>
     <ul class="grid_24" id="local-nav">
@@ -85,18 +88,27 @@
                 </fieldset>
             </form>
         </div>
-            <div class="grid_6 exampleDiv">
-                <label class="searchExamples">Examples:</label>
-                <ul class="exampleList">
-                    <li>GO term(s): <form class="exampleForm" id="example4form" action="" method="GET"><input type="hidden" name="q" value="GO:0016491"/> <a href="<c:out value="#"/>" onclick="document.getElementById('example4form').submit();">GO:0016491</a></form></li>
-                    <li>Gene name(s): <form class="exampleForm" id="example1form" action="" method="GET"><input type="hidden" name="q" value="Ndc80"/>    <a href="<c:out value="#"/>" onclick="document.getElementById('example1form').submit();">Ndc80</a></form></li>
-                    <li>UniProt AC(s): <form class="exampleForm" id="example3form" action="" method="GET"><input type="hidden" name="q" value="Q05471"/>  <a href="<c:out value="#"/>" onclick="document.getElementById('example3form').submit();">Q05471</a></form></li>
-                    <li>Protein name(s): <form class="exampleForm" id="example2form" action="" method="GET"><input type="hidden" name="q" value="PCNA"/>  <a href="<c:out value="#"/>" onclick="document.getElementById('example2form').submit();">PCNA</a></form></li>
-                    <li>Complex AC: <form class="exampleForm" id="example5form" action="" method="GET"><input type="hidden" name="q" value="EBI-9008420"/><a href="<c:out value="#"/>" onclick="document.getElementById('example5form').submit();">EBI-9008420</a></form></li>
-                    <%--<li>Pubmed ID: 22540012</li>--%>
+        <div class="grid_6 exampleDiv">
+            <h3 class="icon icon-generic searchExamples">Examples:</h3>
+            <ul class="exampleList">
+                <li>GO term(s): <form class="exampleForm" id="example4form" action="" method="GET"><input type="hidden" name="q" value="GO:0016491"/> <a href="<c:out value="#"/>" onclick="document.getElementById('example4form').submit();">GO:0016491</a></form></li>
+                <li>Gene name(s): <form class="exampleForm" id="example1form" action="" method="GET"><input type="hidden" name="q" value="Ndc80"/>    <a href="<c:out value="#"/>" onclick="document.getElementById('example1form').submit();">Ndc80</a></form></li>
+                <li>UniProt AC(s): <form class="exampleForm" id="example3form" action="" method="GET"><input type="hidden" name="q" value="Q05471"/>  <a href="<c:out value="#"/>" onclick="document.getElementById('example3form').submit();">Q05471</a></form></li>
+                <li>Protein name(s): <form class="exampleForm" id="example2form" action="" method="GET"><input type="hidden" name="q" value="PCNA"/>  <a href="<c:out value="#"/>" onclick="document.getElementById('example2form').submit();">PCNA</a></form></li>
+                <li>Complex AC: <form class="exampleForm" id="example5form" action="" method="GET"><input type="hidden" name="q" value="EBI-9008420"/><a href="<c:out value="#"/>" onclick="document.getElementById('example5form').submit();">EBI-9008420</a></form></li>
+                <%--<li>Pubmed ID: 22540012</li>--%>
+            </ul>
+            <%--<a href="JavaScript:newPopup('<c:url value="/help/"/>');">Help</a>--%>
+            <p rel="tooltip" title="You can search for one or several of the following types of terms: complex_id, complex_alias, species, complex_xref, udate, id, alias, ptype, stc, pbiorole, ftype, source and number_participants. By default, we search for entries that contain ANY of your search terms. If you would like to restrict your search, please link your terms with 'AND' or use the filters available once you have made an initial search.">Help</p>
+        </div>
+            <div class="grid_6 stats">
+                <h3 class="icon icon-generic" data-icon="g">Data Content:</h3>
+                <ul>
+                    <li>Complexes: <span style="font-weight: bold;"><c:out value="${stats_total}"/></span></li>
+                    <li>Species: <span style="font-weight: bold;"><c:out value="${stats_species}"/></span></li>
+                    <li>Interactor types: <span style="font-weight: bold;"><c:out value="${stats_interactor}"/></span></li>
+                    <li>Biological role types: <span style="font-weight: bold;"><c:out value="${stats_biorole}"/></span></li>
                 </ul>
-                <%--<a href="JavaScript:newPopup('<c:url value="/help/"/>');">Help</a>--%>
-                <p rel="tooltip" title="You can search for one or several of the following types of terms: complex_id, complex_alias, species, complex_xref, udate, id, alias, ptype, stc, pbiorole, ftype, source and number_participants. By default, we search for entries that contain ANY of your search terms. If you would like to restrict your search, please link your terms with 'AND' or use the filters available once you have made an initial search.">Help</p>
             </div>
         <div class="grid_19 alpha">
             <ul class="helpList">

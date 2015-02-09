@@ -172,8 +172,8 @@
                         <td>Stochiometry</td>
                         <td>Biological Role</td>
                         <td>Interactor Type</td>
-                        <td>Linked Features</td>
-                        <td>Other Features</td>
+                        <%--<td>Linked Features</td>--%>
+                        <%--<td>Other Features</td>--%>
                     </tr>
                 </thead>
                 <tbody>
@@ -186,28 +186,28 @@
                             <td><c:if test="${not empty part.stochiometry}"><c:out value="${part.stochiometry}"/></c:if></td>
                             <td><c:if test="${not empty part.bioRole}"><c:out value="${part.bioRole}"/></c:if></td>
                             <td><c:if test="${not empty part.interactorType}"><c:out value="${part.interactorType}"/></c:if></td>
-                            <td><div class="detailsTable" rel="tooltip" data-placement="left" title="<c:if test="${not empty part.linkedFeatures}"><c:forEach var="linked" items="${part.linkedFeatures}"><c:out value="${linked.featureType}"/><c:out value="${linked.participantId}"/><c:forEach var="range" items="${linked.ranges}">[<c:out value="${range}"/>]</c:forEach></c:forEach></c:if>">
-                                <c:if test="${not empty part.linkedFeatures}">
-                                <c:forEach var="linked" items="${part.linkedFeatures}">
-                                    <c:out value="${linked.featureType}"/> <c:out value="${linked.participantId}"/>
-                                        <c:forEach var="range" items="${linked.ranges}">
-                                            [<c:out value="${range}"/>]
-                                        </c:forEach>
-                                        <br/>
-                                    </c:forEach>
-                                </c:if>
-                            </div></td>
-                            <td><div class="detailsTable" rel="tooltip" data-placement="right" title="<c:if test="${not empty part.otherFeatures}"><c:forEach var="other" items="${part.otherFeatures}"><c:out value="${other.featureType}"/><c:out value="${other.participantId}"/><c:forEach var="range" items="${other.ranges}">[<c:out value="${range}"/>]</c:forEach></c:forEach></c:if>">
-                                <c:if test="${not empty part.otherFeatures}">
-                                    <c:forEach var="other" items="${part.otherFeatures}">
-                                        <c:out value="${other.featureType}"/> <c:out value="${other.participantId}"/>
-                                        <c:forEach var="range" items="${other.ranges}">
-                                            [<c:out value="${range}"/>]
-                                        </c:forEach>
-                                        <br/>
-                                    </c:forEach>
-                                </c:if>
-                            </div></td>
+                            <%--<td><div class="detailsTable" rel="tooltip" data-placement="left" title="<c:if test="${not empty part.linkedFeatures}"><c:forEach var="linked" items="${part.linkedFeatures}"><c:out value="${linked.featureType}"/><c:out value="${linked.participantId}"/><c:forEach var="range" items="${linked.ranges}">[<c:out value="${range}"/>]</c:forEach></c:forEach></c:if>">--%>
+                                <%--<c:if test="${not empty part.linkedFeatures}">--%>
+                                <%--<c:forEach var="linked" items="${part.linkedFeatures}">--%>
+                                    <%--<c:out value="${linked.featureType}"/> <c:out value="${linked.participantId}"/>--%>
+                                        <%--<c:forEach var="range" items="${linked.ranges}">--%>
+                                            <%--[<c:out value="${range}"/>]--%>
+                                        <%--</c:forEach>--%>
+                                        <%--<br/>--%>
+                                    <%--</c:forEach>--%>
+                                <%--</c:if>--%>
+                            <%--</div></td>--%>
+                            <%--<td><div class="detailsTable" rel="tooltip" data-placement="right" title="<c:if test="${not empty part.otherFeatures}"><c:forEach var="other" items="${part.otherFeatures}"><c:out value="${other.featureType}"/><c:out value="${other.participantId}"/><c:forEach var="range" items="${other.ranges}">[<c:out value="${range}"/>]</c:forEach></c:forEach></c:if>">--%>
+                                <%--<c:if test="${not empty part.otherFeatures}">--%>
+                                    <%--<c:forEach var="other" items="${part.otherFeatures}">--%>
+                                        <%--<c:out value="${other.featureType}"/> <c:out value="${other.participantId}"/>--%>
+                                        <%--<c:forEach var="range" items="${other.ranges}">--%>
+                                            <%--[<c:out value="${range}"/>]--%>
+                                        <%--</c:forEach>--%>
+                                        <%--<br/>--%>
+                                    <%--</c:forEach>--%>
+                                <%--</c:if>--%>
+                            <%--</div></td>--%>
                         </tr>
                     </c:forEach>
                 </tbody>
