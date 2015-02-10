@@ -151,8 +151,8 @@
                     var targetDiv = document.getElementById('networkContainer');
                     xlv = new xiNET(targetDiv);
                     xlv.readMIJSON(data, true);
-                    xlv.resetZoom();
-                    xlv.autoLayout();
+//                    xlv.resetZoom();
+//                    xlv.autoLayout();
                 </script>
                 <div id="networkControls" class="networkControls">
                     <button id="AutoLayout" class="submit networkButton" onclick="xlv.autoLayout();">Auto layout</button>
@@ -174,7 +174,7 @@
                         <td>Biological Role</td>
                         <td>Interactor Type</td>
                         <%--<td>Linked Features</td>--%>
-                        <%--<td>Other Features</td>--%>
+                        <td>Other Features</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -198,17 +198,17 @@
                                     <%--</c:forEach>--%>
                                 <%--</c:if>--%>
                             <%--</div></td>--%>
-                            <%--<td><div class="detailsTable" rel="tooltip" data-placement="right" title="<c:if test="${not empty part.otherFeatures}"><c:forEach var="other" items="${part.otherFeatures}"><c:out value="${other.featureType}"/><c:out value="${other.participantId}"/><c:forEach var="range" items="${other.ranges}">[<c:out value="${range}"/>]</c:forEach></c:forEach></c:if>">--%>
-                                <%--<c:if test="${not empty part.otherFeatures}">--%>
-                                    <%--<c:forEach var="other" items="${part.otherFeatures}">--%>
-                                        <%--<c:out value="${other.featureType}"/> <c:out value="${other.participantId}"/>--%>
-                                        <%--<c:forEach var="range" items="${other.ranges}">--%>
-                                            <%--[<c:out value="${range}"/>]--%>
-                                        <%--</c:forEach>--%>
-                                        <%--<br/>--%>
-                                    <%--</c:forEach>--%>
-                                <%--</c:if>--%>
-                            <%--</div></td>--%>
+                            <td><div class="detailsTable" rel="tooltip" data-placement="right" title="<c:if test="${not empty part.otherFeatures}"><c:forEach var="other" items="${part.otherFeatures}"><c:out value="${other.featureType}"/><c:out value="${other.participantId}"/><c:forEach var="range" items="${other.ranges}">[<c:out value="${range}"/>]</c:forEach></c:forEach></c:if>">
+                                <c:if test="${not empty part.otherFeatures}">
+                                    <c:forEach var="other" items="${part.otherFeatures}">
+                                        <c:out value="${other.featureType}"/> <c:out value="${other.participantId}"/>
+                                        <c:forEach var="range" items="${other.ranges}">
+                                            [<c:out value="${range}"/>]
+                                        </c:forEach>
+                                        <br/>
+                                    </c:forEach>
+                                </c:if>
+                            </div></td>
                         </tr>
                     </c:forEach>
                 </tbody>

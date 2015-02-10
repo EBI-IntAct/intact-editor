@@ -1,8 +1,6 @@
 package uk.ac.ebi.intact.service.complex.view;
 
-import org.apache.solr.client.solrj.SolrServerException;
 import org.jsoup.Jsoup;
-import org.jsoup.examples.HtmlToPlainText;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -14,7 +12,6 @@ import uk.ac.ebi.intact.dataexchange.psimi.solr.complex.ComplexFieldNames;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +29,7 @@ public class WebAppController {
     /***   Public functions   ***/
     /****************************/
 
-    // SEARCH
+    // POST SEARCH
     @RequestMapping(value = "/", method = RequestMethod.POST)
 	public String search(@RequestParam String query,
                                    @RequestParam ( required = false ) String page,
@@ -87,7 +84,7 @@ public class WebAppController {
         return "home";
 	}
 
-    // GET PARTIAL SEARCH
+    // GET SEARCH
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public String search(@RequestParam ( required = false ) String q,
                          @RequestParam ( required = false ) String page,
@@ -212,7 +209,17 @@ public class WebAppController {
         Page total = restConnection.getPage(null, "*", null, this.facets);
         ComplexRestResult result = restConnection.query("*", total, null, this.facets, null);
         session.setAttribute("stats_total", total.getTotalNumberOfElements());
-        session.setAttribute("stats_rest", result);
+        for (String key : result.getFacets().keySet()) {
+            if (key.equalsIgnoreCase(ComplexFieldNames.COMPLEX_ORGANISM_F)) {
+                session.setAttribute("stats_species", result.getFacets().get(key));
+            }
+            if (key.equalsIgnoreCase(ComplexFieldNames.INTERACTOR_TYPE_F)) {
+                session.setAttribute("stats_interactor", result.getFacets().get(key));
+            }
+            if (key.equalsIgnoreCase(ComplexFieldNames.BIOROLE_F)) {
+                session.setAttribute("stats_biorole", result.getFacets().get(key));
+            }
+        }
         model.addAttribute("page_title", "Complex Statistics");
         model.addAttribute("complex_search_form", request.getRequestURL().toString().split("stats/")[0]);
         return "stats";

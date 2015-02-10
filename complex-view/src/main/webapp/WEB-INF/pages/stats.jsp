@@ -2,7 +2,9 @@
 
 <%@include file="header.jsp"%>
 <jsp:useBean id="stats_total" class="java.lang.Integer" scope="session"/>
-<jsp:useBean id="stats_rest" class="uk.ac.ebi.intact.service.complex.view.ComplexRestResult" scope="session"/>
+<jsp:useBean id="stats_species" class="java.util.ArrayList" type="java.util.List" scope="session"/>
+<jsp:useBean id="stats_interactor" class="java.util.ArrayList" type="java.util.List" scope="session"/>
+<jsp:useBean id="stats_biorole" class="java.util.ArrayList" type="java.util.List" scope="session"/>
 
 <div class="grid_12 omega">
     <form id="local-search" name="local-search" action="${complex_search_form}" method="get">
@@ -90,7 +92,24 @@
         </p>
     </nav>
     <h2>Statistics:</h2>
-
+    <h3>Species:</h3>
+    <ul>
+    <c:forEach var="species" items="${sessionScope.stats_species}">
+        <li><c:out value="${species.name}"/>: <c:out value="${species.count}"/></li>
+    </c:forEach>
+    </ul>
+    <h3>Interactor type:</h3>
+    <ul>
+        <c:forEach var="interactor" items="${sessionScope.stats_interactor}">
+            <li><c:out value="${interactor.name}"/>: <c:out value="${interactor.count}"/></li>
+        </c:forEach>
+    </ul>
+    <h3>Participant's biological role:</h3>
+    <ul>
+        <c:forEach var="biorole" items="${sessionScope.stats_biorole}">
+            <li><c:out value="${biorole.name}"/>: <c:out value="${biorole.count}"/></li>
+        </c:forEach>
+    </ul>
 </div>
 
 
