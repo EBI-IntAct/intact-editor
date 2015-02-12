@@ -144,15 +144,14 @@
                     <p style="text-align: justify;"><c:out value="${sessionScope.details.complexAssembly}"/></p>
                 </c:if>
             </div>
-            <div class="grid_12">
-                <div id="networkContainer"></div>
+            <div class="grid_12" style="height: 50%; width: 45%;">
+                <div id="networkContainer" style="border: 0px;"></div>
                 <script type="text/javascript">
                     var data = '${json_rest}';
                     var targetDiv = document.getElementById('networkContainer');
                     xlv = new xiNET(targetDiv);
                     xlv.readMIJSON(data, true);
-//                    xlv.resetZoom();
-//                    xlv.autoLayout();
+                    xlv.autoLayout();
                 </script>
                 <div id="networkControls" class="networkControls">
                     <button id="AutoLayout" class="submit networkButton" onclick="xlv.autoLayout();">Auto layout</button>
@@ -163,7 +162,7 @@
             <br>
         </c:if>
         <div class="grid_24">
-            <h4>Participants</h4>2
+            <h4>Participants</h4>
             <table id="participants" class="tablesorter">
                 <thead>
                     <tr class="trHead">
