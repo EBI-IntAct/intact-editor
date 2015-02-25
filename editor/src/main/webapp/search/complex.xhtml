@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ot="http://myfaces.apache.org/orchestra"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+
+                template="/search/search_template.xhtml">
+
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewParam name="ac" value="#{complexOrganismController.ac}"/>
+            <f:viewParam name="shortLabel" value="#{complexOrganismController.shortLabel}"/>
+            <f:viewParam name="numInteractors" value="#{complexOrganismController.numComplexes}"/>
+            <f:viewParam name="resultsOutcome" value="#{complexOrganismController.resultsOutcome}"/>
+
+            <f:event type="preRenderView" listener="#{complexOrganismController.loadData}"/>
+        </f:metadata>
+    </ui:define>
+
+    <ui:define name="content">
+        <h:link outcome="#{complexOrganismController.resultsOutcome}" value="&lt;&lt; Back to the search results" />
+        <br/>
+        <br/>
+
+        <p:outputPanel>
+            Biological complexes with <b>#{complexOrganismController.shortLabel}</b> involved.
+            <hr/>
+        </p:outputPanel>
+        <p:panel header="Biological complexes (#{complexOrganismController.numComplexes})">
+            <ui:include src="/dashboard/complexes_table.xhtml">
+                <ui:param name="complexesDataModel" value="#{complexOrganismController.complexes}"/>
+            </ui:include>
+        </p:panel>
+
+    </ui:define>
+
+</ui:composition>

@@ -196,12 +196,8 @@
     <context-param>
         <param-name>contextConfigLocation</param-name>
         <param-value>
-            classpath:/META-INF/intact-jami-spring.xml,
-            classpath*:/META-INF/*.spring.xml,
-            classpath*:/META-INF/jobs/*.spring.xml,
-            classpath:/META-INF/security/security.spring.xml,
-            classpath:/META-INF/intact-editor.spring.xml,
-            classpath:/META-INF/jpa.spring.xml,
+            classpath:/META-INF/beans.spring.xml,
+            classpath:/META-INF/ws.spring.xml,
         </param-value>
     </context-param>
 
@@ -217,7 +213,7 @@
 
     <context-param>
         <param-name>javax.faces.FACELETS_REFRESH_PERIOD</param-name>
-        <param-value>-1</param-value>
+        <param-value>0</param-value>
     </context-param>
 
     <!--http://osdir.com/ml/java.springframework.user/2004-02/msg00344.html-->

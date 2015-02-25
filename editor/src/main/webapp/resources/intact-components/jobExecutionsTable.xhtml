@@ -57,7 +57,7 @@
                 <f:facet name="header">
                     <h:outputText value="Parameters"/>
                 </f:facet>
-                <h:outputText value="#{jobExecution.jobInstance.jobParameters}"/>
+                <h:outputText value="#{jobExecution.jobParameters}"/>
             </p:column>
             <p:column>
                 <f:facet name="header">
@@ -67,9 +67,19 @@
             </p:column>
             <p:column>
                 <f:facet name="header">
+                    <h:outputText value="Errors"/>
+                </f:facet>
+                <h:panelGroup rendered="#{adminJobController.hasJobFailed(jobExecution)}">
+                    <ui:repeat value="#{adminJobController.getFailureExceptions(jobExecution)}" var="exception">
+                        #{adminJobController.printFullStackTrace(exception)}
+                    </ui:repeat>
+                </h:panelGroup>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
                     <h:outputText value="Action"/>
                 </f:facet>
-                <h:commandLink value="Restart" actionListener="#{adminJobController.restart}">
+                <h:commandLink value="Resume" actionListener="#{adminJobController.restart}">
                     <f:param name="executionId" value="#{jobExecution.id}"/>
                 </h:commandLink>
                 &#160;

@@ -9,7 +9,7 @@
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
 
-                template="/curate/curate_template.xhtml">
+                template="/curate/curate_complex_template.xhtml">
 
     <ui:param name="annotatedObjectController" value="#{modelledFeatureController}"/>
 
@@ -20,7 +20,6 @@
     <ui:define name="metadata">
         <f:metadata>
             <f:viewParam name="ac" value="#{modelledFeatureController.ac}"/>
-            <f:event type="preRenderView" listener="#{editorCvTermService.loadDataIfNotDone}"/>
             <f:event type="preRenderView" listener="#{modelledFeatureController.loadData}"/>
             <f:event type="preRenderView" listener="#{curateController.setCurrentAnnotatedObjectController(modelledFeatureController)}"/>
         </f:metadata>
@@ -29,11 +28,11 @@
     <ui:define name="breadcrumbs">
         <p:breadCrumb>
             <p:menuitem ajax="false" onclick="loadDialog.show()" value="#{complexController.name}"
-                        action="#{curateController.editJami(interaction)}" process="@this"/>
+                        action="#{curateController.edit(interaction)}" process="@this"/>
             <p:menuitem ajax="false" onclick="loadDialog.show()" value="#{complexController.name}"
-                        action="#{curateController.editJami(interaction)}" process="@this"/>
+                        action="#{curateController.edit(interaction)}" process="@this"/>
             <p:menuitem ajax="false" onclick="loadDialog.show()" value="#{participant.interactor.shortName}"
-                        action="#{curateController.editJami(participant)}" process="@this"/>
+                        action="#{curateController.edit(participant)}" process="@this"/>
             <p:menuitem value="#{feature.shortName}"/>
         </p:breadCrumb>
     </ui:define>
@@ -55,7 +54,7 @@
                 </p:outputPanel>
 
                 <div id="auditInfo" class="intact-auditPanel">
-                    <ia:jcreatorUpdator annotatedObject="#{feature}" />
+                    <ia:creatorUpdator annotatedObject="#{feature}" />
                 </div>
 
                 <table class="intact-tableBasicForm" cellpadding="0" cellspacing="0">
@@ -94,7 +93,7 @@
                         <td colspan="2">
                             <ia:inputCvTerm id="featureTypeTxt" cvIdentifier="MI:0116" value="#{feature.type}"
                                             cvClass="uk.ac.ebi.intact.model.CvFeatureType"
-                                            selectItems="#{editorCvTermService.featureTypeSelectItems}"
+                                            selectItems="#{cvObjectService.featureTypeSelectItems}"
                                             required="true" requiredMessage="Feature type is required"
                                             update=":editorForm:changesPanel :editorForm:unsavedChangesInfo"
                                             valueChangeAwareObject="#{annotatedObjectController}"/>
@@ -107,7 +106,7 @@
                         <td colspan="2">
                             <ia:inputCvTerm id="featureRoleTxt" cvIdentifier="MI:0925" value="#{feature.role}"
                                             cvClass="uk.ac.ebi.intact.model.CvTopic"
-                                            selectItems="#{editorCvTermService.featureRoleSelectItems}"
+                                            selectItems="#{cvObjectService.featureRoleSelectItems}"
                                             update=":editorForm:changesPanel :editorForm:unsavedChangesInfo"
                                             valueChangeAwareObject="#{annotatedObjectController}"/>
                         </td>
@@ -118,12 +117,12 @@
 
             <br/>
 
-            <p:tabView id="featureTabs" dynamic="true" cache="false">
+            <p:tabView id="featureTabs" dynamic="true">
                 <p:ajax event="tabChange" listener="#{modelledFeatureController.onTabChanged}" onstart="loadDialog.show()" oncomplete="loadDialog.hide()"/>
 
                 <p:tab id="rangesTab" title="Ranges (#{modelledFeatureController.featureRangeSize})">
 
-                    <p:outputPanel id="rangesPanel" autoUpdate="true">
+                    <p:outputPanel id="rangesPanel" autoUpdate="false">
 
                         <div class="intact-buttonBar">
                             <p:inputText id="newRangeTxt" value="#{modelledFeatureController.newRangeValue}" converter="trimmingConverter"/>
@@ -135,7 +134,32 @@
                             </p:commandButton>
                         </div>
 
+                        <ui:param name="rangeToDeleteCount"
+                                  value="#{changesController.getDeletedAcsByClassName('uk.ac.ebi.intact.jami.model.extension.ModelledRange', modelledFeatureController.ac).size()}"/>
 
+                        <h:panelGroup rendered="#{rangeToDeleteCount gt 0}">
+                            <ia:panelMessage level="info">
+                                <h:outputText value="#{rangeToDeleteCount} ranges will be deleted on save."/>
+                            </ia:panelMessage>
+                        </h:panelGroup>
+
+                        <ui:include src="ranges_wrapped_table.xhtml">
+                            <ui:param name="value" value="#{modelledFeatureController.wrappedRanges}"/>
+                            <ui:param name="annotatedObjectController" value="#{modelledFeatureController}"/>
+                        </ui:include>
+
+                    </p:outputPanel>
+
+                </p:tab>
+
+                <ui:decorate template="propertiesTabs.xhtml">
+                    <ui:param name="annotatedObjectSelectItems" value="#{cvObjectService.featureTopicSelectItems}"/>
+                    <ui:param name="updateOnChange" value=":editorForm:acTxt :editorForm:featureTabs"/>
+                </ui:decorate>
+
+                <p:tab id="sequencesTab" title="Sequence and resulting sequence">
+
+                    <p:outputPanel id="sequencesPanel" autoUpdate="false">
 
                         <ui:param name="rangeToDeleteCount"
                                   value="#{changesController.getDeletedAcsByClassName('uk.ac.ebi.intact.jami.model.extension.ModelledRange', modelledFeatureController.ac).size()}"/>
@@ -146,22 +170,14 @@
                             </ia:panelMessage>
                         </h:panelGroup>
 
-                        <ui:include src="jranges_wrapped_table.xhtml">
+                        <ui:include src="range_sequences.xhtml">
                             <ui:param name="value" value="#{modelledFeatureController.wrappedRanges}"/>
-                            <ui:param name="fuzzyTypeSelectItems" value="#{editorCvTermService.fuzzyTypeSelectItems}"/>
-                            <ui:param name="participantSelectItems" value="#{modelledFeatureController.participantSelectItems}"/>
+                            <ui:param name="annotatedObjectController" value="#{modelledFeatureController}"/>
                         </ui:include>
 
                     </p:outputPanel>
 
                 </p:tab>
-
-                <ui:decorate template="jpropertiesTabs.xhtml">
-                    <ui:param name="annotatedObjectSelectItems" value="#{editorCvTermService.featureTopicSelectItems}"/>
-                    <ui:param name="aliasTypeSelectItems" value="#{editorCvTermService.aliasTypeSelectItems}"/>
-                    <ui:param name="databaseSelectItems" value="#{editorCvTermService.featureDatabaseSelectItems}"/>
-                    <ui:param name="qualifierSelectItems" value="#{editorCvTermService.qualifierSelectItems}"/>
-                </ui:decorate>
 
             </p:tabView>
 

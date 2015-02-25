@@ -38,7 +38,7 @@
 
     <p:dialog id="jcandidatesDialog" widgetVar="jcandidatesDialogWV" header="Import participants" dynamic="true"
               position="center" resizable="true"
-              width="800">
+              width="800" height="800">
         <p:outputPanel id="jcandidatesContent">
             <ia:panelDialogLayout id="jcandidatesDialogContent">
                 <f:facet name="buttonBar">
@@ -46,93 +46,99 @@
                         <p:commandButton id="jimportSelected" value="Import selected" rendered="#{not empty modelledParticipantImportController.importCandidates}"
                                          actionListener="#{modelledParticipantImportController.importSelected}"
                                          onstart="jcandidatesDialogWV.hide();adding_load.show()" onerror="adding_load.hide(); jcandidatesDialogWV.show();"
-                                         oncomplete="adding_load.hide(); " process=":editorForm:complexTabs:jcandidatesDialog"
+                                         oncomplete="adding_load.hide(); " process=":editorForm:complexTabs:jcandidatesContent"
                                          update=":editorForm:complexTabs:jparticipantsPanel :editorForm:shortlabelTxt :editorForm:messagesComponent :editorForm:changesPanel"/>
                         <p:commandButton type="button" value="Back" rendered="#{empty modelledParticipantImportController.importCandidates}"
                                          onclick="jcandidatesDialogWV.hide(); jimportParticipantDialog.show()"/>
                     </h:panelGroup>
                 </f:facet>
 
-
-                <p:dataTable id="jcandidatesTable" var="candidate" rendered="#{not empty modelledParticipantImportController.importCandidates}"
-                             paginatorAlwaysVisible="false"
-                             value="#{modelledParticipantImportController.importCandidates}" paginator="true" rows="10">
-                    <p:column>
-                        <f:facet name="header"><h:outputText value="Select"/></f:facet>
-                        <h:selectBooleanCheckbox value="#{candidate.selected}"/>
-                    </p:column>
-                    <p:column>
-                        <f:facet name="header"><h:outputText value="Source"/></f:facet>
-                        <h:outputText value="#{candidate.source}"/>
-                        <h:outputText value="&lt;br/>(isoform)" style="color: gray"
-                                      escape="false" rendered="#{candidate.isoform}"/>
-                        <h:outputText value="&lt;br/>(chain)" style="color: gray"
-                                      escape="false" rendered="#{candidate.chain}"/>
-                    </p:column>
-                    <p:column>
-                        <f:facet name="header"><h:outputText value="Primary AC"/></f:facet>
-                        <ui:repeat value="#{candidate.primaryAcs}" var="ac">
-                            <h:outputText value="#{ac}"/>
-                            <br/>
-                        </ui:repeat>
-                    </p:column>
-                    <p:column>
-                        <f:facet name="header"><h:outputText value="Secondary ACs"/></f:facet>
-                        <ui:repeat value="#{candidate.secondaryAcs}" var="ac">
-                            <h:outputText value="#{ac}"/>
-                            <br/>
-                        </ui:repeat>
-                    </p:column>
-                    <p:column>
-                        <f:facet name="header"><h:outputText value="Organism"/></f:facet>
-                        <h:outputText value="#{candidate.organism}"/>
-                    </p:column>
-                    <p:column>
-                        <f:facet name="header"><h:outputText value="IntAct AC"/></f:facet>
-                        <h:outputText value="#{candidate.interactor.ac}" rendered="#{candidate.persistentInteractor}"/>
-                    </p:column>
-                    <p:column>
-                        <f:facet name="header"><h:outputText value="IntAct label"/></f:facet>
-                        <h:outputText value="#{candidate.interactor.shortName}" rendered="#{candidate.interactor != null}"/>
-                    </p:column>
-                    <p:column>
-                        <f:facet name="header"><h:outputText value="Query"/></f:facet>
-                        <h:outputText value="#{candidate.query}"/>
-                    </p:column>
-                </p:dataTable>
-
-                <br/>
-                <h:panelGroup id="noResults" rendered="#{not empty modelledParticipantImportController.queriesNoResults}">
-                    <ia:panelMessage level="warn">
-                        <h:outputText value="Not found: " style="font-weight:bold"/>
-                        <ul>
-                            <ui:repeat value="#{modelledParticipantImportController.queriesNoResults}" var="query">
-                                <li>#{query}</li>
+                <p:scrollPanel mode="native"  style="max-height:600px; max-width: 1000px">
+                    <p:dataTable id="jcandidatesTable" var="candidate" rendered="#{not empty modelledParticipantImportController.importCandidates}"
+                                 paginatorAlwaysVisible="false"
+                                 value="#{modelledParticipantImportController.importCandidates}" paginator="true" rows="10">
+                        <p:column>
+                            <f:facet name="header"><h:outputText value="Select"/></f:facet>
+                            <h:selectBooleanCheckbox value="#{candidate.selected}"/>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header"><h:outputText value="Source"/></f:facet>
+                            <h:outputText value="#{candidate.source}"/>
+                            <h:outputText value="&lt;br/>(isoform)" style="color: gray"
+                                          escape="false" rendered="#{candidate.isoform}"/>
+                            <h:outputText value="&lt;br/>(chain)" style="color: gray"
+                                          escape="false" rendered="#{candidate.chain}"/>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header"><h:outputText value="Primary AC"/></f:facet>
+                            <ui:repeat value="#{candidate.primaryAcs}" var="ac">
+                                <h:outputText value="#{ac}"/>
+                                <br/>
                             </ui:repeat>
-                        </ul>
-                    </ia:panelMessage>
-                </h:panelGroup>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header"><h:outputText value="Secondary ACs"/></f:facet>
+                            <ui:repeat value="#{candidate.secondaryAcs}" var="ac">
+                                <h:outputText value="#{ac}"/>
+                                <br/>
+                            </ui:repeat>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header"><h:outputText value="Organism"/></f:facet>
+                            <h:outputText value="#{candidate.organism}"/>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header"><h:outputText value="IntAct AC"/></f:facet>
+                            <h:outputText value="#{candidate.interactor.ac}" rendered="#{candidate.interactor != null}"/>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header"><h:outputText value="IntAct label"/></f:facet>
+                            <h:outputText value="#{candidate.interactor.shortName}" rendered="#{candidate.interactor != null}"/>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header"><h:outputText value="Interactor type"/></f:facet>
+                            <h:outputText value="#{candidate.interactor.interactorType.shortName}" rendered="#{candidate.interactor != null}"/>
+                        </p:column>
+                        <p:column>
+                            <f:facet name="header"><h:outputText value="Query"/></f:facet>
+                            <h:outputText value="#{candidate.query}"/>
+                        </p:column>
+                    </p:dataTable>
 
-                <br/>
+                    <br/>
+                    <h:panelGroup id="noResults" rendered="#{not empty modelledParticipantImportController.queriesNoResults}">
+                        <ia:panelMessage level="warn">
+                            <h:outputText value="Not found: " style="font-weight:bold"/>
+                            <ul>
+                                <ui:repeat value="#{modelledParticipantImportController.queriesNoResults}" var="query">
+                                    <li>#{query}</li>
+                                </ui:repeat>
+                            </ul>
+                        </ia:panelMessage>
+                    </h:panelGroup>
 
-                <p:panel id="jglobalAttributesId" header="Global attributes" rendered="#{not empty modelledParticipantImportController.importCandidates}">
-                    <h:panelGrid columns="2">
+                    <br/>
 
-                        <h:outputLabel value="Biological role: " for="jbioRoleDialogTxt"/>
-                        <ia:inputCvTerm id="jbioRoleDialogTxt" cvIdentifier="MI:0500"
-                                        cvClass="uk.ac.ebi.intact.model.CvBiologicalRole"
-                                          modal="false"
-                                          value="#{modelledParticipantImportController.biologicalRole}"
-                                          selectItems="#{editorCvTermService.biologicalRoleSelectItems}" />
+                    <p:panel id="jglobalAttributesId" header="Global attributes" rendered="#{not empty modelledParticipantImportController.importCandidates}">
+                        <h:panelGrid columns="2">
 
-                        <h:outputLabel value="Min Stoichiometry: " for="minStoichiometryDialogTxt"/>
-                        <p:spinner id="minStoichiometryDialogTxt" value="#{modelledParticipantImportController.minStoichiometry}" min="0" stepFactor="1" size="3" maxlength="2"/>
+                            <h:outputLabel value="Biological role: " for="jbioRoleDialogTxt"/>
+                            <h:selectOneMenu id="jbioRoleDialogTxt" value="#{modelledParticipantImportController.cvBiologicalRole}"
+                                             converter="cvObjectConverter">
+                                <f:selectItems value="#{cvObjectService.biologicalRoleSelectItems}"/>
+                            </h:selectOneMenu>
 
-                        <h:outputLabel value="Max Stoichiometry: " for="maxStoichiometryDialogTxt"/>
-                        <p:spinner id="maxStoichiometryDialogTxt" value="#{modelledParticipantImportController.maxStoichiometry}" min="0" stepFactor="1" size="3" maxlength="2"/>
+                            <h:outputLabel value="Min Stoichiometry: " for="minStoichiometryDialogTxt"/>
+                            <p:spinner id="minStoichiometryDialogTxt" value="#{modelledParticipantImportController.minStoichiometry}" min="0" stepFactor="1" size="3" maxlength="2"/>
 
-                    </h:panelGrid>
-                </p:panel>
+                            <h:outputLabel value="Max Stoichiometry: " for="maxStoichiometryDialogTxt"/>
+                            <p:spinner id="maxStoichiometryDialogTxt" value="#{modelledParticipantImportController.maxStoichiometry}" min="0" stepFactor="1" size="3" maxlength="2"/>
+
+                            <h:outputLabel value="Load as molecule set: " for="moleculeSetTxt"/>
+                            <h:selectBooleanCheckbox id="moleculeSetTxt" value="#{participantImportController.loadAsMoleculeSet}"/>
+                        </h:panelGrid>
+                    </p:panel>
+                </p:scrollPanel>
 
             </ia:panelDialogLayout>
 

@@ -14,22 +14,46 @@
         <table style="#{style}">
             <tr>
                 <td>
-                     <div class="intact-buttonBar">
-                            <p:commandButton id="newXrefBtn" value="New Xref" actionListener="#{annotatedObjectController.newXref}"
-                                             process="@this"
-                                             update="xrefsTable #{update}"/>
-                    </div>
+                    <h:panelGrid id="newXrefTxt" columns="11" class="intact-buttonBar">
+                        <h:outputLabel value="Database: " for="databaseSel1"/>
+                        <h:selectOneMenu id="databaseSel1" value="#{annotatedObjectController.newDatabase}" disabled="#{annotatedObjectController.isXrefDisabled()}"
+                                         converter="cvObjectConverter">
+                            <f:selectItems value="#{cvObjectService.databaseSelectItems}"/>
+                        </h:selectOneMenu>
+                        <h:outputLabel value="Identifier: " for="primaryId1Txt"/>
+                        <p:inputText id="primaryId1Txt" value="#{annotatedObjectController.newXrefId}" size="15" converter="trimmingConverter"
+                                     disabled="#{annotatedObjectController.isXrefDisabled()}">
+                        </p:inputText>
+                        <h:outputLabel value="Secondary: " for="secondary1Txt"/>
+                        <p:inputText id="secondary1Txt" value="#{annotatedObjectController.newSecondaryId}" size="15"
+                                     converter="trimmingConverter" disabled="#{annotatedObjectController.isXrefDisabled()}">
+                        </p:inputText>
+                        <h:outputLabel value="Qualifier: " for="qualifier1Sel"/>
+                        <h:selectOneMenu id="qualifier1Sel" value="#{annotatedObjectController.newQualifier}"
+                                         converter="cvObjectConverter" disabled="#{annotatedObjectController.isXrefDisabled()}">
+                            <f:selectItems value="#{cvObjectService.qualifierSelectItems}"/>
+                        </h:selectOneMenu>
+                        <h:outputLabel value="Version: " for="version1Txt"/>
+                        <p:inputText id="version1Txt" value="#{annotatedObjectController.newXrefVersion}" size="5"
+                                     converter="trimmingConverter" disabled="#{annotatedObjectController.isXrefDisabled()}"/>
+                        <p:commandButton id="newXrefBtn" value="Add new Xref" actionListener="#{annotatedObjectController.newXref}"
+                                         process="newXrefTxt"
+                                         update="newXrefTxt xrefsTable #{update}" onclick="loadDialog.show()" oncomplete="loadDialog.hide()"/>
+                    </h:panelGrid>
 
                     <p:dataTable id="xrefsTable" var="xref" value="#{annotatedObjectController.collectXrefs()}"
                                  rowIndexVar="xrefIndex"
-                                 style="width:100%">
+                                 style="width:100%" rendered="#{!annotatedObjectController.isXrefDisabled()}">
                         <p:column>
                             <f:facet name="header">
                                 <h:outputText value="Database"/>
                             </f:facet>
-                            <h:selectOneMenu id="databaseSel" value="#{xref.cvDatabase}" required="true"
-                                             requiredMessage="Database for xref is required" disabled="#{annotatedObjectController.isXrefDisabled()}">
-                                <f:selectItems value="#{databaseSelectItems}"/>
+                            <h:selectOneMenu id="databaseSel" value="#{xref.database}" required="true"
+                                             requiredMessage="Database for xref is required" disabled="#{annotatedObjectController.isXrefDisabled()
+                                 or annotatedObjectController.isXrefNotEditable(xref)}"
+                                             converter="cvObjectConverter">
+                                <f:selectItems value="#{cvObjectService.databaseSelectItems}"/>
+                                <ed:curation/>
                             </h:selectOneMenu>
 
                             <script type="text/javascript">
@@ -42,35 +66,29 @@
                                 <h:outputText value="Identifier"/>
                             </f:facet>
                             <h:panelGroup style="display:block; white-space:nowrap;">
-                            <p:inputText id="primaryIdTxt" value="#{xref.primaryId}" widgetVar="primaryTxt_#{xrefIndex}"
+                            <p:inputText id="primaryIdTxt" value="#{xref.id}" widgetVar="primaryTxt_#{xrefIndex}"
                                          size="15" converter="trimmingConverter"
                                          onchange="jsXref_#{xrefIndex}.markSecondaryAsReadOnlyIfNecessary()"
-                                         required="true" requiredMessage="Primary identifier for xref is required">
+                                         required="true" requiredMessage="Primary identifier for xref is required"
+                                         disabled="#{annotatedObjectController.isXrefDisabled()
+                                 or annotatedObjectController.isXrefNotEditable(xref)}">
                                 <ed:curation/>
                                 <ui:insert name="syncValues"/>
                             </p:inputText>
 
                             <h:panelGroup id="validityPanel">
-                                <!--<h:panelGroup rendered="#{annotatedObjectController.isXrefValid(xref)}">-->
-                                    <!--<span class="ui-icon ui-icon-circle-check" title="Matches the expected regular expression"/>-->
-                                <!--</h:panelGroup>-->
                                 <h:panelGroup rendered="#{not annotatedObjectController.isXrefValid(xref)}">
                                     <span class="ui-icon ui-icon-alert" style="display:inline-block"
                                           title="Does not match the expected regular expression"/>
-                                    <!--<h:graphicImage alt="warn" library="images" name="warn.gif" -->
-                                                    <!--title="Does not match the expected regular expression"/>-->
                                 </h:panelGroup>
                             </h:panelGroup>
 
                                 <h:panelGroup id="linkPanel">
-                                <!--<h:panelGroup rendered="#{annotatedObjectController.isXrefValid(xref)}">-->
-                                    <!--<span class="ui-icon ui-icon-circle-check" title="Matches the expected regular expression"/>-->
-                                <!--</h:panelGroup>-->
                                 <h:panelGroup rendered="#{annotatedObjectController.isXrefValid(xref) and annotatedObjectController.externalLink(xref) != null}">
                                     <ot:separateConversationContext>
                                         <h:outputLink value="#{annotatedObjectController.externalLink(xref)}" target="_blank">
                                             <span class="ui-icon ui-icon-extlink" style="display:inline-block"
-                                                  title="External link to #{xref.cvDatabase.shortLabel}"/>
+                                                  title="External link to #{xref.database.shortName}"/>
                                         </h:outputLink>
                                     </ot:separateConversationContext>
                                 </h:panelGroup>
@@ -83,7 +101,8 @@
                                 <h:outputText value="Secondary"/>
                             </f:facet>
                             <p:inputText id="secondaryTxt" widgetVar="secondaryTxt_#{xrefIndex}" value="#{xref.secondaryId}" size="15"
-                                         converter="trimmingConverter">
+                                         converter="trimmingConverter" disabled="#{annotatedObjectController.isXrefDisabled()
+                                 or annotatedObjectController.isXrefNotEditable(xref)}">
                                     <ed:curation/>
                             </p:inputText>
 
@@ -96,26 +115,31 @@
                             <f:facet name="header">
                                 <h:outputText value="Qualifier"/>
                             </f:facet>
-                            <h:selectOneMenu id="qualifierSel" value="#{xref.cvXrefQualifier}" disabled="#{annotatedObjectController.isXrefDisabled()}">
-                                <f:selectItems value="#{qualifierSelectItems}"/>
+                            <h:selectOneMenu id="qualifierSel" value="#{xref.qualifier}"
+                                             converter="cvObjectConverter" disabled="#{annotatedObjectController.isXrefDisabled()
+                                 or annotatedObjectController.isXrefNotEditable(xref)}">
+                                <f:selectItems value="#{cvObjectService.qualifierSelectItems}"/>
+                                <ed:curation/>
                             </h:selectOneMenu>
                         </p:column>
                         <p:column>
                             <f:facet name="header">
                                 <h:outputText value="Version"/>
                             </f:facet>
-                            <p:inputText value="#{xref.dbRelease}" size="5"
+                            <p:inputText value="#{xref.version}" size="5"
                                          onchange="editorCuration.setUnsavedChanges(true)"
-                                         converter="trimmingConverter"/>
+                                         converter="trimmingConverter" disabled="#{annotatedObjectController.isXrefDisabled()
+                                 or annotatedObjectController.isXrefNotEditable(xref)}"/>
                         </p:column>
                         <p:column>
                             <f:facet name="header">
                                 <h:outputText value="Actions"/>
                             </f:facet>
                             <p:commandLink id="removeXrefBtn" styleClass="ui-icon ui-icon-closethick" process="removeXrefBtn"
-                               actionListener="#{annotatedObjectController.annotatedObject.removeXref(xref)}"
+                               actionListener="#{annotatedObjectController.removeXref(xref)}"
                                oncomplete="markAsUnsaved()"
-                               update="xrefsTable,#{update}"/>
+                               update="xrefsTable,#{update}" disabled="#{annotatedObjectController.isXrefDisabled()
+                                 or annotatedObjectController.isXrefNotEditable(xref)}"/>
                         </p:column>
                     </p:dataTable>
 

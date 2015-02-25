@@ -24,20 +24,29 @@
                      rowsPerPageTemplate="10,20,50,100"
                      rows="10" paginator="true"
                      paginatorAlwaysVisible="false"
-                     rowStyleClass="#{wrapper.participant.ac == null? 'intact-new' : null}"
+                     rowStyleClass="#{wrapper.participant.ac == null? 'intact-new' : changesController.isDeletedAc(wrapper.participant.ac)? 'intact-deleted' : null}"
                      paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
                 >
 
             <ui:param name="participant" value="#{wrapper.participant}" />
             <ui:param name="interactor" value="#{participant.interactor}" />
 
+            <p:column id="ac" headerText="AC"
+                      sortBy="#{participant.ac}"
+                      filterBy="#{participant.ac}"
+                      filterMatchMode="contains">
+                <h:panelGroup rendered="#{not changesController.isDeletedAc(participant.ac)}">
+                    <h:outputText value="#{participant.ac}" styleClass="#{participant.ac == null? 'intact-new' :''}"/>
+                </h:panelGroup>
+                <h:panelGroup rendered="#{changesController.isDeletedAc(participant.ac)}">
+                    <h:outputText value="#{participant.ac}" styleClass="intact-deleted"/>
+                </h:panelGroup>
+            </p:column>
+
             <p:column id="shortLabel" headerText="Name">
-                <p:commandLink onclick="load_participant.show()" action="#{modelledParticipantController.loadParticipant(participant)}"
-                               value="#{interactor.shortName}" rendered="#{participant.ac != null}"
-                               ajax="false"/>
-                <p:commandLink onclick="load_participant.show()" action="#{modelledParticipantController.loadParticipant(participant)}"
-                               value="#{interactor.shortName}" rendered="#{participant.ac == null}"
-                               styleClass="#{'intact-new'}"
+                <p:commandLink onclick="load_participant.show()" action="#{curateController.edit(participant)}"
+                               value="#{interactor.shortName}" rendered="#{interactor != null and not changesController.isDeletedAc(participant.ac)}"
+                               styleClass="#{participant.ac == null? 'intact-new' :''}"
                                ajax="false"/>
                 <h:panelGroup rendered="#{changesController.isDeletedAc(participant.ac)}">
                     <h:outputText value="#{interactor.shortName}" styleClass="intact-deleted"/>
@@ -45,9 +54,13 @@
             </p:column>
 
             <p:column id="ao">
-                <ui:include src="jcommon_column_notifications.xhtml">
+                <ui:include src="common_column_notifications.xhtml">
                     <ui:param name="annotatedObjectController" value="#{modelledParticipantController}"/>
                     <ui:param name="ao" value="#{participant}"/>
+                    <h:panelGroup rendered="#{annotatedObjectController.isNoUniprotUpdate(participant.interactor)}">
+                        <h:graphicImage alt="no uniprot update" library="images" name="no_uni_update.png"
+                                        title="No Uniprot Update"/>
+                    </h:panelGroup>
                 </ui:include>
             </p:column>
 
@@ -59,13 +72,13 @@
             <p:column id="bioRoleCol" headerText="Biological role">
 
                 <h:selectOneMenu id="bioRoleCv" value="#{wrapper.participant.biologicalRole}"
-                                 rendered="#{value.rowCount lt 5}" disabled="#{complexController.isParticipantDisabled()}"
-                                 converter="cvTermConverter">
-                    <f:selectItems value="#{editorCvTermService.biologicalRoleSelectItems}" />
+                                 rendered="#{value.size() lt 5}" disabled="#{complexController.isParticipantDisabled()}"
+                                 converter="cvObjectConverter">
+                    <f:selectItems value="#{cvObjectService.biologicalRoleSelectItems}" />
                     <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
                 </h:selectOneMenu>
                 <h:outputText value="#{wrapper.participant.biologicalRole != null? wrapper.participant.biologicalRole.shortName : ''}"
-                              rendered="#{value.rowCount ge 5}"/>
+                              rendered="#{value.size() ge 5}"/>
             </p:column>
 
             <p:column headerText="Features">
@@ -79,18 +92,18 @@
                         <h:selectBooleanCheckbox value="#{featureWrapper.selected}"/>
                     </h:column>
                     <h:column>
-                        <div id="feature_#{featureWrapper.feature.ac}"
-                             onmouseover="this.style.fontWeight = '#{!empty feature.linkedFeatures? 'bold' : 'inherit'}';"
-                             onmouseout="this.style.fontWeight = 'inherit';">
+                        <div id="feature_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}">
                             <h:outputText value="#{featureWrapper.feature.shortName} #{featureWrapper.ranges}"/>
 
 
                             <h:panelGroup id="linkedFeaturePanelGroup" rendered="#{!empty featureWrapper.linkedFeatures}">
                                 <ui:repeat value="#{featureWrapper.linkedFeatures}" var="linked" varStatus="status">
-                                    <p:commandLink type="button" oncomplete="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.show()"
+                                    <p:commandLink id="unlinkBtn_${intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}" type="button" oncomplete="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.show()"
                                                    styleClass="ui-icon ui-icon-link" style="display:inline-block"
                                                    title="Linked to #{linked.shortName}" action="#{complexController.selectLinkedFeature(featureWrapper, linked)}"
-                                                   update=":editorForm:complexTabs:participantsTable">
+                                                   update=":editorForm:complexTabs:participantsTable"
+                                                   onmouseover="ia_showLinkedFeatures('feature_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}', '#{featureWrapper.getRelatedFeatureDivs(linked)}', '#{!empty featureWrapper.linkedFeatures}')"
+                                                   onmouseout="ia_hideLinkedFeatures('feature_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}', '#{featureWrapper.getRelatedFeatureDivs(linked)}', '#{!empty featureWrapper.linkedFeatures}')">
                                     </p:commandLink>
 
                                     <p:outputPanel rendered="#{status.index lt (status.end - 1)}">
@@ -98,15 +111,15 @@
                                     </p:outputPanel>
                                 </ui:repeat>
                             </h:panelGroup>
+                            <p:confirmDialog widgetVar="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}"
+                                             message="Do you want to unlink this feature?" modal="true">
+                                <p:commandButton value="Yes Sure"
+                                                 actionListener="#{complexController.unlinkFeature(featureWrapper)}"
+                                                 update=":editorForm:complexTabs:participantsTable :editorForm:changesPanel :editorForm:messagesComponent :editorForm:unsavedChangesInfo"
+                                                 onclick="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.hide()"/>
+                                <p:commandButton value="Not Yet" onclick="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.hide()" />
+                            </p:confirmDialog>
                         </div>
-                        <p:confirmDialog widgetVar="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}"
-                                         message="Do you want to unlink this feature?" modal="true">
-                            <p:commandButton value="Yes Sure"
-                                             actionListener="#{complexController.unlinkFeature(featureWrapper)}"
-                                             update=":editorForm:complexTabs:participantsTable :editorForm:changesPanel :editorForm:messagesComponent :editorForm:unsavedChangesInfo"
-                                             onclick="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.hide()"/>
-                            <p:commandButton value="Not Yet" onclick="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.hide()" />
-                        </p:confirmDialog>
                     </h:column>
                 </h:dataTable>
             </p:column>
@@ -129,19 +142,19 @@
                 <div style="float:right">
                     <p:commandLink id="markDeletedBtn" process="markDeletedBtn" title="Mark to be deleted" styleClass="ui-icon ui-icon-closethick"
                                    actionListener="#{complexController.markParticipantToDelete(participant)}"
-                                   update=":editorForm:unsavedChangesInfo :editorForm:changesPanel :editorForm:messagesComponent :editorForm:complexTabs:participantsTable"
+                                   update=":editorForm:unsavedChangesInfo :editorForm:changesPanel :editorForm:messagesComponent :editorForm:complexTabs:participantsTab"
                                    rendered="#{not changesController.isDeletedAc(participant.ac)}"/>
                 </div>
                 <div style="float:right">
                     <p:commandLink id="revertBtn" process="revertBtn" title="Revert" styleClass="ui-icon ui-icon-arrowreturnthick-1-w"
-                                   actionListener="#{changesController.revertJami(participant)}"
-                                   update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent"
+                                   actionListener="#{changesController.revert(participant)}"
+                                   update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent, :editorForm:complexTabs:participantsTab"
                                    rendered="#{changesController.isDeletedAc(participant.ac)}"/>
                 </div>
                 <div style="float:left">
                     <p:commandLink id="duplicateBtn" process="duplicateBtn" title="Duplicate" styleClass="ui-icon ui-icon-newwin"
                                    actionListener="#{complexController.cloneParticipant(wrapper)}"
-                                   update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent, :editorForm:complexTabs:participantsTable"
+                                   update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent, :editorForm:complexTabs:participantsTab"
                                    rendered="#{not changesController.isDeletedAc(participant.ac)}"/>
                 </div>
             </p:column>

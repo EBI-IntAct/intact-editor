@@ -36,7 +36,12 @@ public class SelectableCollectionDataModel<T> implements SelectableDataModel<T> 
     public T getRowData(String rowKey) {
         if (rowKey == null) return null;
 
-        return list.get(Integer.parseInt(rowKey));
+        try{
+            return list.get(Integer.parseInt(rowKey));
+        }
+        catch (NumberFormatException e){
+            return null;
+        }
     }
     
     public int size() {

@@ -9,7 +9,7 @@
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
 
-                template="/curate/curate_template.xhtml">
+                template="/curate/curate_publication_template.xhtml">
 
 <ui:param name="annotatedObjectController" value="#{interactionController}"/>
 
@@ -33,7 +33,7 @@
                     action="#{curateController.edit(publicationController.publication)}" process="@this"/>
         <p:menuitem ajax="false" onclick="loadDialog.show()" value="#{experiment.shortLabel}"
                     action="#{curateController.edit(experiment)}" process="@this"/>
-        <p:menuitem value="#{interaction.shortLabel}"/>
+        <p:menuitem value="#{interaction.shortName}"/>
     </p:breadCrumb>
 </ui:define>
 
@@ -65,7 +65,6 @@
 <p:panel id="basic" header="Interaction Details">
 
     <p:outputPanel id="infoPanels">
-        <!--TODO: Add the proper interaction status in the future-->
         <h:panelGroup rendered="#{experimentController.accepted}">
             <ia:panelMessage level="info">
                 The experiment, in which this interaction is part of, is <b>accepted</b>.&#160;
@@ -76,9 +75,6 @@
         <h:panelGroup rendered="#{not empty experimentController.toBeReviewed}">
             <ia:panelMessage level="warn">
                 <b>Comments "to be reviewed" copied from the experiment: </b> #{experimentController.toBeReviewed}
-                &#160;&#160;&#160;
-                <p:commandButton id="clearToBeReviewed" value="Clear" rendered="#{userSessionController.isItMe(publicationController.publication.currentReviewer)}" actionListener="#{experimentController.clearToBeReviewed}"
-                                 update=":editorForm:centralUnit"/>
             </ia:panelMessage>
         </h:panelGroup>
 
@@ -105,11 +101,17 @@
                 <h:outputLabel value="Shortlabel: " for="shortlabelTxt"/>
             </td>
             <td>
-                <p:inputText id="shortlabelTxt" value="#{interaction.shortLabel}" size="30"
-                             validator="#{annotatedObjectController.validateAnnotatedObject}" converter="trimmingConverter"
+                <p:inputText id="shortlabelTxt" value="#{interaction.shortName}" size="30"
+                             converter="trimmingConverter"
                              required="true" requiredMessage="Shortlabel is required">
                     <p:ajax event="change" update=":editorForm:messagesComponent,:editorForm:changesPanel,:editorForm:unsavedChangesInfo" async="true" process="@this" oncomplete="markAsUnsaved()"/>
                 </p:inputText>
+                <p:commandButton id="refreshLabelBtn" value="Refresh shortlabel"
+                                 actionListener="#{interactionController.refreshShortLabel}" async="true"
+                                 process="shortlabelTxt"
+                                 onclick="loadDialog.show()"
+                                 oncomplete="loadDialog.hide()"
+                                 update=":editorForm:basic,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo"/>
             </td>
             <td style="padding-left: 50px;">
                 <h:outputLabel value="AC: " for="acTxt" styleClass="intact-disabled"/>
@@ -126,13 +128,14 @@
                 <h:outputLabel value="Interaction type: " for="interactionTypeTxt"/>
             </td>
             <td colspan="3">
-                <ia:inputCvObject id="interactionTypeTxt" cvIdentifier="MI:0190"
-                                  value="#{interaction.cvInteractionType}"
-                                  selectItems="#{cvObjectService.interactionTypeSelectItems}"
-                                  required="true" requiredMessage="Interaction type is required"
-                                  oncomplete="ia_enableSave()"
-                                  update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
-                                  valueChangeAwareObject="#{interactionController}"/>
+                <ia:inputCvTerm id="interactionTypeTxt" cvIdentifier="MI:0190"
+                                value="#{interaction.interactionType}"
+                                selectItems="#{cvObjectService.interactionTypeSelectItems}"
+                                required="true" requiredMessage="Interaction type is required"
+                                oncomplete="ia_enableSave()"
+                                update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
+                                valueChangeAwareObject="#{interactionController}"
+                                cvClass="uk.ac.ebi.intact.model.CvInteractionType"/>
             </td>
         </tr>
         <tr>
@@ -141,7 +144,7 @@
             </td>
             <td colspan="3">
                 <p:inputText id="figLegendTxt" value="#{interactionController.figureLegend}" size="80"
-                             converter="trimmingConverter">
+                             converter="trimmingConverter" valueChangeListener="#{interactionController.onFigureLegendChanged}">
                     <ed:curation/>
                 </p:inputText>
             </td>
@@ -153,132 +156,17 @@
             <td colspan="3" >
                 <h:selectOneMenu id="experimentLists"
                                  value="#{interactionController.experiment}"
-                                 required="true" requiredMessage="You must set an experiment">
-                    <p:ajax event="change" update=":editorForm" rendered="#{interactionController.experiment != null}"
-                            listener="#{interactionController.experimentChanged}" async="true"/>
+                                 required="true" requiredMessage="You must set an experiment" converter="experimentConverter">
+                    <p:ajax event="change" update=":editorForm" listener="#{interactionController.experimentChanged}" async="true"/>
                     <f:selectItems value="#{interactionController.experimentSelectItems}"/>
                 </h:selectOneMenu>
-                <!--<p:pickList id="experimentLists"-->
-                <!--valueChangeListener="#{interactionController.experimentChanged}"-->
-                <!--value="#{interactionController.experimentLists}"-->
-                <!--required="true" requiredMessage="An experiment is required"-->
-                <!--var="exp" itemLabel="#{exp}" itemValue="#{exp}" />-->
             </td>
         </tr>
     </table>
-
-    <!--</ia:panelFormLayout>-->
 </p:panel>
 
 <br/>
 
-<script type="text/javascript">
-    function handleChange(index){
-        if(index == 7){
-            jQuery('#interactionTabs').trigger('featuresSelected');
-        }
-    }
-</script>
-
-<p:tabView id="interactionTabs" dynamic="true">
-    <p:ajax event="tabChange" listener="#{interactionController.onTabChanged}" />
-
-    <p:tab id="participantsTab" title="Participants (#{interactionController.participantSize})">
-
-        <p:panel style="padding:0">
-            Participants:&#160;
-            <p:commandButton value="New participant" action="#{participantController.newParticipant(interactionController.interaction)}"
-                             ajax="false"/>
-            <p:commandButton id="importParticipantBtn" value="Import..." type="button" onclick="importParticipantDialog.show()"/>
-            &#160;| Features:&#160;
-            <p:commandButton value="Link features" actionListener="#{interactionController.linkSelectedFeatures}" ajax="false"/>
-        </p:panel>
-
-        <ia:spacer height="10" />
-
-        <ui:include src="dialog_import_participant.xhtml"/>
-
-        <p:outputPanel id="participantsPanel" autoUpdate="true">
-            <ui:include src="participants_table.xhtml">
-                <ui:param name="value" value="#{interactionController.participants}"/>
-            </ui:include>
-        </p:outputPanel>
-    </p:tab>
-
-    <ui:decorate template="basicPropertiesTabs.xhtml">
-        <ui:param name="annotatedObjectSelectItems" value="#{cvObjectService.interactionTopicSelectItems}"/>
-        <ui:param name="updateOnChange" value=":editorForm:basic"/>
-
-        <ui:define name="annotationSyncValues">
-            <ed:syncValue with=":editorForm:figLegendTxt"
-                          rendered="#{annotation.cvTopic != null and annotation.cvTopic.identifier == 'MI:0599'}"/>
-        </ui:define>
-
-    </ui:decorate>
-
-    <p:tab id="parametersTab" title="Parameters (#{interactionController.parameterSize})">
-
-        <p:outputPanel id="parametersPanel" autoUpdate="true">
-            <ui:decorate template="parameters_table.xhtml">
-                <ui:param name="annotatedObjectController" value="#{interactionController}"/>
-                <ui:param name="parameterTypeSelectItems" value="#{cvObjectService.parameterTypeSelectItems}"/>
-                <ui:param name="parameterUnitSelectItems" value="#{cvObjectService.parameterUnitSelectItems}"/>
-                <ui:param name="update" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent"/>
-                <ui:param name="disableParameterSelectItems" value="#{interactionController.isParameterDisabled()}"/>
-            </ui:decorate>
-        </p:outputPanel>
-
-    </p:tab>
-
-    <p:tab id="confidencesTab" title="Confidences (#{interactionController.confidenceSize})">
-
-        <p:outputPanel id="confidencesPanel" autoUpdate="true">
-            <ui:decorate template="confidences_table.xhtml">
-                <ui:param name="annotatedObjectController" value="#{interactionController}"/>
-                <ui:param name="confidenceTypeSelectItems" value="#{cvObjectService.confidenceTypeSelectItems}"/>
-                <ui:param name="update" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent"/>
-                <ui:param name="disableConfidenceSelectItems" value="#{interactionController.isConfidenceDisabled()}"/>
-            </ui:decorate>
-        </p:outputPanel>
-
-    </p:tab>
-
-    <p:tab id="advancedTab" title="Advanced">
-        <h:panelGrid columns="2">
-            <h:outputLabel for="kdTxt" value="Kd: "/>
-            <p:inputText id="kdTxt" value="#{interactionController.interaction.KD}" size="5"
-                         valueChangeListener="#{interactionController.unsavedValueChange}" converter="trimmingConverter">
-                <ed:curation/>
-            </p:inputText>
-
-            <h:outputLabel for="crcTxt" value="CRC: "/>
-            <p:inputText id="crcTxt" value="#{interactionController.interaction.crc}" size="20" readonly="true"/>
-
-            <h:outputLabel for="institutionSel" value="Institution: "/>
-            <h:selectOneMenu id="institutionSel" value="#{interactionController.interaction.owner}"
-                             disabled="#{(not userSessionController.hasRole('ADMIN') and not userSessionController.hasRole('REVIEWER')) or interactionController.isAdvancedDisabled()}}">
-                <f:selectItems value="#{institutionService.institutionSelectItems}"/>
-                <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
-            </h:selectOneMenu>
-        </h:panelGrid>
-    </p:tab>
-
-    <p:tab id="featuresTab" title="Experimental Features"
-           disabled="#{not interactionController.featuresAvailable}">
-        <table style ="width:98%" id="featureTable">
-            <tr>
-                <td style="width:100%;vertical-align:top;text-align:center;" id="featureColumn">
-                    <ia:interactionRepresentation url="#{facesContext.externalContext.requestContextPath}/service/export/mi/interaction?ac=#{interaction.ac}" />
-                </td>
-            </tr>
-        </table>
-
-    </p:tab>
-
-
-</p:tabView>
-
-</h:panelGroup>
 
 <!-- DIALOGS -->
 <!-- Copy to Exp dialog -->
@@ -289,7 +177,7 @@
         <p:inputText id="expToCopy" value="#{interactionController.experimentToCopyTo}" converter="trimmingConverter"/>
 
         <p:commandButton value="Copy" action="#{interactionController.copyToExperiment}"
-                         ajax="false" oncomplete="copyToExperimentDialog.hide()"/>
+                         ajax="false" oncomplete="copyToExperimentDialog.hide()" process="expToCopy"/>
     </h:panelGrid>
 </p:dialog>
 
@@ -305,6 +193,98 @@
                          ajax="false" oncomplete="moveToExperimentDialog.hide()"/>
     </h:panelGrid>
 </p:dialog>
+
+<ui:include src="jdialog_import_vparameters.xhtml"/>
+
+<p:tabView id="interactionTabs" dynamic="true">
+    <p:ajax event="tabChange" listener="#{interactionController.onTabChanged}" onstart="loadDialog.show()" oncomplete="loadDialog.hide()"/>
+
+    <p:tab id="participantsTab" title="Participants (#{interactionController.participantsSize})">
+
+        <p:panel style="padding:0">
+            Participants:&#160;
+            <p:commandButton value="New participant" action="#{participantController.newParticipant(interactionController.interaction)}"
+                             ajax="false"/>
+            <p:commandButton id="importParticipantBtn" value="Import..." type="button" onclick="importParticipantDialog.show()"/>
+            &#160;| Features:&#160;
+            <p:commandButton value="Link features" actionListener="#{interactionController.linkSelectedFeatures}" ajax="false"/>
+        </p:panel>
+
+        <ia:spacer height="10" />
+
+        <ui:include src="dialog_import_participant.xhtml"/>
+
+        <p:outputPanel id="participantsPanel" autoUpdate="false">
+            <ui:include src="participants_table.xhtml">
+                <ui:param name="value" value="#{interactionController.participants}"/>
+            </ui:include>
+        </p:outputPanel>
+    </p:tab>
+
+    <ui:decorate template="basicPropertiesTabs.xhtml">
+        <ui:param name="annotatedObjectSelectItems" value="#{cvObjectService.interactionTopicSelectItems}"/>
+        <ui:param name="updateOnChange" value=":editorForm:basic :editorForm:interactionTabs"/>
+
+    </ui:decorate>
+
+    <p:tab id="parametersTab" title="Parameters (#{interactionController.parametersSize})">
+
+        <p:outputPanel id="parametersPanel" autoUpdate="false">
+            <ui:decorate template="parameters_table.xhtml">
+                <ui:param name="annotatedObjectController" value="#{interactionController}"/>
+                <ui:param name="update" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:acTxt :editorForm:interactionTabs"/>
+                <ui:param name="disableParameterSelectItems" value="#{interactionController.isParameterDisabled()}"/>
+            </ui:decorate>
+        </p:outputPanel>
+
+    </p:tab>
+
+    <p:tab id="confidencesTab" title="Confidences (#{interactionController.confidencesSize})">
+
+        <p:outputPanel id="confidencesPanel" autoUpdate="false">
+            <ui:decorate template="confidences_table.xhtml">
+                <ui:param name="annotatedObjectController" value="#{interactionController}"/>
+                <ui:param name="update" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:acTxt :editorForm:interactionTabs"/>
+                <ui:param name="disableConfidenceSelectItems" value="#{interactionController.isConfidenceDisabled()}"/>
+            </ui:decorate>
+        </p:outputPanel>
+
+    </p:tab>
+
+    <p:tab id="vparametersTab" title="Variable experimental conditions (#{interactionController.variableParameterValuesSize})">
+        <div class="intact-buttonBar">
+            <p:commandButton id="newConditionsSetBtn" value="Import new set of experimental conditions"
+                             type="button" onclick="importVariableParametersDialog.show()"/>
+        </div>
+        <ia:spacer height="10" />
+
+        <p:outputPanel id="vparametersPanel" autoUpdate="false" rendered="#{interactionController.isVariableParametersTableEnabled()}">
+            <ui:decorate template="interaction_vparameters_table.xhtml">
+                <ui:param name="annotatedObjectController" value="#{interactionController}"/>
+                <ui:param name="update" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent
+                :editorForm:acTxt :editorForm:interactionTabs"/>
+                <ui:param name="disableVariableParametersSelectItems" value="#{interactionController.isVariableParametersDisabled()}"/>
+            </ui:decorate>
+        </p:outputPanel>
+
+        <h:outputText value="No variable parameters were added to the experiment so there are no experimental conditions available."
+                      rendered="#{!interactionController.isVariableParametersTableEnabled()}"/>
+
+    </p:tab>
+    <p:tab id="graphTab" title="Graph" rendered="#{interactionController.participantsSize gt 0}">
+
+        <p:outputPanel id="graphPanel" autoUpdate="false">
+            <ui:decorate template="graph_tab.xhtml">
+                <ui:param name="objType" value="interaction"/>
+                <ui:param name="ac" value="#{interactionController.ac}"/>
+            </ui:decorate>
+        </p:outputPanel>
+
+    </p:tab>
+
+</p:tabView>
+
+</h:panelGroup>
 
 </ui:define>
 

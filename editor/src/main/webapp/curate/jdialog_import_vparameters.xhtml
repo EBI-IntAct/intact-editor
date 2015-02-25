@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components">
+
+    <p:dialog id="vipDialog" widgetVar="importVariableParametersDialog" header="Import Experimental Conditions" modal="true"
+              position="center"
+              width="900" dynamic="true" resizable="true">
+
+        <ia:panelDialogLayout id="vipDialogPanel">
+            <f:facet name="buttonBar">
+                <p:commandButton id="newvParamBtn" value="Import experimental conditions from experiment"
+                                 actionListener="#{interactionController.importExperimentalConditions}"
+                                 update=":editorForm:interactionTabs :editorForm:shortlabelTxt :editorForm:messagesComponent
+                                 :editorForm:changesPanel"
+                                 onstart="importing_load.show(); importVariableParametersDialog.hide();"
+                                 onerror="importing_load.hide(); importVariableParametersDialog.hide();"
+                                 oncomplete="importing_load.hide();"
+                                 process=":editorForm:vipDialog"/>
+                <p:commandButton type="button" value="Back" onclick="importVariableParametersDialog.hide();"/>
+            </f:facet>
+
+            <h:panelGrid columns="2">
+                <p>
+                    Import set of experimental conditions :<br/>
+                </p>
+
+                <p:dataTable id="expConditionsTable" var="condition" paginatorAlwaysVisible="false"
+                             value="#{interactionController.conditionsToImport}" paginator="true"  rows="10">
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="Parameter description"/></f:facet>
+                        <h:outputText value="#{condition.description}"/>
+                    </p:column>
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="Parameter unit"/></f:facet>
+                        <h:outputText value="#{condition.unit}"/>
+                    </p:column>
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="Experimental values"/></f:facet>
+                        <h:selectOneMenu id="parameterValuesTxt" value="#{condition.selectedValue}"
+                                         disabled="#{interactionController.isVariableParametersDisabled()}" converter="parameterValueConverter">
+                            <f:selectItems value="#{condition.variableValues}" />
+                        </h:selectOneMenu>
+                    </p:column>
+                </p:dataTable>
+            </h:panelGrid>
+
+        </ia:panelDialogLayout>
+    </p:dialog>
+
+    <ia:loadingDialog widgetVar="importing_load" message="Importing experimental conditions..."/>
+
+</ui:composition>

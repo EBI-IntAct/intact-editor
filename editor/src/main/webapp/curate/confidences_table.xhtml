@@ -9,43 +9,52 @@
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui">
 
-        <div class="intact-buttonBar">
-            <p:commandButton id="newConfidenceBtn" value="New Confidence"
-                             actionListener="#{annotatedObjectController.newConfidence}"
-                             process="newConfidenceBtn"
-                             update="confidencesTable #{update}"/>
-        </div>
+    <h:panelGrid id="newConfidenceTxt" columns="5" class="intact-buttonBar">
+        <h:outputLabel value="Type: " for="confidenceType1Sel"/>
+        <h:selectOneMenu id="confidenceType1Sel" value="#{annotatedObjectController.newConfidenceType}"
+                         disabled="#{disableConfidenceSelectItems}"
+                         converter="cvObjectConverter">
+            <f:selectItems value="#{cvObjectService.confidenceTypeSelectItems}"/>
+        </h:selectOneMenu>
+        <h:outputLabel value="Value: " for="confidenceValue1Txt"/>
+        <p:inputText id="confidenceValue1Txt" value="#{annotatedObjectController.newConfidenceValue}" converter="trimmingConverter"/>
+        <p:commandButton id="newConfidenceBtn" value="Add New Confidence"
+                         actionListener="#{annotatedObjectController.newConfidence}"
+                         process="newConfidenceTxt"
+                         update="confidencesTable #{update}" onclick="loadDialog.show()" oncomplete="loadDialog.hide()"/>
+    </h:panelGrid>
 
-        <p:dataTable id="confidencesTable" var="confidence" value="#{annotatedObjectController.confidences}">
-            <p:column>
-                <f:facet name="header">
-                    <h:outputText value="Type"/>
-                </f:facet>
-                <h:selectOneMenu id="confidenceTypeSel" value="#{confidence.cvConfidenceType}" rendered="#{confidenceTypeSelectItems != null}"
-                                 required="true" requiredMessage="Parameter type is required" disabled="#{disableConfidenceSelectItems}">
-                    <f:selectItems value="#{confidenceTypeSelectItems}"/>
-                    <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
-                </h:selectOneMenu>
-                <h:outputText value="#{confidence.cvConfidenceType.shortLabel}" rendered="#{confidenceTypeSelectItems == null}"/>
-            </p:column>
-           <p:column>
-                <f:facet name="header">
-                    <h:outputText value="Value"/>
-                </f:facet>
-                     <p:inputText id="confidenceValueTxt" value="#{confidence.value}" required="true" requiredMessage="Confidence value is required" converter="trimmingConverter">
-                         <ed:curation/>
-                    </p:inputText>
-            </p:column>
-             <p:column>
-                <f:facet name="header">
-                     <h:outputText value="Actions"/>
-                </f:facet>
-                 <p:commandLink id="removeConfidenceBtn" styleClass="ui-icon ui-icon-closethick" process="removeConfidenceBtn"
-                               actionListener="#{annotatedObjectController.annotatedObject.removeConfidence(confidence)}"
-                               oncomplete="markAsUnsaved()"
-                               update="#{update}"/>
-            </p:column>
-        </p:dataTable>
+    <p:dataTable id="confidencesTable" var="confidence" value="#{annotatedObjectController.collectConfidences()}">
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Type"/>
+            </f:facet>
+            <h:selectOneMenu id="confidenceTypeSel" value="#{confidence.type}" rendered="#{cvObjectService.confidenceTypeSelectItems != null}"
+                             required="true" requiredMessage="Parameter type is required" disabled="#{disableConfidenceSelectItems}"
+                             converter="cvObjectConverter">
+                <f:selectItems value="#{cvObjectService.confidenceTypeSelectItems}"/>
+                <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
+            </h:selectOneMenu>
+            <h:outputText value="#{confidence.type.shortName}" rendered="#{cvObjectService.confidenceTypeSelectItems == null}"/>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Value"/>
+            </f:facet>
+            <p:inputText id="confidenceValueTxt" value="#{confidence.value}" required="true" requiredMessage="Confidence value is required" converter="trimmingConverter">
+                <ed:curation/>
+            </p:inputText>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Actions"/>
+            </f:facet>
+            <p:commandLink id="removeConfidenceBtn" styleClass="ui-icon ui-icon-closethick" process="removeConfidenceBtn"
+                           actionListener="#{annotatedObjectController.removeConfidence(confidence)}"
+                           oncomplete="markAsUnsaved()"
+                           update="#{update}"/>
+        </p:column>
+    </p:dataTable>
 
 
 </ui:composition>

@@ -17,28 +17,41 @@ package uk.ac.ebi.intact.editor.ws;
 
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import psidev.psi.mi.tab.model.BinaryInteraction;
-import psidev.psi.mi.tab.model.BinaryInteractionImpl;
-import psidev.psi.mi.tab.model.CrossReference;
-import psidev.psi.mi.tab.model.OrganismImpl;
-import psidev.psi.mi.xml.PsimiXmlForm;
-import psidev.psi.mi.xml.converter.ConverterContext;
-import psidev.psi.mi.xml.model.Entry;
-import psidev.psi.mi.xml.model.EntrySet;
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.dataexchange.psimi.xml.converter.shared.EntryConverter;
-import uk.ac.ebi.intact.model.*;
-import uk.ac.ebi.intact.model.util.PublicationUtils;
-import uk.ac.ebi.intact.psimitab.converters.Intact2BinaryInteractionConverter;
-import uk.ac.ebi.intact.psimitab.converters.converters.ExperimentConverter;
-import uk.ac.ebi.intact.psimitab.converters.converters.PublicationConverter;
-import uk.ac.ebi.intact.psimitab.converters.expansion.ExpansionStrategy;
-import uk.ac.ebi.intact.psimitab.converters.expansion.NotExpandableInteractionException;
-import uk.ac.ebi.intact.psimitab.converters.expansion.SpokeWithoutBaitExpansion;
+import psidev.psi.mi.jami.binary.expansion.InteractionEvidenceSpokeExpansion;
+import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
+import psidev.psi.mi.jami.bridges.ols.CachedOlsOntologyTermFetcher;
+import psidev.psi.mi.jami.commons.MIWriterOptionFactory;
+import psidev.psi.mi.jami.datasource.InteractionWriter;
+import psidev.psi.mi.jami.factory.InteractionWriterFactory;
+import psidev.psi.mi.jami.html.MIHtml;
+import psidev.psi.mi.jami.html.MIHtmlOptionFactory;
+import psidev.psi.mi.jami.json.InteractionViewerJson;
+import psidev.psi.mi.jami.json.MIJsonOptionFactory;
+import psidev.psi.mi.jami.json.MIJsonType;
+import psidev.psi.mi.jami.model.Complex;
+import psidev.psi.mi.jami.model.ComplexType;
+import psidev.psi.mi.jami.model.InteractionCategory;
+import psidev.psi.mi.jami.model.InteractionEvidence;
+import psidev.psi.mi.jami.tab.MitabVersion;
+import psidev.psi.mi.jami.xml.PsiXmlVersion;
+import uk.ac.ebi.intact.dataexchange.psimi.mitab.IntactPsiMitab;
+import uk.ac.ebi.intact.dataexchange.psimi.xml.IntactPsiXml;
+import uk.ac.ebi.intact.dataexchange.structuredabstract.AbstractOutputType;
+import uk.ac.ebi.intact.dataexchange.structuredabstract.IntactStructuredAbstract;
+import uk.ac.ebi.intact.dataexchange.structuredabstract.StructuredAbstractOptionFactory;
+import uk.ac.ebi.intact.jami.service.ComplexService;
+import uk.ac.ebi.intact.jami.service.InteractionEvidenceService;
 
+import javax.annotation.Resource;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import java.util.*;
+import java.io.OutputStream;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * TODO comment this class header.
@@ -49,122 +62,84 @@ import java.util.*;
 public class MiExportServiceImpl implements MiExportService {
     private final static String RELEASED_EVT_ID = "PL:0028";
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    @Resource(name = "interactionEvidenceService")
+    private InteractionEvidenceService interactionEvidenceService;
+
+    @Resource(name = "complexService")
+    private ComplexService complexService;
+
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public Object exportPublication(final String ac, final String format) {
         Response response = null;
+        InteractionWriter writer = null;
         try {
-            String responseType = "application/x-download";
-            String extension = calculateFileExtension(format);
+            String responseType = getResponseType(format);
             StreamingOutput output = null;
 
-            if (format.equals("xml254") || format.equals("html") || format.equals("json")){
-                output = new IntactEntryStreamingOutput(format) {
-                    @Override
-                    public EntrySet createIntactEntry() {
-                        return createEntrySetFromPublication(ac);
-                    }
-                };
-            }
-            else if (format.equals("sda")){
-                output = new IntactEntryStreamingOutput(format) {
-                    @Override
-                    public Publication createIntactEntry() {
-                        return IntactContext.getCurrentInstance().getDaoFactory().getPublicationDao().getByAc(ac);
-                    }
-                };
-            }
-            else {
-                output = new IntactEntryStreamingOutput(format) {
-                    @Override
-                    public Collection<psidev.psi.mi.tab.model.BinaryInteraction> createIntactEntry() {
-                        return createBinaryInteractionsFromPublication(ac);
-                    }
-                };
-            }
+            final String query = "select distinct i from IntactInteractionEvidence i join i.dbExperiments as e join e.publication as p " +
+                    "where p.ac = :ac";
+            final String countQuery = "select count(distinct i.ac) from IntactInteractionEvidence i join i.dbExperiments as e join e.publication as p " +
+                    "where p.ac = :ac";
+            final Map<String, Object> parameters = new HashMap<String, Object>();
+            parameters.put("ac", ac);
+            output = new IntactEntryStreamingOutput(format, query, countQuery, parameters, true);
 
-            response = Response.status(200).type(responseType).header("Content-Disposition", "attachment; filename="+ac+"."+extension).entity(output).build();
+            response = Response.status(200).type(responseType).entity(output).build();
         } catch (Throwable e) {
             throw new RuntimeException("Problem exporting publication: "+ac, e);
+        } finally {
+            if (writer != null){
+                writer.close();
+            }
         }
 
         return response;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public Object exportExperiment(final String ac, final String format) {
         Response response = null;
+        InteractionWriter writer = null;
         try {
-            String responseType = "application/x-download";
-            String extension = calculateFileExtension(format);
+            String responseType = getResponseType(format);
             StreamingOutput output = null;
 
-            if (format.equals("xml254") || format.equals("html") || format.equals("json")){
-                output = new IntactEntryStreamingOutput(format) {
-                    @Override
-                    public EntrySet createIntactEntry() {
-                        return createEntrySetFromExperiment(ac);
-                    }
-                };
-            }
-            else if (format.equals("sda")){
-                output = new IntactEntryStreamingOutput(format) {
-                    @Override
-                    public Experiment createIntactEntry() {
-                        return IntactContext.getCurrentInstance().getDaoFactory().getExperimentDao().getByAc(ac);
-                    }
-                };
-            }
-            else {
-                output = new IntactEntryStreamingOutput(format) {
-                    @Override
-                    public Collection<psidev.psi.mi.tab.model.BinaryInteraction> createIntactEntry() {
-                        return createBinaryInteractionsFromExperiment(ac);
-                    }
-                };
-            }
+            final String query = "select distinct i from IntactInteractionEvidence i join i.dbExperiments as e " +
+                    "where e.ac = :ac";
+            final String countQuery = "select count(distinct i.ac) from IntactInteractionEvidence i join i.dbExperiments as e " +
+                    "where e.ac = :ac";
+            final Map<String, Object> parameters = new HashMap<String, Object>();
+            parameters.put("ac", ac);
+            output = new IntactEntryStreamingOutput(format, query, countQuery, parameters, true);
 
-            response = Response.status(200).type(responseType).header("Content-Disposition", "attachment; filename="+ac+"."+extension).entity(output).build();
+            response = Response.status(200).type(responseType).entity(output).build();
         } catch (Throwable e) {
             throw new RuntimeException("Problem exporting experiment: "+ac, e);
+        } finally {
+            if (writer != null){
+                writer.close();
+            }
         }
 
         return response;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public Object exportInteraction(final String ac, final String format) {
         Response response = null;
         try {
-            String responseType = "application/x-download";
-            String extension = calculateFileExtension(format);
+            String responseType = getResponseType(format);
             StreamingOutput output = null;
 
-            if (format.equals("xml254") || format.equals("html") || format.equals("json")){
-                output = new IntactEntryStreamingOutput(format) {
-                    @Override
-                    public EntrySet createIntactEntry() {
-                        return createEntrySetFromInteraction(ac);
-                    }
-                };
-            }
-            else if (format.equals("sda")){
-                output = new IntactEntryStreamingOutput(format) {
-                    @Override
-                    public Interaction createIntactEntry() {
-                        return IntactContext.getCurrentInstance().getDaoFactory().getInteractionDao().getByAc(ac);
-                    }
-                };
-            }
-            else {
-                output = new IntactEntryStreamingOutput(format) {
-                    @Override
-                    public Collection<psidev.psi.mi.tab.model.BinaryInteraction> createIntactEntry() {
-                        return createBinaryInteractionsFromInteraction(ac);
-                    }
-                };
-            }
+            final String query = "select distinct i from IntactInteractionEvidence i " +
+                    "where i.ac = :ac";
+            final String countQuery = "select count(distinct i.ac) from IntactInteractionEvidence i " +
+                    "where i.ac = :ac";
+            final Map<String, Object> parameters = new HashMap<String, Object>();
+            parameters.put("ac", ac);
+            output = new IntactEntryStreamingOutput(format, query, countQuery, parameters, true);
 
-            response = Response.status(200).type(responseType).header("Content-Disposition", "attachment; filename="+ac+"."+extension).entity(output).build();
+            response = Response.status(200).type(responseType).entity(output).build();
         } catch (Throwable e) {
             throw new RuntimeException("Problem exporting interaction: "+ac, e);
         }
@@ -172,383 +147,231 @@ public class MiExportServiceImpl implements MiExportService {
         return response;
     }
 
-    private String calculateResponseType(String format) {
-        String responseType;
-
-        if (format.contains("xml")) {
-            responseType = "application/xml";
-        } else if (format.contains("tab")) {
-            responseType = "text/plain";
-        } else if (format.contains("html")) {
-            responseType = "text/html";
-        } else if (format.contains("json")) {
-            responseType = "text/json";
-        } else if (format.contains("graphml")) {
-            responseType = "text/plain";
-        } else {
-            throw new IllegalArgumentException("Unexpected format: "+format);
-        }
-        return responseType;
-    }
-
-    private String calculateFileExtension(String format) {
-        String responseType;
-
-        if (format.contains("xml")) {
-            responseType = "xml";
-        } else if (format.contains("tab")) {
-            responseType = "txt";
-        } else if (format.contains("html")) {
-            responseType = "html";
-        } else if (format.contains("json")) {
-            responseType = "txt";
-        } else if (format.contains("graphml")) {
-            responseType = "xml";
-        }
-        else if (format.contains("sda")) {
-            responseType = "html";
-        } else {
-            throw new IllegalArgumentException("Unexpected format: "+format);
-        }
-        return responseType;
-    }
-
-
-    private EntrySet createEntrySetFromPublication(String pubAc){
-        // we export compact xml only and excludes hidden annotations
-        uk.ac.ebi.intact.dataexchange.psimi.xml.converter.ConverterContext.getInstance().setGenerateExpandedXml(false);
-        ConverterContext.getInstance().getConverterConfig().setXmlForm(PsimiXmlForm.FORM_COMPACT);
-        uk.ac.ebi.intact.dataexchange.psimi.xml.converter.ConverterContext.getInstance().getAnnotationConfig().setExcludeHiddenTopics(true);
-
-
-        // reattach the publication object to the entity manager because connection may have been closed after reading the object
-        Publication publication = IntactContext.getCurrentInstance().getDaoFactory().getPublicationDao().getByAc(pubAc);
-
-        // if the publication does not have any experiments, we skip it
-        if (publication == null || publication.getExperiments().isEmpty()){
-            return new EntrySet(Collections.EMPTY_LIST, 2, 5, 4);
-        }
-
-        // iterator of experiments
-        Iterator<Experiment> iterator = publication.getExperiments().iterator();
-
-        // the released date of the publication
-        Date releasedDate;
-        LifecycleEvent evt = PublicationUtils.getLastEventOfType(publication, RELEASED_EVT_ID);
-        if (evt == null){
-            releasedDate = new Date();
-        }
-        else {
-            releasedDate = evt.getWhen();
-        }
-
-        Set<String> interactorsAcs = new HashSet<String>();
-
-        IntactEntry intactEntry = new IntactEntry();
-        // set institution
-        intactEntry.setInstitution(publication.getOwner());
-        // set release date
-        intactEntry.setReleasedDate(releasedDate);
-
-        // convert experiments in one to several publication entry(ies)
-        while (iterator.hasNext()){
-            // the processed experiment
-            Experiment exp = iterator.next();
-
-            // add experiment to intact entry
-            intactEntry.getExperimentsList().add(exp);
-            // add all the interactions to the currentIntactEntry
-            for (Interaction inter : exp.getInteractions()){
-                processInteractionForEntrySet(inter, interactorsAcs, intactEntry);
-            }
-        }
-
-        EntrySet entrySet = createEntrySetFromIntactEntry(intactEntry);
-
-        IntactContext.getCurrentInstance().getDaoFactory().getEntityManager().clear();
-
-        return entrySet;
-    }
-
-    private Collection<psidev.psi.mi.tab.model.BinaryInteraction> createBinaryInteractionsFromPublication(String pubAc){
-        // reattach the publication object to the entity manager because connection may have been closed after reading the object
-        Publication publication = IntactContext.getCurrentInstance().getDaoFactory().getPublicationDao().getByAc(pubAc);
-
-        // if the publication does not have any experiments, we skip it
-        if (publication == null || publication.getExperiments().isEmpty()){
-            return Collections.EMPTY_LIST;
-        }
-
-        PublicationConverter publicationConverter = new PublicationConverter();
-        ExperimentConverter experimentConverter = new ExperimentConverter();
-        ExpansionStrategy expansionStrategy = new SpokeWithoutBaitExpansion(false, false);
-        Intact2BinaryInteractionConverter intactInteractionConverter = new Intact2BinaryInteractionConverter(expansionStrategy);
-
-        // convert the publication
-        BinaryInteractionImpl binaryTemplate = new BinaryInteractionImpl();
-
-        publicationConverter.intactToMitab(publication, binaryTemplate);
-
-        // iterator of experiments
-        Iterator<Experiment> iterator = publication.getExperiments().iterator();
-
-        Collection<psidev.psi.mi.tab.model.BinaryInteraction> binaryInteractions = new ArrayList<psidev.psi.mi.tab.model.BinaryInteraction>();
-
-        // convert experiments in one to several publication entry(ies)
-        while (iterator.hasNext()){
-            // clear previous experiment details
-            binaryTemplate.setDetectionMethods(new ArrayList<CrossReference>());
-            binaryTemplate.setHostOrganism(new OrganismImpl());
-
-            // the processed experiment
-            Experiment exp = iterator.next();
-
-            // convert experiment details
-            experimentConverter.intactToMitab(exp, binaryTemplate, true, false);
-
-            for (Interaction interaction : exp.getInteractions()){
-                try {
-                    processBinaryInteractionsFor(exp, experimentConverter, intactInteractionConverter, binaryTemplate, binaryInteractions, interaction);
-
-                } catch (Exception e) {
-                    throw new RuntimeException("Problem exporting publication: "+pubAc, e);
-                }
-            }
-        }
-
-        IntactContext.getCurrentInstance().getDaoFactory().getEntityManager().clear();
-
-        return binaryInteractions;
-    }
-
-    private EntrySet createEntrySetFromExperiment(String expAc){
-        // we export compact xml only and excludes hidden annotations
-        uk.ac.ebi.intact.dataexchange.psimi.xml.converter.ConverterContext.getInstance().setGenerateExpandedXml(false);
-        ConverterContext.getInstance().getConverterConfig().setXmlForm(PsimiXmlForm.FORM_COMPACT);
-        uk.ac.ebi.intact.dataexchange.psimi.xml.converter.ConverterContext.getInstance().getAnnotationConfig().setExcludeHiddenTopics(true);
-
-
-        Experiment experiment = IntactContext.getCurrentInstance().getDaoFactory().getExperimentDao().getByAc(expAc);
-
-        // if the experiment does not have any interactions, we skip it
-        if (experiment == null || experiment.getInteractions().isEmpty()){
-            return new EntrySet(Collections.EMPTY_LIST, 2, 5, 4);
-        }
-
-        Publication pub = experiment.getPublication();
-
-        // the released date of the publication
-        Date releasedDate;
-        if (pub != null){
-            LifecycleEvent evt = PublicationUtils.getLastEventOfType(pub, RELEASED_EVT_ID);
-            if (evt == null){
-                releasedDate = new Date();
-            }
-            else {
-                releasedDate = evt.getWhen();
-            }
-        }
-        else {
-            releasedDate = new Date();
-        }
-
-        Set<String> interactorsAcs = new HashSet<String>();
-
-        IntactEntry intactEntry = new IntactEntry();
-        // set institution
-        intactEntry.setInstitution(experiment.getOwner());
-        // set release date
-        intactEntry.setReleasedDate(releasedDate);
-
-        // convert experiments in one to several publication entry(ies)
-        // add experiment to intact entry
-        intactEntry.getExperimentsList().add(experiment);
-        // add all the interactions to the currentIntactEntry
-        for (Interaction inter : experiment.getInteractions()){
-            intactEntry.getInteractions().add(inter);
-            for (Component comp : inter.getComponents()){
-                Interactor interactor = comp.getInteractor();
-                Collection<Interactor> interactors = intactEntry.getInteractorsList();
-
-                if (interactor != null && !interactorsAcs.contains(interactor.getAc())){
-                    interactors.add(interactor);
-                    interactorsAcs.add(interactor.getAc());
-                }
-            }
-        }
-
-        EntrySet entrySet = createEntrySetFromIntactEntry(intactEntry);
-
-        IntactContext.getCurrentInstance().getDaoFactory().getEntityManager().clear();
-
-        return entrySet;
-    }
-
-    private Collection<psidev.psi.mi.tab.model.BinaryInteraction> createBinaryInteractionsFromExperiment(String expAc){
-        // reattach the publication object to the entity manager because connection may have been closed after reading the object
-        Experiment experiment = IntactContext.getCurrentInstance().getDaoFactory().getExperimentDao().getByAc(expAc);
-
-        // if the experiment does not have any interactions, we skip it
-        if (experiment == null || experiment.getInteractions().isEmpty()){
-            return Collections.EMPTY_LIST;
-        }
-
-        PublicationConverter publicationConverter = new PublicationConverter();
-        ExperimentConverter experimentConverter = new ExperimentConverter();
-        ExpansionStrategy expansionStrategy = new SpokeWithoutBaitExpansion(false, false);
-        Intact2BinaryInteractionConverter intactInteractionConverter = new Intact2BinaryInteractionConverter(expansionStrategy);
-
-        Publication pub = experiment.getPublication();
-
-        // convert the publication
-        BinaryInteractionImpl binaryTemplate = new BinaryInteractionImpl();
-
-        if (pub != null){
-            publicationConverter.intactToMitab(pub, binaryTemplate);
-        }
-
-        Collection<psidev.psi.mi.tab.model.BinaryInteraction> binaryInteractions = new ArrayList<psidev.psi.mi.tab.model.BinaryInteraction>();
-
-        // convert experiment details
-        experimentConverter.intactToMitab(experiment, binaryTemplate, true, false);
-
-        for (Interaction interaction : experiment.getInteractions()){
-            try {
-                processBinaryInteractionsFor(experiment, experimentConverter, intactInteractionConverter, binaryTemplate, binaryInteractions, interaction);
-
-            } catch (Exception e) {
-                throw new RuntimeException("Problem exporting experiment: "+expAc, e);
-            }
-        }
-
-        IntactContext.getCurrentInstance().getDaoFactory().getEntityManager().clear();
-
-        return binaryInteractions;
-    }
-
-    private void processBinaryInteractionsFor(Experiment experiment, ExperimentConverter experimentConverter, Intact2BinaryInteractionConverter intactInteractionConverter, BinaryInteractionImpl binaryTemplate, Collection<BinaryInteraction> binaryInteractions, Interaction interaction) throws NotExpandableInteractionException {
-        Collection<BinaryInteraction> binaryChunk = intactInteractionConverter.convert(interaction);
-
-        if (binaryChunk != null && !binaryChunk.isEmpty()){
-            boolean isFirst = true;
-
-            for (BinaryInteraction binary : binaryChunk){
-                // we override all the shared collections of the expanded binary interactions excepted annotations (can come from publication and interactions)
-                // experiment details
-                binary.setDetectionMethods(binaryTemplate.getDetectionMethods());
-                binary.setHostOrganism(binaryTemplate.getHostOrganism());
-
-                if (binary.getInteractorA() != null && binary.getInteractorA().getParticipantIdentificationMethods().isEmpty()){
-                    experimentConverter.addParticipantDetectionMethodForInteractor(experiment,  binary.getInteractorA());
-                }
-                if (binary.getInteractorB() != null && binary.getInteractorB().getParticipantIdentificationMethods().isEmpty()){
-                    experimentConverter.addParticipantDetectionMethodForInteractor(experiment,  binary.getInteractorB());
-                }
-
-                // publication details
-                binary.setPublications(binaryTemplate.getPublications());
-                binary.setAuthors(binaryTemplate.getAuthors());
-                binary.setSourceDatabases(binaryTemplate.getSourceDatabases());
-                binary.setCreationDate(binaryTemplate.getCreationDate());
-
-                // we don't need to update all the interactions as they all share the same annotation collection
-                if (isFirst){
-                    binary.getAnnotations().addAll(binaryTemplate.getAnnotations());
-                }
-
-                isFirst = false;
-            }
-            binaryInteractions.addAll(binaryChunk);
-        }
-    }
-
-    private EntrySet createEntrySetFromInteraction(String intAc){
-        // we export compact xml only and excludes hidden annotations
-        uk.ac.ebi.intact.dataexchange.psimi.xml.converter.ConverterContext.getInstance().setGenerateExpandedXml(false);
-        ConverterContext.getInstance().getConverterConfig().setXmlForm(PsimiXmlForm.FORM_COMPACT);
-        uk.ac.ebi.intact.dataexchange.psimi.xml.converter.ConverterContext.getInstance().getAnnotationConfig().setExcludeHiddenTopics(true);
-
-        Interaction interaction = IntactContext.getCurrentInstance().getDaoFactory().getInteractionDao().getByAc(intAc);
-
-        // if the interaction does not have any participants, we skip it
-        if (interaction == null || interaction.getComponents().isEmpty()){
-            return new EntrySet(Collections.EMPTY_LIST, 2, 5, 4);
-        }
-
-        // the released date of the publication
-        Date releasedDate = new Date();
-
-        Set<String> interactorsAcs = new HashSet<String>();
-
-        IntactEntry intactEntry = new IntactEntry();
-        // set institution
-        intactEntry.setInstitution(interaction.getOwner());
-        // set release date
-        intactEntry.setReleasedDate(releasedDate);
-
-        // convert experiments in one to several publication entry(ies)
-        // add experiment to intact entry
-        intactEntry.getExperimentsList().addAll(interaction.getExperiments());
-        // add all the interactions to the currentIntactEntry
-        processInteractionForEntrySet(interaction, interactorsAcs, intactEntry);
-
-        EntrySet entrySet = createEntrySetFromIntactEntry(intactEntry);
-
-        IntactContext.getCurrentInstance().getDaoFactory().getEntityManager().clear();
-
-        return entrySet;
-    }
-
-    private void processInteractionForEntrySet(Interaction interaction, Set<String> interactorsAcs, IntactEntry intactEntry) {
-        intactEntry.getInteractions().add(interaction);
-        for (Component comp : interaction.getComponents()){
-            Interactor interactor = comp.getInteractor();
-            Collection<Interactor> interactors = intactEntry.getInteractorsList();
-
-            if (interactor != null && !interactorsAcs.contains(interactor.getAc())){
-                interactors.add(interactor);
-                interactorsAcs.add(interactor.getAc());
-            }
-        }
-    }
-
-    private EntrySet createEntrySetFromIntactEntry(IntactEntry intactEntry) {
-
-        EntryConverter entryConverter = new EntryConverter();
-        entryConverter.setCheckInitializedCollections(false);
-
-        Entry xmlEntry = entryConverter.intactToPsi(intactEntry);
-
-        return new EntrySet(Arrays.asList(xmlEntry), 2, 5, 4);
-    }
-
-    private Collection<psidev.psi.mi.tab.model.BinaryInteraction> createBinaryInteractionsFromInteraction(String intAc){
-        Interaction interaction = IntactContext.getCurrentInstance().getDaoFactory().getInteractionDao().getByAc(intAc);
-
-        // if the interaction does not have any participants, we skip it
-        if (interaction == null || interaction.getComponents().isEmpty()){
-            return Collections.EMPTY_LIST;
-        }
-
-        ExpansionStrategy expansionStrategy = new SpokeWithoutBaitExpansion(true, true);
-        Intact2BinaryInteractionConverter intactInteractionConverter = new Intact2BinaryInteractionConverter(expansionStrategy);
-
-        Collection<psidev.psi.mi.tab.model.BinaryInteraction> binaryInteractions = new ArrayList<psidev.psi.mi.tab.model.BinaryInteraction>();
-
+    @Override
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public Object exportComplex(String ac, @DefaultValue("xml254") String format) {
+        Response response = null;
         try {
-            Collection<psidev.psi.mi.tab.model.BinaryInteraction> binaryChunk = intactInteractionConverter.convert(interaction);
+            String responseType = getResponseType(format);
+            StreamingOutput output = null;
 
-            if (binaryChunk != null && !binaryChunk.isEmpty()){
+            final String query = "select distinct i from IntactComplex i " +
+                    "where i.ac = :ac";
+            final String countQuery = "select count(distinct i.ac) from IntactComplex i " +
+                    "where i.ac = :ac";
+            final Map<String, Object> parameters = new HashMap<String, Object>();
+            parameters.put("ac", ac);
+            output = new IntactEntryStreamingOutput(format, query, countQuery, parameters, false);
 
-                binaryInteractions.addAll(binaryChunk);
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("Problem exporting interaction: "+intAc, e);
+            response = Response.status(200).type(responseType).entity(output).build();
+        } catch (Throwable e) {
+            throw new RuntimeException("Problem exporting complex: "+ac, e);
         }
 
-        IntactContext.getCurrentInstance().getDaoFactory().getEntityManager().clear();
+        return response;
+    }
 
-        return binaryInteractions;
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public void writeEvidences(OutputStream outputStream, String format, String countQuery, String query,
+                      Map<String, Object> parameters) throws WebApplicationException {
+        InteractionWriter writer = null;
+        try {
+
+            writer = createInteractionEvidenceWriterFor(format, outputStream);
+
+            writer.start();
+            if (!format.equals(MiExportService.FORMAT_XML254_COMPACT) && !format.equals(MiExportService.FORMAT_XML300_COMPACT)){
+                Iterator<InteractionEvidence> evidenceIterator = interactionEvidenceService.iterateAll(countQuery, query, parameters, false);
+                writer.write(evidenceIterator);
+            }
+            else{
+                // load all interactions to they appear in the entry
+                Collection<InteractionEvidence> evidences = interactionEvidenceService.fetchIntactObjects(query, parameters);
+                writer.write(evidences);
+            }
+            writer.end();
+        } finally {
+            if (writer != null){
+                writer.close();
+            }
+        }
+    }
+
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public void writeComplexes(OutputStream outputStream, String format, String countQuery, String query,
+                               Map<String, Object> parameters) throws WebApplicationException {
+        InteractionWriter writer = null;
+        try {
+
+            writer = createComplexWriterFor(format, outputStream);
+
+            writer.start();
+            if (!format.equals(MiExportService.FORMAT_XML254_COMPACT) && !format.equals(MiExportService.FORMAT_XML300_COMPACT)){
+                Iterator<Complex> complexIterator = complexService.iterateAll(countQuery, query, parameters, false);
+                writer.write(complexIterator);
+            }
+            else{
+                // load all interactions to they appear in the entry
+                Collection<Complex> complexes = complexService.fetchIntactObjects(query, parameters);
+                writer.write(complexes);
+            }
+            writer.end();
+        } finally {
+            if (writer != null){
+                writer.close();
+            }
+        }
+    }
+
+    private InteractionWriter createInteractionEvidenceWriterFor(String format, Object output){
+        InteractionWriterFactory writerFactory = InteractionWriterFactory.getInstance();
+
+        if (format.equals(MiExportService.FORMAT_MITAB25)){
+            IntactPsiMitab.initialiseAllIntactMitabWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getMitabOptions(output, InteractionCategory.evidence, ComplexType.n_ary,
+                    new InteractionEvidenceSpokeExpansion(), true, MitabVersion.v2_5, false)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_MITAB26)){
+            IntactPsiMitab.initialiseAllIntactMitabWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getMitabOptions(output, InteractionCategory.evidence, ComplexType.n_ary,
+                    new InteractionEvidenceSpokeExpansion(), true, MitabVersion.v2_6, false)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_MITAB27)){
+            IntactPsiMitab.initialiseAllIntactMitabWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getMitabOptions(output, InteractionCategory.evidence, ComplexType.n_ary,
+                    new InteractionEvidenceSpokeExpansion(), true, MitabVersion.v2_7, false)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_XML254_COMPACT)){
+            IntactPsiXml.initialiseAllIntactXmlWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getDefaultCompactXmlOptions(output, InteractionCategory.evidence, ComplexType.n_ary,
+                    PsiXmlVersion.v2_5_4)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_XML254_EXPANDED)){
+            IntactPsiXml.initialiseAllIntactXmlWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getDefaultExpandedXmlOptions(output, InteractionCategory.evidence, ComplexType.n_ary,
+                    PsiXmlVersion.v2_5_4)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_XML300_COMPACT)){
+            IntactPsiXml.initialiseAllIntactXmlWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getDefaultCompactXmlOptions(output, InteractionCategory.evidence, ComplexType.n_ary,
+                    PsiXmlVersion.v3_0_0)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_XML300_EXPANDED)){
+            IntactPsiXml.initialiseAllIntactXmlWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getDefaultExpandedXmlOptions(output, InteractionCategory.evidence, ComplexType.n_ary,
+                    PsiXmlVersion.v3_0_0)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_HTML)){
+            MIHtml.initialiseAllMIHtmlWriters();
+            MIHtmlOptionFactory optionFactory = MIHtmlOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getHtmlOptions(output, InteractionCategory.evidence, true)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_JSON)){
+            InteractionViewerJson.initialiseAllMIJsonWriters();
+            MIJsonOptionFactory optionFactory = MIJsonOptionFactory.getInstance();
+            try {
+                return writerFactory.getInteractionWriterWith(optionFactory.getJsonOptions(output, InteractionCategory.evidence, null,
+                        MIJsonType.n_ary_only, new CachedOlsOntologyTermFetcher(), null)) ;
+            } catch (BridgeFailedException e) {
+                return writerFactory.getInteractionWriterWith(optionFactory.getJsonOptions(output, InteractionCategory.evidence, null,
+                        MIJsonType.n_ary_only, null, null)) ;
+            }
+        }
+        else if (format.equals(MiExportService.FORMAT_JSON_BINARY)){
+            InteractionViewerJson.initialiseAllMIJsonWriters();
+            MIJsonOptionFactory optionFactory = MIJsonOptionFactory.getInstance();
+            try {
+                return writerFactory.getInteractionWriterWith(optionFactory.getJsonOptions(output, InteractionCategory.evidence, ComplexType.n_ary,
+                        MIJsonType.binary_only, new CachedOlsOntologyTermFetcher(), new InteractionEvidenceSpokeExpansion())) ;
+            } catch (BridgeFailedException e) {
+                return writerFactory.getInteractionWriterWith(optionFactory.getJsonOptions(output, InteractionCategory.evidence, ComplexType.n_ary,
+                        MIJsonType.binary_only, null, new InteractionEvidenceSpokeExpansion())) ;
+            }
+        }
+        else if (format.equals(MiExportService.FORMAT_FEBS_SDA)){
+            IntactStructuredAbstract.initialiseAllStructuredAbstractWriters();
+            StructuredAbstractOptionFactory optionFactory = StructuredAbstractOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getStructuredAbstractOptions(output, InteractionCategory.evidence,
+                    AbstractOutputType.ABSTRACT_HTML_OUTPUT)) ;
+        }
+        else{
+            throw new IllegalArgumentException("The format "+format +" is not recognized");
+        }
+    }
+
+    private InteractionWriter createComplexWriterFor(String format, Object output){
+        InteractionWriterFactory writerFactory = InteractionWriterFactory.getInstance();
+
+        if (format.equals(MiExportService.FORMAT_XML254_COMPACT)){
+            IntactPsiXml.initialiseAllIntactXmlWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getDefaultCompactXmlOptions(output, InteractionCategory.complex, ComplexType.n_ary,
+                    PsiXmlVersion.v2_5_4)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_XML254_EXPANDED)){
+            IntactPsiXml.initialiseAllIntactXmlWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getDefaultExpandedXmlOptions(output, InteractionCategory.complex, ComplexType.n_ary,
+                    PsiXmlVersion.v2_5_4)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_XML300_COMPACT)){
+            IntactPsiXml.initialiseAllIntactXmlWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getDefaultCompactXmlOptions(output, InteractionCategory.complex, ComplexType.n_ary,
+                    PsiXmlVersion.v3_0_0)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_XML300_EXPANDED)){
+            IntactPsiXml.initialiseAllIntactXmlWriters();
+            MIWriterOptionFactory optionFactory = MIWriterOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getDefaultExpandedXmlOptions(output, InteractionCategory.complex, ComplexType.n_ary,
+                    PsiXmlVersion.v3_0_0)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_HTML)){
+            MIHtml.initialiseAllMIHtmlWriters();
+            MIHtmlOptionFactory optionFactory = MIHtmlOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getHtmlOptions(output, InteractionCategory.modelled, true)) ;
+        }
+        else if (format.equals(MiExportService.FORMAT_JSON)){
+            InteractionViewerJson.initialiseAllMIJsonWriters();
+            MIJsonOptionFactory optionFactory = MIJsonOptionFactory.getInstance();
+            try {
+                return writerFactory.getInteractionWriterWith(optionFactory.getJsonOptions(output, InteractionCategory.modelled, null,
+                        MIJsonType.n_ary_only, new CachedOlsOntologyTermFetcher(), null)) ;
+            } catch (BridgeFailedException e) {
+                return writerFactory.getInteractionWriterWith(optionFactory.getJsonOptions(output, InteractionCategory.modelled, null,
+                        MIJsonType.n_ary_only, null, null)) ;
+            }
+        }
+        else if (format.equals(MiExportService.FORMAT_FEBS_SDA)){
+            IntactStructuredAbstract.initialiseAllStructuredAbstractWriters();
+            StructuredAbstractOptionFactory optionFactory = StructuredAbstractOptionFactory.getInstance();
+            return writerFactory.getInteractionWriterWith(optionFactory.getStructuredAbstractOptions(output, InteractionCategory.complex,
+                    AbstractOutputType.ABSTRACT_HTML_OUTPUT)) ;
+        }
+        else{
+            throw new IllegalArgumentException("The format "+format +" is not recognized");
+        }
+    }
+    private String getResponseType( String format) {
+        if ( FORMAT_MITAB25.equals( format ) || FORMAT_MITAB26.equals( format ) || FORMAT_MITAB27.equals( format ) ) {
+            return "text/plain";
+        } else if ( FORMAT_XML254_COMPACT.equals( format ) || FORMAT_XML254_EXPANDED.equals( format )
+                || FORMAT_XML300_COMPACT.equals( format ) || FORMAT_XML300_EXPANDED.equals( format )) {
+            return "application/xml";
+        } else if ( FORMAT_FEBS_SDA.equals( format ) || FORMAT_HTML.equals(format)) {
+            return "text/html";
+        } else if ( FORMAT_JSON.equals(format) || FORMAT_JSON_BINARY.equals(format)) {
+            return "application/json";
+        } else{
+            return "text/plain";
+        }
+
     }
 }

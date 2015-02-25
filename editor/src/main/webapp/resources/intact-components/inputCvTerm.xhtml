@@ -44,7 +44,7 @@
          <h:panelGrid columns="2" id="inputPanel" onmouseover="document.getElementById('#{cc.clientId}:cvButtons').style.visibility = 'visible';"
                  onmouseout="document.getElementById('#{cc.clientId}:cvButtons').style.visibility = 'hidden';">
 
-                <h:selectOneMenu id="selectObject" value="#{cc.attrs.value}" size="#{cc.attrs.size}" converter="cvTermConverter"
+                <h:selectOneMenu id="selectObject" value="#{cc.attrs.value}" size="#{cc.attrs.size}" converter="cvObjectConverter"
                                  required="#{cc.attrs.required}" requiredMessage="#{cc.attrs.requiredMessage}"
                                  disabled="#{cc.attrs.disabled}">
                     <f:selectItems value="#{cc.attrs.selectItems}"/>
@@ -68,7 +68,7 @@
             Loading controlled vocabulary...
         </p:dialog>
 
-        <p:dialog header="#{cc.attrs.value['class'].simpleName} selection" resizable="true" position="center"
+        <p:dialog header="#{cc.attrs.cvClass} selection" resizable="true" position="center"
                   widgetVar="#{dialogWidgetId}" modal="#{cc.attrs.modal}" width="510">
             <p:outputPanel id="cvObjectBrowserDialog">
             <div style="height: 500px; overflow-x: auto;">

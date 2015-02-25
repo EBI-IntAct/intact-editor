@@ -15,10 +15,10 @@
  */
 package uk.ac.ebi.intact.editor.ws;
 
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Map;
 
 /**
  * @author Bruno Aranda (baranda@ebi.ac.uk)
@@ -27,13 +27,16 @@ import javax.ws.rs.QueryParam;
 @Path("/mi")
 public interface MiExportService {
 
-    String FORMAT_XML254 = "xml254";
+    String FORMAT_XML254_COMPACT = "xml254_compact";
+    String FORMAT_XML300_COMPACT = "xml300_compact";
+    String FORMAT_XML254_EXPANDED = "xml254_expanded";
+    String FORMAT_XML300_EXPANDED = "xml300_expanded";
     String FORMAT_MITAB25 = "tab25";
     String FORMAT_MITAB26 = "tab26";
     String FORMAT_MITAB27 = "tab27";
     String FORMAT_HTML = "html";
     String FORMAT_JSON = "json";
-    String FORMAT_GRAPHML = "graphml";
+    String FORMAT_JSON_BINARY = "json_binary";
     String FORMAT_FEBS_SDA = "sda";
 
     @GET
@@ -50,5 +53,15 @@ public interface MiExportService {
     @Path("/interaction")
     Object exportInteraction(@QueryParam("ac") String id,
                              @DefaultValue("tab25") @QueryParam("format") String format);
+
+    @GET
+    @Path("/complex")
+    Object exportComplex(@QueryParam("ac") String id,
+                             @DefaultValue("xml254") @QueryParam("format") String format);
+
+    public void writeEvidences(OutputStream outputStream, String format, String countQuery, String query,
+                      Map<String, Object> parameters) throws IOException;
+    public void writeComplexes(OutputStream outputStream, String format, String countQuery, String query,
+                               Map<String, Object> parameters) throws IOException;
 
 }

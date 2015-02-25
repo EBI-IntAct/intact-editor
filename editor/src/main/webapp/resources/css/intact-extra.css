@@ -289,6 +289,15 @@ border-right:0 none !important;
     background-color:#fff8dc;
     padding: 2px;
     text-align:left;
+    border-style: none !important;
+}
+
+.ui-datatable .ui-datatable-data .intact-buttonBar td, .ui-datatable .ui-datatable-data-empty .intact-buttonBar td{
+    border-style: none !important;
+}
+
+.ui-datatable .ui-datatable-data .intact-variable-table td, .ui-datatable .ui-datatable-data-empty .intact-variable-table td{
+    border-style: none !important;
 }
 
 .important-button {

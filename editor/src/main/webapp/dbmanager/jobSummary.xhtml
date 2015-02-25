@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+
+                template="/dbmanager/dbmanager_template.xhtml">
+
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:event type="preRenderView" listener="#{importJobController.load}"/>
+        </f:metadata>
+    </ui:define>
+
+    <ui:define name="dbManagerContent">
+
+        <h2>Running jobs</h2>
+
+        <h3>Running Imports of interaction evidences</h3>
+
+        <ia:runningJobsTable value="#{importJobController.runningJobEvidence}"/>
+
+        <h3>Running Imports of biological complexes</h3>
+
+        <ia:runningJobsTable value="#{importJobController.runningJobComplex}"/>
+
+        <h2>All jobs</h2>
+
+        <h3>Imports of interacion evidences</h3>
+        <h:panelGroup rendered="#{not empty importJobController.completedJobEvidence}">
+            <ia:jobImportExecutionsTable value="#{importJobController.completedJobEvidence}"/>
+        </h:panelGroup>
+        <h3>Imports of biological complexes</h3>
+        <h:panelGroup rendered="#{not empty importJobController.completedJobComplex}">
+            <ia:jobImportExecutionsTable value="#{importJobController.completedJobComplex}"/>
+
+        </h:panelGroup>
+
+    </ui:define>
+
+</ui:composition>

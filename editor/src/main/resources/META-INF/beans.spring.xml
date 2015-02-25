@@ -11,6 +11,18 @@
            http://www.springframework.org/schema/aop
            http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
 
+    <context:annotation-config/>
+
+    <import resource="classpath:META-INF/intact-jami-spring.xml"/>
+    <import resource="classpath:META-INF/intact-batch.spring.xml"/>
+    <import resource="classpath:META-INF/jobs/intact-db-import.spring.xml"/>
+    <import resource="classpath:META-INF/intact-editor.spring.xml"/>
+    <import resource="classpath:META-INF/orchestra.spring.xml"/>
+    <import resource="classpath:META-INF/security/security.spring.xml"/>
+
+    <!-- IMEx assigner -->
+    <!-- Needed by Spring to find the annotations in the code -->
+    <context:component-scan base-package="uk.ac.ebi.intact.dataexchange.imex.idassigner"/>
     <!-- Needed by Spring to find the annotations in the code -->
     <context:component-scan base-package="uk.ac.ebi.intact.editor"/>
 
@@ -25,27 +37,13 @@
         <property name="theme" value="ui-lightness" />
     </bean>
 
-    <!-- Chebi -->
-    <bean id="chebiService" class="uk.ac.ebi.intact.dbupdate.bioactiveentity.importer.BioActiveEntityServiceImpl"/>
-
-    <!-- SwissProt for gene information -->
-    <bean id="geneService" class="uk.ac.ebi.intact.dbupdate.gene.importer.GeneServiceImpl"/>
-
-
-    <!-- Uniprot -->
-    <bean id="uniprotService" class="uk.ac.ebi.intact.uniprot.service.UniprotRemoteService"/>
-    <bean id="proteinService" class="uk.ac.ebi.intact.util.ProteinServiceImpl"/>
-
     <!-- Biosource update -->
-    <bean id="editorBioSourceService" class="uk.ac.ebi.intact.editor.controller.curate.interaction.EditorBioSourceService">
-        <constructor-arg>
-            <bean id="taxonomyService" class="uk.ac.ebi.intact.bridges.taxonomy.UniprotTaxonomyService"/>
-        </constructor-arg>
-    </bean>
+    <bean id="taxonomyService" class="psidev.psi.mi.jami.bridges.uniprot.taxonomy.UniprotTaxonomyFetcher"/>
+    <bean id="editorBioSourceService" class="uk.ac.ebi.intact.editor.services.curate.organism.EditorBioSourceService"/>
 
-    <!-- IMEx assigner -->
-    <!-- imex central -->
-    <bean id="imexCentralEditor" class="uk.ac.ebi.intact.editor.controller.curate.publication.ImexCentralClientWrapper" lazy-init="true">
+
+    <!-- imex central client -->
+    <bean id="imexCentralClient" class="uk.ac.ebi.intact.editor.controller.curate.publication.ImexCentralClientWrapper" lazy-init="true">
         <constructor-arg index="0" value="${ic.username}"/>
         <constructor-arg index="1" value="${ic.password}"/>
         <constructor-arg index="2" value="${ic.endpoint}"/>
@@ -53,38 +51,49 @@
 
     <!-- config -->
     <bean id="imexUpdateConfig" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.ImexAssignerConfig">
-        <property name="updateLogsDirectory" value="${update.log.directory}}"/>
+        <property name="updateLogsDirectory" value="${update.log.directory}"/>
     </bean>
 
     <!-- actions -->
-    <bean id="imexCentralRegister" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.ImexCentralPublicationRegisterImpl">
-        <property name="imexCentralClient" ref="imexCentralEditor"/>
+    <bean id="imexCentralRegister" class="psidev.psi.mi.jami.imex.actions.impl.ImexCentralPublicationRegisterImpl">
+        <constructor-arg ref="imexCentralClient"/>
     </bean>
     <bean id="intactImexAssigner" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactImexAssignerImpl">
-        <property name="imexCentralClient" ref="imexCentralEditor"/>
+        <constructor-arg ref="imexCentralClient"/>
     </bean>
-    <bean id="imexAdminGroupSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.PublicationAdminGroupSynchronizerImpl">
-        <property name="imexCentralClient" ref="imexCentralEditor"/>
+    <bean id="intactImexAdminGroupSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactPublicationAdminGroupSynchronizerImpl">
+        <constructor-arg ref="imexCentralClient"/>
     </bean>
-    <bean id="imexAdminUserSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.PublicationAdminUserSynchronizerImpl">
-        <property name="imexCentralClient" ref="imexCentralEditor"/>
+    <bean id="intactImexAdminUserSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactPublicationAdminUserSynchronizerImpl">
+        <constructor-arg ref="imexCentralClient"/>
     </bean>
-    <bean id="publicationIdentifierSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.PublicationIdentifierSynchronizerImpl">
-        <property name="imexCentralClient" ref="imexCentralEditor"/>
+    <bean id="publicationIdentifierSynchronizer" class="psidev.psi.mi.jami.imex.actions.impl.PublicationIdentifierSynchronizerImpl">
+        <constructor-arg ref="imexCentralClient"/>
     </bean>
-    <bean id="imexStatusSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.PublicationStatusSynchronizerImpl">
-        <property name="imexCentralClient" ref="imexCentralEditor"/>
+    <bean id="intactImexStatusSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactPublicationStatusSynchronizerImpl">
+        <constructor-arg ref="imexCentralClient"/>
     </bean>
 
-    <!-- Imex central manager -->
-    <bean id="imexCentralManager" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.ImexCentralManager">
-        <property name="imexAdminGroupSynchronizer" ref="imexAdminGroupSynchronizer"/>
-        <property name="imexAdminUserSynchronizer" ref="imexAdminUserSynchronizer"/>
-        <property name="imexCentralRegister" ref="imexCentralRegister"/>
-        <property name="imexStatusSynchronizer" ref="imexStatusSynchronizer"/>
-        <property name="publicationIdentifierSynchronizer" ref="publicationIdentifierSynchronizer"/>
-        <property name="intactImexAssigner" ref="intactImexAssigner"/>
-        <property name="imexUpdateConfig" ref="imexUpdateConfig"/>
+    <!-- enricher -->
+    <bean id="intactPublicationRegister" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.enrichers.IntactImexPublicationRegister">
+        <constructor-arg ref="imexCentralClient"/>
+        <property name="adminUserSynchronizer" ref="intactImexAdminUserSynchronizer"/>
+        <property name="adminGroupSynchronizer" ref="intactImexAdminGroupSynchronizer"/>
+        <property name="publicationRegister" ref="imexCentralRegister"/>
+        <property name="statusSynchronizer" ref="intactImexStatusSynchronizer"/>
+    </bean>
+    <bean id="intactPublicationUpdater" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.enrichers.IntactImexPublicationUpdater">
+        <constructor-arg ref="imexCentralClient"/>
+        <property name="adminUserSynchronizer" ref="intactImexAdminUserSynchronizer"/>
+        <property name="adminGroupSynchronizer" ref="intactImexAdminGroupSynchronizer"/>
+        <property name="identifierSynchronizer" ref="publicationIdentifierSynchronizer"/>
+        <property name="statusSynchronizer" ref="intactImexStatusSynchronizer"/>
+    </bean>
+    <bean id="intactPublicationAssigner" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.enrichers.IntactImexPublicationAssigner">
+        <constructor-arg ref="imexCentralClient"/>
+        <property name="publicationUpdater" ref="intactPublicationUpdater"/>
+        <property name="publicationRegister" ref="imexCentralRegister"/>
+        <property name="imexAssigner" ref="intactImexAssigner"/>
     </bean>
 
     <!-- jami fetchers -->

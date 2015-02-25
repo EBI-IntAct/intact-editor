@@ -15,45 +15,30 @@
  */
 package uk.ac.ebi.intact.editor.controller.curate.participant;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
-import org.primefaces.event.TabChangeEvent;
-import org.primefaces.model.SelectableDataModelWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import psidev.psi.mi.jami.model.*;
-import psidev.psi.mi.jami.utils.AnnotationUtils;
+import psidev.psi.mi.jami.model.CvTerm;
+import psidev.psi.mi.jami.model.ModelledFeature;
+import psidev.psi.mi.jami.model.Participant;
 import uk.ac.ebi.intact.editor.controller.curate.AnnotatedObjectController;
-import uk.ac.ebi.intact.editor.controller.curate.ChangesController;
-import uk.ac.ebi.intact.editor.controller.curate.PersistenceController;
-import uk.ac.ebi.intact.editor.controller.curate.UnsavedJamiChange;
-import uk.ac.ebi.intact.editor.controller.curate.cloner.ParticipantJamiCloner;
-import uk.ac.ebi.intact.editor.controller.curate.interaction.*;
-import uk.ac.ebi.intact.editor.util.SelectableCollectionDataModel;
-import uk.ac.ebi.intact.jami.context.UserContext;
-import uk.ac.ebi.intact.jami.dao.CvTermDao;
-import uk.ac.ebi.intact.jami.dao.IntactDao;
-import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
+import uk.ac.ebi.intact.editor.controller.curate.UnsavedChange;
+import uk.ac.ebi.intact.editor.controller.curate.cloner.EditorCloner;
+import uk.ac.ebi.intact.editor.controller.curate.cloner.ModelledFeatureCloner;
+import uk.ac.ebi.intact.editor.controller.curate.cloner.ModelledParticipantCloner;
+import uk.ac.ebi.intact.editor.controller.curate.complex.ComplexController;
+import uk.ac.ebi.intact.editor.controller.curate.interaction.FeatureWrapper;
 import uk.ac.ebi.intact.jami.model.extension.*;
-import uk.ac.ebi.intact.jami.synchronizer.FinderException;
 import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
-import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
-import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
 import uk.ac.ebi.intact.jami.utils.IntactUtils;
-import uk.ac.ebi.intact.model.AnnotatedObject;
-import uk.ac.ebi.intact.model.CvTopic;
 
-import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
-import javax.faces.event.ComponentSystemEvent;
-import javax.faces.model.DataModel;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Modelled Participant controller.
@@ -64,120 +49,45 @@ import java.util.*;
 @Controller
 @Scope( "conversation.access" )
 @ConversationName( "general" )
-public class ModelledParticipantController extends AnnotatedObjectController {
+public class ModelledParticipantController extends AbstractParticipantController<IntactModelledParticipant> {
 
     private static final Log log = LogFactory.getLog( ModelledParticipantController.class );
-
-    private IntactModelledParticipant participant;
-
-    private String interactor;
-    private List<ImportJamiCandidate> interactorCandidates;
-
-    private DataModel<ModelledFeatureWrapper> featuresDataModel;
-    private ModelledFeatureWrapper[] selectedFeatures;
-
-    /**
-     * The AC of the participant to be loaded.
-     */
-    private String ac;
 
     @Autowired
     private ComplexController interactionController;
 
-    private String cautionMessage = null;
-    private String internalRemark = null;
-    private String participantPrimaryId=null;
-
-    private boolean isFeatureDisabled;
-
-    public ModelledParticipantController() {
+    @Override
+    public Class<IntactModelledParticipant> getParticipantClass() {
+        return IntactModelledParticipant.class;
     }
 
     @Override
-    public AnnotatedObject getAnnotatedObject() {
-        return null;
+    protected EditorCloner newFeatureClonerInstance() {
+        return new ModelledFeatureCloner();
     }
 
     @Override
-    public IntactPrimaryObject getJamiObject() {
-        return this.participant;
+    protected void generalLoadChecks() {
+        super.generalLoadChecks();
+        generalComplexLoadChecks();
     }
 
     @Override
-    @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED, readOnly = true)
-    public void setJamiObject(IntactPrimaryObject annotatedObject) {
-        // reload object if necessary
-        if (annotatedObject != null && annotatedObject.getAc() != null && !getJamiEntityManager().contains(annotatedObject)){
-            annotatedObject = getJamiEntityManager().merge(annotatedObject);
-        }
-        setParticipant((IntactModelledParticipant)annotatedObject);
-    }
-
-    @Override
-    public void setAnnotatedObject(AnnotatedObject annotatedObject) {
-        // do nothing
-    }
-
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void loadData( ComponentSystemEvent event ) {
-        if (!FacesContext.getCurrentInstance().isPostback()) {
-
-            if ( (participant == null && ac != null) || (ac != null && participant != null && !ac.equals( participant.getAc() ))) {
-                setParticipant(loadByJamiAc(IntactModelledParticipant.class, ac));
-            }
-
-            if (participant == null) {
-                addErrorMessage("No participant with this AC", ac);
-                return;
-            }
-
-            if (participant.getAc() != null && !getJamiEntityManager().contains(participant)){
-                setParticipant(getJamiEntityManager().merge(participant));
-            }
-
-            refreshParentControllers();
-
-            if (participant.getInteractor() != null) {
-                interactor = participant.getInteractor().getShortName();
-            }
-
-            refreshTabsAndFocusXref();
-            generalJamiLoadChecks();
-        }
-    }
-
     protected void refreshParentControllers() {
-        if (participant.getInteraction() != interactionController.getComplex()){
-            interactionController.setComplex((IntactComplex) participant.getInteraction());
-        }
-    }
-
-    @Override
-    public void doPreSave() {
-        // create master proteins from the unsaved manager
-        final List<UnsavedJamiChange> transcriptCreated = getChangesController().getAllUnsavedJamiProteinTranscripts();
-
-        for (UnsavedJamiChange unsaved : transcriptCreated) {
-            IntactPrimaryObject transcript = unsaved.getUnsavedObject();
-
-            String currentAc = participant != null ? participant.getAc() : null;
-
-            // the object to save is different from the current object. Checks that the scope of this object to save is the ac of the current object being saved
-            // if the scope is null or different, the object should not be saved at this stage because we only save the current object and changes associated with it
-            // if current ac is null, no unsaved event should be associated with it as this object has not been saved yet
-            if (unsaved.getScope() != null && unsaved.getScope().equals(currentAc)){
-                getPersistenceController().doSaveJamiMasterProteins(transcript);
-                getChangesController().removeFromHiddenChanges(unsaved);
+        // different loaded interaction
+        if (interactionController.getComplex() != getParticipant().getInteraction()){
+            // different participant to load
+            if (interactionController.getAc() == null ||
+                    (getParticipant().getInteraction() instanceof IntactComplex
+                            && !interactionController.getAc().equals(((IntactComplex)getParticipant().getInteraction()).getAc()))){
+                IntactComplex intactInteraction = (IntactComplex)getParticipant().getInteraction();
+                interactionController.setComplex(intactInteraction);
             }
-            else if (unsaved.getScope() == null && currentAc == null){
-                getPersistenceController().doSaveJamiMasterProteins(transcript);
-                getChangesController().removeFromHiddenChanges(unsaved);
+            // replace old feature instance with new one in feature tables of participant
+            else{
+                getParticipant().setInteraction(interactionController.getComplex());
+                interactionController.reloadSingleParticipant(getParticipant());
             }
-        }
-
-        // the participant is not persisted, we can add it to the list of components in the interaction
-        if (participant.getAc() == null){
-            interactionController.getComplex().getParticipants().add(participant);
         }
     }
 
@@ -185,26 +95,12 @@ public class ModelledParticipantController extends AnnotatedObjectController {
     public Collection<String> collectParentAcsOfCurrentAnnotatedObject(){
         Collection<String> parentAcs = new ArrayList<String>();
 
-        if (participant.getInteraction() != null){
-            addParentAcsTo(parentAcs, (IntactComplex)participant.getInteraction());
+        if (getParticipant().getInteraction() != null){
+            addParentAcsTo(parentAcs, (IntactComplex)getParticipant().getInteraction());
         }
 
         return parentAcs;
     }
-
-    @Override
-    protected void refreshUnsavedChangesBeforeRevert(){
-        if (participant != null){
-            Collection<String> parentAcs = new ArrayList<String>();
-
-            if (participant.getInteraction() != null){
-                addParentAcsTo(parentAcs, (IntactComplex)participant.getInteraction());
-            }
-
-            getChangesController().revertModelledParticipant(participant, parentAcs);
-        }
-    }
-
 
     /**
      * Add all the parent acs of this interaction
@@ -219,560 +115,139 @@ public class ModelledParticipantController extends AnnotatedObjectController {
 
     @Override
     public void doPostSave(){
-        interactionController.refreshParticipants();
-    }
-
-    @Override
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String clone() {
-        if (participant.getAc() != null && !getJamiEntityManager().contains(getParticipant())){
-            IntactModelledParticipant reloadedParticipant = getJamiEntityManager().merge(this.participant);
-            setParticipant(reloadedParticipant);
-        }
-
-        String value = clone(getParticipant());
-
-        getJamiEntityManager().detach(getParticipant());
-
-        return value;
-    }
-
-    @Override
-    protected IntactModelledParticipant cloneAnnotatedObject(IntactPrimaryObject ao) {
-        // to be overrided
-        return (IntactModelledParticipant) ParticipantJamiCloner.cloneParticipant((IntactModelledParticipant) ao);
-    }
-
-    public String newParticipant(IntactComplex interaction) {
-        this.interactor = null;
-
-        IntactDao intactDao = getIntactDao();
-        CvTermDao cvObjectService = intactDao.getCvTermDao();
-
-        CvTerm defaultBiologicalRole = cvObjectService.getByMIIdentifier(Participant.UNSPECIFIED_ROLE_MI, IntactUtils.BIOLOGICAL_ROLE_OBJCLASS);
-
-        IntactModelledParticipant participant = new IntactModelledParticipant(new IntactInteractor("unspecified"));
-        participant.setCreated(new Date());
-        participant.setUpdated(participant.getCreated());
-        UserContext jamiUserContext = getIntactDao().getUserContext();
-        participant.setCreator(jamiUserContext.getUserId());
-        participant.setUpdator(jamiUserContext.getUserId());
-        participant.setBiologicalRole(defaultBiologicalRole);
-        participant.setStoichiometry(new IntactStoichiometry((int)getEditorConfig().getDefaultStoichiometry()));
-
-        // by setting the interaction of a participant, we don't add the participant to the collection of participants for this interaction so if we revertJami, it will not affect anything.
-        // when saving, it will be added to the list of participants for this interaction. we just have to refresh the list of participants
-        participant.setInteraction(interaction);
-
-        setParticipant(participant);
-
-        changed();
-
-        return navigateToJamiObject(participant);
-    }
-
-    public void importInteractor(ActionEvent evt) {
-        ModelledParticipantImportController participantImportController = (ModelledParticipantImportController) getSpringContext().getBean("modelledParticipantImportController");
-        interactorCandidates = new ArrayList<ImportJamiCandidate>(participantImportController.importParticipant(interactor));
-
-        if (interactorCandidates.size() == 1) {
-            interactorCandidates.get(0).setSelected(true);
+        // the participant was just created, add it to the list of participant of the interaction
+        if (getParticipant().getInteraction() != null){
+            interactionController.reloadSingleParticipant(getParticipant());
         }
     }
 
-    @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
+    @Override
+    public void postRevert() {
+        // the participant was just created, add it to the list of participant of the interaction
+        if (getParticipant().getInteraction() != null){
+            interactionController.reloadSingleParticipant(getParticipant());
+        }
+    }
+
+    @Override
     public void addInteractorToParticipant(ActionEvent evt) {
-        for (ImportJamiCandidate importCandidate : interactorCandidates) {
-            if (importCandidate.isSelected()) {
-                // chain or isoform, we may have to update it later
-                if (importCandidate.isChain() || importCandidate.isIsoform()){
-                    Collection<String> parentAcs = new ArrayList<String>();
+        super.addInteractorToParticipant(evt);
+        interactionController.reloadSingleParticipant(getParticipant());
 
-                    if (participant.getInteraction() != null){
-                        addParentAcsTo(parentAcs, (IntactComplex)participant.getInteraction());
-                    }
-                }
-                try {
-                    getIntactTransactionSynchronization().registerDaoForSynchronization(getIntactDao());
-                    participant.setInteractor(getIntactDao().
-                            getSynchronizerContext().
-                            getInteractorSynchronizer().
-                            synchronize(importCandidate.getInteractor(), true));
-                } catch (FinderException e) {
-                    // clear cache
-                    getIntactDao().getSynchronizerContext().clearCache();
-                    addErrorMessage("Cannot import interactor: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
-                } catch (PersisterException e) {
-                    // clear cache
-                    getIntactDao().getSynchronizerContext().clearCache();
-                    addErrorMessage("Cannot import interactor: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
-                } catch (SynchronizerException e) {
-                    // clear cache
-                    getIntactDao().getSynchronizerContext().clearCache();
-                    addErrorMessage("Cannot import interactor: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
-                }
-
-                // if the participant is a new participant, we don't need to add a unsaved notice because one already exists for creating a new participant
-                if (participant.getAc() != null){
-                    setUnsavedChanges(true);
-                }
-            }
-        }
-    }
-
-    public void markFeatureToDelete(ModelledFeature feature) {
-        participant.removeFeature(feature);
-        refreshFeatures();
-        changed();
-    }
-
-    public void deleteSelectedFeatures(ActionEvent evt) {
-        for (ModelledFeatureWrapper feature : selectedFeatures) {
-            markFeatureToDelete(feature.getFeature());
-        }
-
-        addInfoMessage("Features to be deleted", selectedFeatures.length+" have been marked to be deleted");
-    }
-
-    public String getAc() {
-        if ( ac == null && participant != null ) {
-            return participant.getAc();
-        }
-        return ac;
-    }
-
-    public void setAc( String ac ) {
-        this.ac = ac;
-    }
-
-    public int getMinStoichiometry(){
-        return this.participant.getStoichiometry() != null ? this.participant.getStoichiometry().getMinValue() : 0;
-    }
-
-    public int getMaxStoichiometry(){
-        return this.participant.getStoichiometry() != null ? this.participant.getStoichiometry().getMaxValue() : 0;
-    }
-
-    public void setMinStoichiometry(int stc){
-        if (this.participant.getStoichiometry() == null){
-            this.participant.setStoichiometry(new IntactStoichiometry(stc));
-        }
-        else {
-            Stoichiometry stoichiometry = participant.getStoichiometry();
-            this.participant.setStoichiometry(new IntactStoichiometry(stc, Math.max(stc, stoichiometry.getMaxValue())));
-        }
-    }
-
-    public void setMaxStoichiometry(int stc){
-        if (this.participant.getStoichiometry() == null){
-            this.participant.setStoichiometry(new IntactStoichiometry(stc));
-        }
-        else {
-            Stoichiometry stoichiometry = participant.getStoichiometry();
-            this.participant.setStoichiometry(new IntactStoichiometry(Math.min(stc, stoichiometry.getMinValue()), stc));
-        }
-    }
-
-    public IntactModelledParticipant getParticipant() {
-        return participant;
-    }
-
-    public ModelledParticipantWrapper getModelledParticipantWrapper() {
-        return new ModelledParticipantWrapper( participant, getChangesController(), interactionController );
     }
 
     @Override
-    public void refreshTabsAndFocusXref(){
-        refreshTabs();
-
-        this.isFeatureDisabled = false;
-    }
-
-    public void setParticipant( IntactModelledParticipant participant ) {
-        this.participant = participant;
-
-        if (participant != null){
-            this.ac = participant.getAc();
-            refreshInfoMessages();
-            refreshFeatures();
-            refreshParticipantPrimaryId();
-        }
-        else{
-            this.ac = null;
-        }
-    }
-
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String loadParticipant(IntactModelledParticipant participant){
-        if (participant != null && participant.getAc() != null && !getJamiEntityManager().contains(participant)){
-            setParticipant(getJamiEntityManager().merge(participant));
-        }
-        else{
-            setParticipant(participant);
-        }
-        return "/curate/cparticipant"+(participant.getAc() != null ? "?faces-redirect=true&includeViewParams=true" : "");
-    }
-
-    public String getParticipantPrimaryId() {
-        return this.participantPrimaryId;
+    protected AnnotatedObjectController getParentController() {
+        return interactionController;
     }
 
     @Override
-    protected void doPostDelete(){
-        interactionController.setComplex(null);
-
-        // remove this one from the complex
-        if (participant.getInteraction() != null){
-            interactionController.setAc(((IntactComplex)participant.getInteraction()).getAc());
-        }
-    }
-
-    public void selectLinkedFeature(ModelledFeatureWrapper wrapper, IntactModelledFeature linked){
-        wrapper.setSelectedLinkedFeature(linked);
-    }
-
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void unlinkFeature(ModelledFeatureWrapper wrapper) {
-        Feature feature1 = wrapper.getFeature();
-        IntactModelledFeature feature2 = wrapper.getSelectedLinkedFeature();
-        feature1.getLinkedFeatures().remove(feature2);
-        feature2.getLinkedFeatures().remove(feature1);
-
-        ModelledFeatureWrapper wrapperToRemove=null;
-        for (ModelledFeatureWrapper fw : featuresDataModel) {
-            if (fw.getFeature() == wrapper.getSelectedLinkedFeature()) {
-                wrapperToRemove = fw;
-                break;
-            }
-        }
-        if (wrapperToRemove != null){
-            wrapperToRemove.getLinkedFeatures().clear();
-            wrapperToRemove.getLinkedFeatures().addAll(feature2.getLinkedFeatures());
-        }
-
-        addInfoMessage("Feature unlinked", feature2.toString());
-        setUnsavedChanges(true);
-
-        wrapper.getLinkedFeatures().clear();
-        wrapper.getLinkedFeatures().addAll(feature1.getLinkedFeatures());
-
-        getJamiEntityManager().detach(feature2);
-    }
-
-    private void refreshParticipantPrimaryId(){
-        if (participant == null) this.participantPrimaryId = null;
-
-        final Xref xrefs = participant.getInteractor().getPreferredIdentifier();
-
-        if (xrefs == null && participant.getInteractor() instanceof IntactInteractor) {
-            String ac = ((IntactInteractor)participant.getInteractor()).getAc();
-            this.participantPrimaryId = ac != null ? ac : participant.getInteractor().getShortName();
-        }
-        else if (xrefs == null){
-            this.participantPrimaryId = participant.getInteractor().getShortName();
-        }
-        else{
-            this.participantPrimaryId = xrefs.getId();
-        }
-    }
-
-    private String joinIds(Collection<Xref> xrefs) {
-        Collection<String> ids = new ArrayList<String>(xrefs.size());
-
-        for (Xref xref : xrefs) {
-            ids.add(xref.getId());
-        }
-
-        return StringUtils.join(ids, ", ");
-    }
-
-    public String getInteractor() {
-        return interactor;
-    }
-
-    public void setInteractor(String interactor) {
-        this.interactor = interactor;
-    }
-
-    public List<ImportJamiCandidate> getInteractorCandidates() {
-        return interactorCandidates;
-    }
-
-    public void setInteractorCandidates(List<ImportJamiCandidate> interactorCandidates) {
-        this.interactorCandidates = interactorCandidates;
-    }
-
-    public ModelledFeatureWrapper[] getSelectedFeatures() {
-        return selectedFeatures;
-    }
-
-    public void setSelectedFeatures(ModelledFeatureWrapper[] selectedFeatures) {
-        this.selectedFeatures = selectedFeatures;
-    }
-
-    public DataModel<ModelledFeatureWrapper> getFeaturesDataModel() {
-        return featuresDataModel;
+    protected String getPageContext() {
+        return "cparticipant";
     }
 
     @Override
-    public void modifyClone(AnnotatedObject clone) {
-        refreshTabs();
+    protected ModelledParticipantXref newXref(CvTerm db, String id, String secondaryId, String version, CvTerm qualifier) {
+        ModelledParticipantXref ref = new ModelledParticipantXref(db, id, version, qualifier);
+        ref.setSecondaryId(secondaryId);
+        return ref;
     }
 
     @Override
-    public void newXref(ActionEvent evt) {
-        this.participant.getXrefs().add(new ModelledParticipantXref(IntactUtils.createMIDatabase("unspecified", null), "to set"));
-        setUnsavedChanges(true);
+    public ModelledParticipantXref newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+        return new ModelledParticipantXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, dbMI != null ? dbMI : db),
+                id,
+                secondaryId,
+                getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
     }
 
     @Override
-    public void newAnnotation(ActionEvent evt) {
-        this.participant.getAnnotations().add(new ModelledParticipantAnnotation(IntactUtils.createMITopic("unspecified", null)));
-        setUnsavedChanges(true);
+    public ModelledParticipantAnnotation newAnnotation(CvTerm annotation, String text) {
+        return new ModelledParticipantAnnotation(annotation, text);
     }
 
     @Override
-    public void newAlias(ActionEvent evt) {
-        this.participant.getAliases().add(new ModelledParticipantAlias("to set"));
-        setUnsavedChanges(true);
+    public ModelledParticipantAnnotation newAnnotation(String topic, String topicMI, String text) {
+        return new ModelledParticipantAnnotation(getCvService().findCvObject(IntactUtils.TOPIC_OBJCLASS, topicMI != null ? topicMI: topic), text);
     }
 
     @Override
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectXrefs() {
-        if (!this.participant.areXrefsInitialized()){
-            IntactModelledParticipant reloaded = getJamiEntityManager().merge(this.participant);
-            setParticipant(reloaded);
-        }
-
-        List<Xref> xrefs = new ArrayList<Xref>(this.participant.getXrefs());
-
-        getJamiEntityManager().detach(this.participant);
-        return xrefs;
+    public ModelledParticipantAlias newAlias(CvTerm aliasType, String name) {
+        return new ModelledParticipantAlias(aliasType, name);
     }
 
     @Override
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectAliases() {
-        if (!this.participant.areAliasesInitialized()){
-            IntactModelledParticipant reloaded = getJamiEntityManager().merge(this.participant);
-            setParticipant(reloaded);
-        }
-
-        List<Alias> aliases = new ArrayList<Alias>(this.participant.getAliases());
-
-        getJamiEntityManager().detach(this.participant);
-        return aliases;
-    }
-
-    @Override
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectAnnotations() {
-        if (!this.participant.areAnnotationsInitialized()){
-            IntactModelledParticipant reloaded = getJamiEntityManager().merge(this.participant);
-            setParticipant(reloaded);
-        }
-
-        List<Annotation> xrefs = new ArrayList<Annotation>(this.participant.getAnnotations());
-
-        getJamiEntityManager().detach(this.participant);
-        return xrefs;
-    }
-
-    @Override
-    public String getCautionMessage() {
-        return this.cautionMessage;
-    }
-
-    @Override
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getJamiCautionMessage(IntactPrimaryObject ao) {
-        Collection<Annotation> annots = getIntactDao().getModelledParticipantDao().getAnnotationsForParticipant(ao.getAc());
-        psidev.psi.mi.jami.model.Annotation caution = AnnotationUtils.collectFirstAnnotationWithTopic(annots, psidev.psi.mi.jami.model.Annotation.CAUTION_MI,
-                psidev.psi.mi.jami.model.Annotation.CAUTION);
-        return caution != null ? caution.getValue() : null;
-    }
-
-    @Override
-    public String getInternalRemarkMessage() {
-        return this.internalRemark;
+    public ModelledParticipantAlias newAlias(String alias, String aliasMI, String name) {
+        return new ModelledParticipantAlias(getCvService().findCvObject(IntactUtils.ALIAS_TYPE_OBJCLASS, aliasMI != null ? aliasMI : alias),
+                name);
     }
 
     @Override
     public IntactDbSynchronizer getDbSynchronizer() {
-        return getIntactDao().getSynchronizerContext().getModelledParticipantSynchronizer();
+        return getEditorService().getIntactDao().getSynchronizerContext().getModelledParticipantSynchronizer();
     }
 
     @Override
-    public String getJamiObjectName() {
-        return getInteractor();
+    protected EditorCloner<Participant, IntactModelledParticipant> newClonerInstance() {
+        return new ModelledParticipantCloner();
     }
 
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int getAliasesSize() {
-        if (this.participant.areAliasesInitialized()){
-            return this.participant.getAliases().size();
+    public void reloadSingleFeature(IntactModelledFeature f){
+        // only update if not lazy loaded
+        if (getParticipant().areFeaturesInitialized()){
+            Iterator<ModelledFeature> evIterator = getParticipant().getFeatures().iterator();
+            boolean add = true;
+            while (evIterator.hasNext()){
+                IntactModelledFeature intactEv = (IntactModelledFeature)evIterator.next();
+                if (intactEv.getAc() == null && f == intactEv){
+                    add = false;
+                }
+                else if (intactEv.getAc() != null && intactEv.getAc().equals(f.getAc())){
+                    evIterator.remove();
+                }
+            }
+            if (add){
+                getParticipant().getFeatures().add(f);
+            }
         }
-        else{
-            return getIntactDao().getModelledParticipantDao().countAliasesForParticipant(this.ac);
-        }
-    }
-
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int getAnnotationsSize() {
-        if (this.participant.areAnnotationsInitialized()){
-            return this.participant.getAnnotations().size();
-        }
-        else{
-            return getIntactDao().getModelledParticipantDao().countAnnotationsForParticipant(this.ac);
-        }
-    }
-
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int getXrefsSize() {
-        if (this.participant.areXrefsInitialized()){
-            return this.participant.getXrefs().size();
-        }
-        else{
-            return getIntactDao().getModelledParticipantDao().countXrefsForParticipant(this.ac);
-        }
-    }
-
-    public void removeJamiAlias(Alias alias){
-        this.participant.getAliases().remove(alias);
-    }
-
-    public void removeJamiXref(Xref xref){
-        this.participant.getXrefs().remove(xref);
-    }
-
-    public void removeJamiAnnotation(Annotation annot){
-        this.participant.getAnnotations().remove(annot);
-    }
-
-    public boolean isAliasNotEditable(Alias alias){
-        return false;
-    }
-
-    public boolean isAnnotationNotEditable(Annotation annot){
-        return false;
-    }
-
-    private void refreshInfoMessages() {
-        Annotation remark = AnnotationUtils.collectFirstAnnotationWithTopic(this.participant.getAnnotations(), null,
-                "remark-internal");
-        this.internalRemark = remark != null ? remark.getValue() : null;
-        Annotation caution = AnnotationUtils.collectFirstAnnotationWithTopic(this.participant.getAnnotations(), Annotation.CAUTION_MI,
-                Annotation.CAUTION);
-        this.cautionMessage = caution != null ? caution.getValue() : null;
-    }
-
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public boolean isJamiNoUniprotUpdate() {
-
-        if (participant.getInteractor() instanceof IntactInteractor && !((IntactInteractor)participant.getInteractor()).areAnnotationsInitialized()){
-            return AnnotationUtils.collectFirstAnnotationWithTopic(getIntactDao().getInteractorBaseDao().
-                    getAnnotationsForInteractor(((IntactInteractor)participant.getInteractor()).getAc()), null, CvTopic.NON_UNIPROT) != null;
-        }
-        else{
-            return AnnotationUtils.collectFirstAnnotationWithTopic(participant.getInteractor().getAnnotations(), null, CvTopic.NON_UNIPROT) != null;
-        }
-    }
-
-    public void refreshFeatures() {
-        final Collection<ModelledFeature> components = participant.getFeatures();
-
-        List<ModelledFeatureWrapper> wrappers = new LinkedList<ModelledFeatureWrapper>();
-
-        for ( ModelledFeature component : components ) {
-            wrappers.add( new ModelledFeatureWrapper( (IntactModelledFeature)component ) );
-        }
-
-        featuresDataModel = new SelectableDataModelWrapper(new SelectableCollectionDataModel<ModelledFeatureWrapper>(wrappers), wrappers);
-    }
-
-    @Override
-    public void forceRefreshCurrentViewObject(){
-        super.forceRefreshCurrentViewObject();
-
-        if (participant != null) {
-            refreshFeatures();
-        }
-    }
-
-    @Override
-    public boolean doSaveDetails() {
-        boolean saved = true;
 
         refreshFeatures();
-        return saved;
+
+        interactionController.reloadSingleParticipant(getParticipant());
     }
 
-    @Override
-    protected void postRevert() {
+    public void removeFeature(IntactModelledFeature f){
+        // only update if not lazy loaded
+        if (getParticipant().areFeaturesInitialized()){
+            Iterator<ModelledFeature> evIterator = getParticipant().getFeatures().iterator();
+            while (evIterator.hasNext()){
+                IntactModelledFeature intactEv = (IntactModelledFeature)evIterator.next();
+                if (intactEv.getAc() == null && f == intactEv){
+                    evIterator.remove();
+                }
+                else if (intactEv.getAc() != null && intactEv.getAc().equals(f.getAc())){
+                    evIterator.remove();
+                }
+            }
+        }
+
         refreshFeatures();
+
+        interactionController.reloadSingleParticipant(getParticipant());
     }
 
     @Override
-    protected boolean areXrefsInitialised() {
-        return this.participant.areXrefsInitialized();
+    protected void postProcessDeletedEvent(UnsavedChange unsaved) {
+        super.postProcessDeletedEvent(unsaved);
+        if (unsaved.getUnsavedObject() instanceof IntactModelledFeature){
+            removeFeature((IntactModelledFeature)unsaved.getUnsavedObject());
+        }
+        interactionController.reloadSingleParticipant(getParticipant());
     }
 
     @Override
-    protected boolean isPublicationParent() {
-        return false;
-    }
-
-    public void onTabChanged(TabChangeEvent e) {
-
-        // the xref tab is active
-        super.onTabChanged(e);
-
-        // all the tabs selectOneMenu are disabled, we can process the tabs specific to interaction
-        if (isAliasDisabled() && isXrefDisabled() && isAnnotationTopicDisabled()){
-            if (e.getTab().getId().equals("featuresTab")){
-                isFeatureDisabled = false;
-            }
-            else {
-                isFeatureDisabled = true;
-            }
-        }
-        else {
-            isFeatureDisabled = true;
-        }
-    }
-
-    @Override
-    protected boolean isParentJamiObjectNotSaved() {
-        if (this.participant != null){
-            if (this.participant.getInteraction() instanceof IntactComplex
-                    && ((IntactComplex)this.participant.getInteraction()).getAc() == null){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected AnnotatedObjectController getJamiParentController() {
-        return this.interactionController;
-    }
-
-    @Override
-    @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
-    public void doSave(boolean refreshCurrentView) {
-        ChangesController changesController = (ChangesController) getSpringContext().getBean("changesController");
-        PersistenceController persistenceController = getPersistenceController();
-
-        doSaveJami(refreshCurrentView, changesController, persistenceController);
-    }
-
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int getFeatureSize() {
-        if (this.participant.areFeaturesInitialized()){
-            return this.participant.getFeatures().size();
-        }
-        else{
-            return getIntactDao().getModelledParticipantDao().countFeaturesForParticipant(this.ac);
-        }
+    public void unlinkFeature(FeatureWrapper wrapper) {
+        super.unlinkFeature(wrapper);
+        interactionController.reloadSingleParticipant(getParticipant());
     }
 }

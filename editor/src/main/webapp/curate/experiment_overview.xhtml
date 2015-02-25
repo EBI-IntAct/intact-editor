@@ -19,8 +19,6 @@
         <f:viewParam id="expViewContAc" name="ac" value="#{experimentDetailedViewController.ac}"/>
     </f:metadata>
     <f:event type="preRenderView" listener="#{experimentDetailedViewController.loadData}"/>
-    <f:event type="preRenderView"
-             listener="#{curateController.setCurrentAnnotatedObjectController(experimentController)}"/>
 </ui:define>
 
 
@@ -46,12 +44,12 @@
                 <p:dataTable id="sumViewExpAnnotations" var="annotation"
                              value="#{filteredExperimentAnnotations}">
 
-                    <p:column headerText="Topic" styleClass="ia-#{annotation.cvTopic.shortLabel}">
-                        <h:outputText value="#{annotation.cvTopic != null ? annotation.cvTopic.shortLabel : ''}"
+                    <p:column headerText="Topic" styleClass="ia-#{annotation.topic.shortName}">
+                        <h:outputText value="#{annotation.topic != null ? annotation.topic.shortName : ''}"
                                       style="white-space: nowrap"/>
                     </p:column>
-                    <p:column headerText="Text" styleClass="ia-#{annotation.cvTopic.shortLabel}">
-                        <h:outputText value="#{annotation.annotationText}"/>
+                    <p:column headerText="Text" styleClass="ia-#{annotation.topic.shortName}">
+                        <h:outputText value="#{annotation.value}"/>
                     </p:column>
                 </p:dataTable>
             </p:tab>
@@ -79,8 +77,8 @@
                             <p:commandLink id="interactionLink"
                                            onclick="load_int.show()"
                                            action="/curate/interaction?faces-redirect=true&amp;includeViewParams=true"
-                                           styleClass="#{interaction.shortLabel}"
-                                           value="#{interaction.shortLabel}  (#{interaction.ac})" ajax="false">
+                                           styleClass="#{interaction.shortName}"
+                                           value="#{interaction.shortName}  (#{interaction.ac})" ajax="false">
                                 <f:setPropertyActionListener value="#{interaction}"
                                                              target="#{interactionController.interaction}"/>
                             </p:commandLink>
@@ -101,15 +99,15 @@
                                     </p:column>
 
                                     <p:column headerText="Short Label">
-                                        <h:outputText value="#{participant.interactor.shortLabel}"/>
+                                        <h:outputText value="#{participant.interactor.shortName}"/>
                                     </p:column>
 
                                     <p:column headerText="Experimental Role">
-                                        <h:outputText value="#{participant.cvExperimentalRole.shortLabel}"/>
+                                        <h:outputText value="#{participant.experimentalRole.shortName}"/>
                                     </p:column>
 
                                     <p:column headerText="Biological Role">
-                                        <h:outputText value="#{participant.cvBiologicalRole.shortLabel}"/>
+                                        <h:outputText value="#{participant.biologicalRole.shortName}"/>
                                     </p:column>
 
                                     <p:column headerText="Features">
@@ -118,10 +116,15 @@
                                                     value="#{feature.feature}"
                                                     styleClass="feature-for-#{participantController.participantPrimaryId(participant)}"/>
 
-                                            <h:panelGroup rendered="#{feature.bindDomain != null}">
-                                                <div class="ui-icon ui-icon-link linked-feature-for-#{participantController.participantPrimaryId(participant)}"
-                                                     style="display:inline-block"
-                                                     title="Linked to #{feature.bindDomain}"></div>
+                                            <h:panelGroup rendered="#{not empty feature.bindDomains}">
+                                                <ul>
+                                                    <ui:repeat value="#{feature.bindDomains}" var="linked">
+                                                        <li class="ui-icon ui-icon-link linked-feature-for-#{participantController.participantPrimaryId(participant)}"
+                                                             style="display:inline-block"
+                                                             title="Linked to #{linked}"></li>
+                                                        <br/>
+                                                    </ui:repeat>
+                                                </ul>
                                             </h:panelGroup>
                                             <br/>
                                         </ui:repeat>
@@ -129,11 +132,11 @@
 
                                     <p:column headerText="Expressed In">
                                         <h:outputText
-                                                value="#{(participant.expressedIn != null)? participant.expressedIn.shortLabel : ''}"/>
+                                                value="#{(participant.expressedInOrganism != null)? participant.expressedInOrganism.commonName : ''}"/>
                                     </p:column>
 
-                                    <p:column headerText="Stoichiometry">
-                                        <h:outputText value="S: #{participant.stoichiometry}"/>
+                                    <p:column headerText="Stoichiometry" rendered="#{participant.stoichiometry != null}">
+                                        <h:outputText value="S: #{experimentDetailedViewController.stoichiometryAsString(participant.stoichiometry)}"/>
                                     </p:column>
 
                                 </p:dataTable>
@@ -148,11 +151,11 @@
 
                                     <p:column headerText="Topic" style="width: 20%">
                                         <h:outputText id="annotation-topic"
-                                                      value="#{annotation.cvTopic != null ? annotation.cvTopic.shortLabel : ''}"
+                                                      value="#{annotation.topic.shortName}"
                                                       style="white-space: nowrap"/>
                                     </p:column>
                                     <p:column headerText="Text">
-                                        <h:outputText id="annotation-text" value="#{annotation.annotationText}"/>
+                                        <h:outputText id="annotation-text" value="#{annotation.value}"/>
                                     </p:column>
                                 </p:dataTable>
                             </p:tab>
@@ -165,17 +168,17 @@
                                              style="width:100%">
                                     <p:column headerText="Database">
                                         <h:outputText
-                                                value="#{xref.cvDatabase != null ? xref.cvDatabase.shortLabel : ''}"/>
+                                                value="#{xref.database.shortName}"/>
                                     </p:column>
                                     <p:column headerText="Identifier">
-                                        <h:outputText value="#{xref.primaryId}"/>
+                                        <h:outputText value="#{xref.id}"/>
                                     </p:column>
                                     <p:column headerText="Secondary">
                                         <h:outputText value="#{xref.secondaryId}"/>
                                     </p:column>
                                     <p:column headerText="Qualifier">
                                         <h:outputText
-                                                value="#{xref.cvXrefQualifier != null ? xref.cvXrefQualifier.shortLabel : ''}"/>
+                                                value="#{xref.qualifier != null ? xref.qualifier.shortName : ''}"/>
                                     </p:column>
                                 </p:dataTable>
                             </p:tab>
@@ -186,10 +189,10 @@
                                     <ui:repeat value="#{experimentDetailedViewController.experimentWrapper.getInteractionParameters(interaction)}" var="parameter">
                                         <h:panelGroup>
                                             <strong><h:outputText
-                                                    value="#{parameter.cvParameterType != null ? parameter.cvParameterType.shortLabel : ''}"
+                                                    value="#{parameter.type.shortName}"
                                                     style="white-space:nowrap"/></strong>
                                             <h:outputText
-                                                    value=": #{experimentDetailedViewController.parameterAsString(parameter)}  #{parameter.cvParameterUnit != null ?  parameter.cvParameterUnit.shortLabel : '' }"
+                                                    value=": #{experimentDetailedViewController.parameterAsString(parameter)}  #{parameter.unit != null ?  parameter.unit.shortName : '' }"
                                                     style="white-space:nowrap"/>
                                         </h:panelGroup>
                                     </ui:repeat>

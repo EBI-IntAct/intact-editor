@@ -17,8 +17,8 @@ package uk.ac.ebi.intact.editor.servlet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.core.persistence.dao.DaoFactory;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.dao.IntactDao;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -45,9 +45,8 @@ public class HealthCheckServlet extends HttpServlet {
         // db check
         boolean dbOk = false;
         try {
-            final IntactContext intactContext = IntactContext.getCurrentInstance();
-            final DaoFactory daoFactory = intactContext.getDataContext().getDaoFactory();
-            final int count = daoFactory.getInstitutionDao().countAll();
+            final IntactDao intactContext = ApplicationContextProvider.getBean("intactDao");
+            final long count = intactContext.getSourceDao().countAll();
             dbOk = (count > 0);
         } catch ( Throwable t ) {
             log.error( "Health Check failed on database.", t );

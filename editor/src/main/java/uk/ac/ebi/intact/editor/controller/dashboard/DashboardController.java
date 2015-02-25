@@ -19,10 +19,15 @@ import org.primefaces.model.LazyDataModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import uk.ac.ebi.intact.editor.controller.JpaAwareController;
-import uk.ac.ebi.intact.jami.model.extension.IntactComplex;
-import uk.ac.ebi.intact.model.Publication;
+import uk.ac.ebi.intact.editor.controller.BaseController;
+import uk.ac.ebi.intact.editor.controller.UserSessionController;
+import uk.ac.ebi.intact.editor.services.dashboard.DashboardQueryService;
+import uk.ac.ebi.intact.editor.services.summary.ComplexSummary;
+import uk.ac.ebi.intact.editor.services.summary.PublicationSummary;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.user.Role;
 
+import javax.annotation.Resource;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ComponentSystemEvent;
 
@@ -32,72 +37,139 @@ import javax.faces.event.ComponentSystemEvent;
  */
 @Controller
 @Scope( "session" )
-public class DashboardController extends JpaAwareController {
+public class DashboardController extends BaseController {
+    public static final String[] DEFAULT_STATUS_SHOWN = new String[]{"new", "curation in progress", "ready for checking"};
+    private LazyDataModel<PublicationSummary> allPublications;
+    private LazyDataModel<PublicationSummary> ownedByUser;
+    private LazyDataModel<PublicationSummary> reviewedByUser;
+    private LazyDataModel<ComplexSummary> allComplexes;
+    private LazyDataModel<ComplexSummary> complexesOwnedByUser;
+    private LazyDataModel<ComplexSummary> complexesReviewedByUser;
+
+    private boolean hideAcceptedAndReleased;
+    private String[] statusToShow;
+
+    private boolean isPublicationTableEnabled = false;
+    private boolean isComplexTableEnabled = false;
+
+    @Resource(name = "dashboardQueryService")
+    private transient DashboardQueryService queryService;
 
     @Autowired
-    private DashboardQueryService queryService;
+    private UserSessionController userSessionController;
 
     public DashboardController() {
+        hideAcceptedAndReleased = true;
+
+        statusToShow = DEFAULT_STATUS_SHOWN;
     }
 
-    @SuppressWarnings("unchecked")
     public void loadData( ComponentSystemEvent event ) {
         if (!FacesContext.getCurrentInstance().isPostback()) {
-            queryService.loadData();
-            queryService.loadJamiData();
+            if (userSessionController.hasRole(Role.ROLE_CURATOR) || userSessionController.hasRole(Role.ROLE_REVIEWER) ){
+                isPublicationTableEnabled = true;
+            }
+            else{
+                isPublicationTableEnabled = false;
+            }
+            if (userSessionController.hasRole(Role.ROLE_COMPLEX_CURATOR) || userSessionController.hasRole(Role.ROLE_COMPLEX_REVIEWER) ){
+                isComplexTableEnabled = true;
+            }
+            else{
+                isComplexTableEnabled = false;
+            }
+            refreshAllTables();
         }
     }
 
     public void refreshAllTables() {
-        queryService.refreshTables();
-        queryService.refreshJamiTables();
+        final String userId = userSessionController.getCurrentUser().getLogin().toUpperCase();
+
+        if (statusToShow.length == 0) {
+            addWarningMessage("No statuses selected", "Using default status selection");
+            statusToShow = DEFAULT_STATUS_SHOWN;
+        }
+
+        StringBuilder statusToShowSql = new StringBuilder();
+
+        for (int i=0; i<statusToShow.length; i++) {
+            if (i>0) {
+                statusToShowSql.append(" or");
+            }
+            statusToShowSql.append(" p.cvStatus.shortName = '").append(statusToShow[i]).append("'");
+        }
+
+        String additionalSql = statusToShowSql.toString();
+
+        if (isPublicationTableEnabled){
+
+            allPublications = getQueryService().loadAllPublications(additionalSql);
+
+            ownedByUser = getQueryService().loadPublicationsOwnedBy(userId, additionalSql);
+
+            reviewedByUser = getQueryService().loadPublicationsReviewedBy(userId, additionalSql);
+        }
+        if (isComplexTableEnabled){
+            allComplexes = getQueryService().loadAllComplexes(additionalSql);
+
+            complexesOwnedByUser = getQueryService().loadComplexesOwnedBy(userId, additionalSql);
+
+            complexesReviewedByUser = getQueryService().loadComplexesReviewedBy(userId, additionalSql);
+        }
     }
 
-    public LazyDataModel<Publication> getAllPublications() {
-        return queryService.getAllPublications();
+    public LazyDataModel<PublicationSummary> getAllPublications() {
+        return allPublications;
     }
 
-    public LazyDataModel<Publication> getOwnedByUser() {
-        return queryService.getOwnedByUser();
+    public LazyDataModel<PublicationSummary> getOwnedByUser() {
+        return ownedByUser;
     }
 
-    public LazyDataModel<Publication> getReviewedByUser() {
-        return queryService.getReviewedByUser();
+    public LazyDataModel<PublicationSummary> getReviewedByUser() {
+        return reviewedByUser;
     }
 
     public boolean isHideAcceptedAndReleased() {
-        return queryService.isHideAcceptedAndReleased();
+        return hideAcceptedAndReleased;
     }
 
     public void setHideAcceptedAndReleased(boolean hideAcceptedAndReleased) {
-        queryService.setHideAcceptedAndReleased(hideAcceptedAndReleased);
+        this.hideAcceptedAndReleased = hideAcceptedAndReleased;
     }
 
     public String[] getStatusToShow() {
-        return queryService.getStatusToShow();
+        return statusToShow;
     }
 
     public void setStatusToShow(String[] statusToShow) {
-        queryService.setStatusToShow(statusToShow);
+        this.statusToShow = statusToShow;
     }
 
-    public LazyDataModel<IntactComplex> getAllComplexes() {
-        return queryService.getAllComplexes();
+    public LazyDataModel<ComplexSummary> getAllComplexes() {
+        return allComplexes;
     }
 
-    public LazyDataModel<IntactComplex> getComplexesOwnedByUser() {
-        return queryService.getComplexesOwnedByUser();
+    public LazyDataModel<ComplexSummary> getComplexesOwnedByUser() {
+        return complexesOwnedByUser;
     }
 
-    public LazyDataModel<IntactComplex> getComplexesReviewedByUser() {
-        return queryService.getComplexesReviewedByUser();
+    public LazyDataModel<ComplexSummary> getComplexesReviewedByUser() {
+        return complexesReviewedByUser;
     }
 
     public boolean isPublicationTableEnabled() {
-        return queryService.isPublicationTableEnabled();
+        return isPublicationTableEnabled;
     }
 
     public boolean isComplexTableEnabled() {
-        return queryService.isComplexTableEnabled();
+        return isComplexTableEnabled;
+    }
+
+    public DashboardQueryService getQueryService() {
+        if (this.queryService == null){
+            this.queryService = ApplicationContextProvider.getBean("dashboardQueryService");
+        }
+        return queryService;
     }
 }

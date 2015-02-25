@@ -15,9 +15,9 @@
  */
 package uk.ac.ebi.intact.editor.converter;
 
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.editor.controller.curate.experiment.ExperimentController;
-import uk.ac.ebi.intact.model.Experiment;
+import uk.ac.ebi.intact.editor.controller.curate.interaction.InteractionController;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.extension.IntactExperiment;
 
 import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
@@ -29,23 +29,23 @@ import javax.faces.convert.FacesConverter;
  * @author Bruno Aranda (baranda@ebi.ac.uk)
  * @version $Id$
  */
-@FacesConverter( value = "experimentConverter", forClass = Experiment.class )
+@FacesConverter( value = "experimentConverter", forClass = IntactExperiment.class )
 public class ExperimentConverter implements Converter {
 
     @Override
     public Object getAsObject( FacesContext facesContext, UIComponent uiComponent, String ac ) throws ConverterException {
         if ( ac == null ) return null;
 
-        ExperimentController controller = ( ExperimentController ) IntactContext.getCurrentInstance().getSpringContext().getBean( "experimentController" );
-        return controller.getDaoFactory().getExperimentDao().getByAc(ac);
+        InteractionController interactionController = ApplicationContextProvider.getBean("interactionController");
+        return interactionController.getExperimentMap().get(ac);
     }
 
     @Override
     public String getAsString( FacesContext facesContext, UIComponent uiComponent, Object o ) throws ConverterException {
         if ( o == null ) return null;
 
-        if ( o instanceof Experiment ) {
-            Experiment experiment = ( Experiment ) o;
+        if ( o instanceof IntactExperiment ) {
+            IntactExperiment experiment = ( IntactExperiment ) o;
             return experiment.getAc();
         } else {
             throw new IllegalArgumentException( "Argument must be an Experiment: " + o + " (" + o.getClass() + ")" );

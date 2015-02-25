@@ -9,24 +9,50 @@
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui">
 
-        <div class="intact-buttonBar">
-            <p:commandButton id="newParamBtn" value="New Parameter"
-                             actionListener="#{annotatedObjectController.newParameter}"
-                             process="newParamBtn"
-                             update="parametersTable #{update}"/>
-        </div>
+            <h:panelGrid id="newParamTxt" columns="13" class="intact-buttonBar">
+                <h:outputLabel value="Type: " for="paramType1Sel"/>
+                <h:selectOneMenu id="paramType1Sel" value="#{annotatedObjectController.newParameterType}" disabled="#{disableParameterSelectItems}"
+                                 converter="cvObjectConverter">
+                    <f:selectItems value="#{cvObjectService.parameterTypeSelectItems}"/>
+                </h:selectOneMenu>
+                <h:outputLabel value="Value: " for="paramFactor1Txt"/>
+                <p:inputText id="paramFactor1Txt" value="#{annotatedObjectController.newParameterFactor}">
+                    <f:convertNumber/>
+                </p:inputText>
+                <h:outputLabel value="Unit: " for="paramUnit1Sel"/>
+                <h:selectOneMenu id="paramUnit1Sel" value="#{annotatedObjectController.newParameterUnit}" disabled="#{disableParameterSelectItems}"
+                                 converter="cvObjectConverter">
+                    <f:selectItems value="#{cvObjectService.parameterUnitSelectItems}"/>
+                </h:selectOneMenu>
+                <h:outputLabel value="Base: " for="paramBase1Txt"/>
+                <p:inputText id="paramBase1Txt" value="#{annotatedObjectController.newParameterBase}">
+                    <f:convertNumber/>
+                </p:inputText>
+                <h:outputLabel value="Exponent: " for="paramExponent1Txt"/>
+                <p:inputText id="paramExponent1Txt" value="#{annotatedObjectController.newParameterExponent}">
+                    <f:convertNumber/>
+                </p:inputText>
+                <h:outputLabel value="Uncertainty: " for="paramUncertainty1Txt"/>
+                <p:inputText id="paramUncertainty1Txt" value="#{annotatedObjectController.newParameterUncertainty}">
+                    <f:convertNumber/>
+                </p:inputText>
+                <p:commandButton id="newParamBtn" value="Add New Parameter"
+                                 actionListener="#{annotatedObjectController.newParameter}"
+                                 process="newParamTxt"
+                                 update="parametersTable #{update}" onclick="loadDialog.show()" oncomplete="loadDialog.hide()"/>
+            </h:panelGrid>
 
-        <p:dataTable id="parametersTable" var="parameter" value="#{annotatedObjectController.parameters}">
+        <p:dataTable id="parametersTable" var="parameter" value="#{annotatedObjectController.collectParameters()}">
             <p:column>
                 <f:facet name="header">
                     <h:outputText value="Type"/>
                 </f:facet>
-                <h:selectOneMenu id="paramTypeSel" value="#{parameter.cvParameterType}" rendered="#{parameterTypeSelectItems != null}" disabled="#{disableParameterSelectItems}"
-                                 required="true" requiredMessage="Parameter type is required">
-                    <f:selectItems value="#{parameterTypeSelectItems}"/>
+                <h:selectOneMenu id="paramTypeSel" value="#{parameter.type}" rendered="#{cvObjectService.parameterTypeSelectItems != null}" disabled="#{disableParameterSelectItems}"
+                                 required="true" requiredMessage="Parameter type is required" converter="cvObjectConverter">
+                    <f:selectItems value="#{cvObjectService.parameterTypeSelectItems}"/>
                     <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
                 </h:selectOneMenu>
-                <h:outputText value="#{parameter.cvParameterType.shortLabel}" rendered="#{parameterTypeSelectItems == null}"/>
+                <h:outputText value="#{parameter.type.shortName}" rendered="#{cvObjectService.parameterTypeSelectItems == null}"/>
             </p:column>
            <p:column>
                 <f:facet name="header">
@@ -41,11 +67,12 @@
                 <f:facet name="header">
                     <h:outputText value="Unit"/>
                 </f:facet>
-                <h:selectOneMenu id="paramUnitSel" value="#{parameter.cvParameterUnit}" rendered="#{parameterUnitSelectItems != null}" disabled="#{disableParameterSelectItems}">
-                    <f:selectItems value="#{parameterUnitSelectItems}"/>
+                <h:selectOneMenu id="paramUnitSel" value="#{parameter.unit}" rendered="#{cvObjectService.parameterUnitSelectItems != null}" disabled="#{disableParameterSelectItems}"
+                                 converter="cvObjectConverter">
+                    <f:selectItems value="#{cvObjectService.parameterUnitSelectItems}"/>
                     <ed:curation/>
                 </h:selectOneMenu>
-                <h:outputText value="#{parameter.cvParameterUnit.shortLabel}" rendered="#{parameterUnitSelectItems == null}"/>
+                <h:outputText value="#{parameter.unit.shortName}" rendered="#{cvObjectService.parameterUnitSelectItems == null}"/>
             </p:column>
             <p:column>
                 <f:facet name="header">
@@ -79,7 +106,7 @@
                      <h:outputText value="Actions"/>
                 </f:facet>
                 <p:commandLink id="removeParamBtn" styleClass="ui-icon ui-icon-closethick" process="removeParamBtn"
-                               actionListener="#{annotatedObjectController.annotatedObject.removeParameter(parameter)}"
+                               actionListener="#{annotatedObjectController.removeParameter(parameter)}"
                                oncomplete="markAsUnsaved()"
                                update="parametersTable #{update}"/>
             </p:column>

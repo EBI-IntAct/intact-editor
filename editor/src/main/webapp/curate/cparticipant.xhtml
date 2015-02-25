@@ -9,7 +9,7 @@
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
 
-                template="/curate/curate_template.xhtml">
+                template="/curate/curate_complex_template.xhtml">
 
     <ui:param name="title" value="Participant: #{modelledParticipantController.participantPrimaryId} | Curate | Editor"/>
 
@@ -21,7 +21,6 @@
     <ui:define name="metadata">
         <f:metadata>
             <f:viewParam name="ac" value="#{modelledParticipantController.ac}"/>
-            <f:event type="preRenderView" listener="#{editorCvTermService.loadDataIfNotDone}"/>
             <f:event type="preRenderView" listener="#{modelledParticipantController.loadData}"/>
             <f:event type="preRenderView" listener="#{curateController.setCurrentAnnotatedObjectController(modelledParticipantController)}"/>
         </f:metadata>
@@ -30,9 +29,9 @@
     <ui:define name="breadcrumbs">
         <p:breadCrumb>
             <p:menuitem ajax="false" onclick="loadDialog.show()" value="#{complexController.name}"
-                        action="#{curateController.editJami(interaction)}" process="@this"/>
+                        action="#{curateController.edit(interaction)}" process="@this"/>
             <p:menuitem ajax="false" onclick="loadDialog.show()" value="#{complexController.name}"
-                        action="#{curateController.editJami(interaction)}" process="@this"/>
+                        action="#{curateController.edit(interaction)}" process="@this"/>
             <p:menuitem value="#{participant.interactor.shortName}"/>
         </p:breadCrumb>
     </ui:define>
@@ -52,7 +51,7 @@
                         <ui:param name="annotatedObjectController" value="#{modelledParticipantController}"/>
                     </ui:include>
 
-                    <h:panelGroup rendered="#{modelledParticipantController.jamiNoUniprotUpdate}">
+                    <h:panelGroup rendered="#{modelledParticipantController.noUniprotUpdate}">
                         <ia:panelMessage level="warn">
                             <b>No Uniprot Update: </b>The interactor for this participant won't be updated using Uniprot.
                         </ia:panelMessage>
@@ -60,7 +59,7 @@
                 </p:outputPanel>
 
                 <div id="auditInfo" class="intact-auditPanel">
-                    <ia:jcreatorUpdator annotatedObject="#{participant}" />
+                    <ia:creatorUpdator annotatedObject="#{participant}" />
                 </div>
 
                 <table class="intact-tableBasicForm" cellpadding="0" cellspacing="0">
@@ -79,11 +78,10 @@
                         <td colspan="2">
                             <p:inputText id="interactorTxt" value="#{modelledParticipantController.interactor}"
                                          readonly="true"/>
-                            <!--<ia:inputInteractor value="#{participant.interactor}" />-->
                             <p:commandButton id="importInteractorBtn" value="Import" onclick="jimportInteractorDialog.show();"/>
                             <p:commandButton id="newInteractorBtn" value="New" onclick="newInteractorDialog.show();"/>
                             <p:commandButton id="viewInteractorBtn" value="View" rendered="#{participant.interactor != null}"
-                                             action="#{curateController.editByAc(participant.interactor.ac)}" ajax="false"/>
+                                             action="#{curateController.edit(participant.interactor)}" ajax="false"/>
 
                             <ui:include src="jdialog_import_interactor.xhtml"/>
                         </td>
@@ -112,7 +110,7 @@
                             <ia:inputCvTerm id="bioRoleTxt" cvIdentifier="MI:0500"
                                             cvClass="uk.ac.ebi.intact.model.CvBiologicalRole"
                                             value="#{participant.biologicalRole}"
-                                            selectItems="#{editorCvTermService.biologicalRoleSelectItems}"
+                                            selectItems="#{cvObjectService.biologicalRoleSelectItems}"
                                             required="true" requiredMessage="Biological role is required"
                                             update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
                                             valueChangeAwareObject="#{annotatedObjectController}"/>
@@ -125,10 +123,10 @@
 
             <br/>
 
-            <p:tabView id="participantTabs" dynamic="true" cache="false">
+            <p:tabView id="participantTabs" dynamic="true">
                 <p:ajax event="tabChange" listener="#{modelledParticipantController.onTabChanged}" onstart="loadDialog.show()" oncomplete="loadDialog.hide()" />
 
-                <p:tab title="Features (#{modelledParticipantController.featureSize})">
+                <p:tab id="featureTab" title="Features (#{modelledParticipantController.featuresSize})">
 
                     <div class="intact-buttonBar">
                         <p:commandButton id="newFeatureBtn" value="New feature" action="#{modelledFeatureController.newFeature(modelledParticipantController.participant)}"
@@ -142,12 +140,9 @@
                     </p:outputPanel>
                 </p:tab>
 
-                <ui:decorate template="jpropertiesTabs.xhtml">
-                    <ui:param name="annotatedObjectSelectItems" value="#{editorCvTermService.participantTopicSelectItems}"/>
-                    <ui:param name="databaseSelectItems" value="#{editorCvTermService.participantDatabaseSelectItems}"/>
-                    <ui:param name="qualifierSelectItems" value="#{editorCvTermService.qualifierSelectItems}"/>
-                    <ui:param name="aliasTypeSelectItems" value="#{editorCvTermService.aliasTypeSelectItems}"/>
-                    <ui:param name="updateOnChange" value=":editorForm:basic"/>
+                <ui:decorate template="propertiesTabs.xhtml">
+                    <ui:param name="annotatedObjectSelectItems" value="#{cvObjectService.participantTopicSelectItems}"/>
+                    <ui:param name="updateOnChange" value=":editorForm:basic :editorForm:participantTabs"/>
                 </ui:decorate>
 
             </p:tabView>

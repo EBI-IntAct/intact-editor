@@ -1,5 +1,6 @@
 package uk.ac.ebi.intact.editor.controller.curate.util;
 
+import psidev.psi.mi.jami.model.ParticipantEvidence;
 import uk.ac.ebi.intact.editor.controller.curate.interaction.ParticipantWrapper;
 
 import java.util.Comparator;
@@ -18,19 +19,13 @@ public class ParticipantWrapperExperimentalRoleComparator implements Comparator<
     public int compare(ParticipantWrapper pw1, ParticipantWrapper pw2) {
         if (pw1 != null && pw2 != null) {
             ExperimentalRoleComparator comparator = new ExperimentalRoleComparator();
-            int result = comparator.compare(pw1.getExperimentalRole(), pw2.getExperimentalRole());
+            int result = comparator.compare(((ParticipantEvidence)pw1.getParticipant()).getExperimentalRole(),
+                    ((ParticipantEvidence)pw2.getParticipant()).getExperimentalRole());
 
             //If they are identical we sort by author given name
             if (result == 0) {
-                if (pw1.getAuthorGivenName() != null && pw2.getAuthorGivenName() != null) {
-                    return pw1.getAuthorGivenName().compareTo(pw2.getAuthorGivenName());
-                } else {
-                    if (pw1.getAuthorGivenName() == null && pw2.getAuthorGivenName() != null) {
-                        return -1;
-                    } else if (pw1.getAuthorGivenName() != null && pw2.getAuthorGivenName() == null) {
-                        return 1;
-                    }
-                }
+                return pw1.getParticipant().getInteractor().getShortName().compareTo(pw2.getParticipant().getInteractor().getShortName());
+
             } else {
                 return result;
             }

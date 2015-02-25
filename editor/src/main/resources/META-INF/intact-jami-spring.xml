@@ -11,8 +11,9 @@
 
     <!-- only scan annotations in this package -->
     <context:component-scan base-package="uk.ac.ebi.intact.jami"/>
-    <context:annotation-config/>
-    <tx:annotation-driven proxy-target-class="true"/>
+
+    <!-- so the @Transactional annotations work -->
+    <tx:annotation-driven transaction-manager="jamiTransactionManager" proxy-target-class="true"/>
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="ignoreUnresolvablePlaceholders" value="true"/>
@@ -22,9 +23,6 @@
             </list>
         </property>
     </bean>
-
-    <!-- so the @Transactional annotations work -->
-    <tx:annotation-driven transaction-manager="jamiTransactionManager"/>
 
     <!--
         Post-processor to perform exception translation on @Repository classes
@@ -64,8 +62,6 @@
                 <prop key="hibernate.generate_statistics">true</prop>
                 <prop key="hibernate.format_sql">false</prop>
                 <prop key="hibernate.hbm2ddl.auto">${jami.db.hbm2ddl}</prop>
-                <!-- hibernate interceptor to clear the synchronizer caches after each transaction-->
-                <prop key="hibernate.ejb.interceptor.session_scoped">uk.ac.ebi.intact.jami.interceptor.IntactSynchronizerInterceptor</prop>
             </props>
         </property>
         <property name="jpaVendorAdapter">
@@ -95,6 +91,7 @@
     <bean id="intactJamiConfiguration" class="uk.ac.ebi.intact.jami.context.IntactConfiguration" scope="prototype">
         <property name="acPrefix" value="${jami.ac.prefix}"/>
         <property name="defaultInstitution" ref="${jami.default.source}"/>
+        <property name="localCvPrefix" value="${jami.cv.prefix}"/>
     </bean>
 
     <!-- Default institutions -->

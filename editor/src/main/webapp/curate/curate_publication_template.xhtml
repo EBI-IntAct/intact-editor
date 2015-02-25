@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+                xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
+                xmlns:ot="http://myfaces.apache.org/orchestra"
+                template="curate_template.xhtml">
+
+<ui:define name="topTitle">
+    <h:panelGroup rendered="#{annotatedObjectController.annotatedObject != null}">
+        <h:panelGroup rendered="#{publicationController.publication != null}" styleClass="top-title">
+            <h:link outcome="/curate/publication" value="#{publicationController.firstAuthor} et al (#{publicationController.year})"
+                    rendered="#{publicationController.firstAuthor != null}"/>
+
+            <h:panelGroup rendered="#{publicationController.publication.shortLabel != null}" styleClass="top-title-details">
+                (&#160;
+                <ot:separateConversationContext>
+                    <h:outputLink value="http://europepmc.org/abstract/MED/#{publicationController.publication.shortLabel}"
+                                  target="_blank">
+                        <h:outputText style="font-weight: normal;" value="#{publicationController.publication.shortLabel}"/>
+                        <span class="ui-icon ui-icon-extlink" style="display:inline-block; vertical-align: bottom"/>
+                    </h:outputLink>
+                </ot:separateConversationContext>
+                )
+            </h:panelGroup>
+        </h:panelGroup>
+
+        <br/>
+        <h:outputText styleClass="subTitle" value="#{publicationController.publication.status}"/>,
+        <h:outputText styleClass="subTitle-text" value=" owned by "
+                      rendered="#{publicationController.publication.currentOwner != null}"/>
+        <h:outputText styleClass="subTitle" value="#{publicationController.publication.currentOwner.login}"
+                      rendered="#{publicationController.publication.currentOwner != null}"/>
+        <h:outputText value="," rendered="#{publicationController.publication.currentReviewer != null}"/>
+        <h:outputText styleClass="subTitle-text" value=" reviewed by "
+                      rendered="#{publicationController.publication.currentReviewer != null}"/>
+        <h:outputText styleClass="subTitle" value="#{publicationController.publication.currentReviewer.login}"
+                      rendered="#{publicationController.publication.currentReviewer != null}"/>
+    </h:panelGroup>
+
+</ui:define>
+
+</ui:composition>

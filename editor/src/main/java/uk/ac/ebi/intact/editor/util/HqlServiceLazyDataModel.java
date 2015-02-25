@@ -19,9 +19,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortOrder;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
 import uk.ac.ebi.intact.jami.service.IntactService;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +34,7 @@ public class HqlServiceLazyDataModel<T extends IntactPrimaryObject> extends Lazy
 
     private static final Log log = LogFactory.getLog( HqlServiceLazyDataModel.class );
 
-    private IntactService service;
+    private transient IntactService<T> service;
     private String hqlQuery;
     private Map<String, String> queryParameters;
 
@@ -40,15 +42,18 @@ public class HqlServiceLazyDataModel<T extends IntactPrimaryObject> extends Lazy
     private boolean initialSortOrder;
     private String var;
 
-    public HqlServiceLazyDataModel(IntactService service, String hqlQuery, Map<String, String> params) {
+    private String serviceName;
+
+    public HqlServiceLazyDataModel(IntactService service, String serviceName, String hqlQuery, Map<String, String> params) {
         super();
         this.service = service;
         this.hqlQuery = hqlQuery;
         this.queryParameters = params;
+        this.serviceName = serviceName;
     }
 
-    public HqlServiceLazyDataModel(IntactService service, String hqlQuery, Map<String, String> params, String initialSortField, boolean initialSortOrder, String var) {
-        this(service, hqlQuery, params);
+    public HqlServiceLazyDataModel(IntactService service, String serviceName, String hqlQuery, Map<String, String> params, String initialSortField, boolean initialSortOrder, String var) {
+        this(service, serviceName, hqlQuery, params);
         this.initialSortField = initialSortField;
         this.initialSortOrder = initialSortOrder;
         this.var = var;
@@ -70,12 +75,17 @@ public class HqlServiceLazyDataModel<T extends IntactPrimaryObject> extends Lazy
 
         log.debug("HQL: " + queryToRun);
 
-        List<T> results = this.service.fetchIntactObjects(queryToRun, queryParameters, first, pageSize);
+        List<T> results = getService().fetchIntactObjects(queryToRun, new HashMap<String, Object>(queryParameters), first, pageSize);
 
         log.debug("Returning "+results.size()+" results");
 
         return results;
     }
 
-
+    public IntactService<T> getService() {
+        if (service == null && serviceName != null){
+             service = ApplicationContextProvider.getBean(serviceName);
+        }
+        return service;
+    }
 }

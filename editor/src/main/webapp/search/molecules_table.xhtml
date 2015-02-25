@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+                xmlns:ot="http://myfaces.apache.org/orchestra">
+
+    <h:panelGroup id="moleculesTable">
+
+        <p:dataTable id="searchMoleculeTable" var="molecule" value="#{molecules}"
+                     paginatorPosition="both"
+                     paginator="true" paginatorAlwaysVisible="false" rows="10"
+                     paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
+                     rowsPerPageTemplate="10,20,50,100"
+                     dynamic="true"
+                     rowIndexVar="rowIndex">
+            <p:column headerText="AC">
+                <h:link outcome="/curate/interactor" value="#{molecule.ac}" includeViewParams="true">
+                    <f:param name="ac" value="#{molecule.ac}"/>
+                </h:link>
+            </p:column>
+            <p:column>
+                <h:panelGroup rendered="#{molecule.caution != null}">
+                    <h:graphicImage alt="caution" library="images" name="warn.gif"
+                                    title="#{molecule.caution}"/>
+                </h:panelGroup>
+                <h:panelGroup rendered="#{molecule.noUniprotUpdate}">
+                    <h:graphicImage alt="no uniprot update" library="images" name="no_uni_update.png"
+                                    title="No Uniprot Update"/>
+                </h:panelGroup>
+            </p:column>
+            <p:column headerText="Type">
+                <h:outputText value="#{molecule.interactorType}"/>
+            </p:column>
+            <p:column headerText="Organism">
+                <h:outputText value="#{molecule.organism}" rendered="#{molecule.organism != null}"/>
+                <h:outputText value="-" rendered="#{molecule.organism == null}"/>
+            </p:column>
+            <p:column headerText="Short name" sortBy="#{molecule.shortName}">
+                <h:outputText value="#{molecule.shortName}"/>
+            </p:column>
+            <p:column headerText="Full name" sortBy="#{molecule.fullName}">
+                <h:outputText value="#{molecule.fullName}"/>
+            </p:column>
+            <p:column headerText="Identity">
+                <h:outputText value="#{molecule.identityXref}"/>
+            </p:column>
+            <p:column headerText="# Interactions">
+                <h:link id="linkRow" outcome="/search/interactions" includeViewParams="true"
+                        value="#{molecule.numberInteractions}">
+                    <f:param name="ac" value="#{molecule.ac}"/>
+                    <f:param name="shortLabel" value="#{molecule.shortName}"/>
+                    <f:param name="numInteractions" value="#{molecule.numberInteractions}"/>
+                    <f:param name="resultsOutcome" value="#{resultsOutcome}"/>
+                </h:link>
+            </p:column>
+            <p:column headerText="# Complexes">
+                <h:link id="linkRowComplexes" outcome="/search/complexes" includeViewParams="true"
+                        value="#{molecule.numberComplexes}"
+                        rendered="#{complexSearchEnabled}">
+                    <f:param name="ac" value="#{molecule.ac}"/>
+                    <f:param name="shortLabel" value="#{molecule.shortName}"/>
+                    <f:param name="numComplexes" value="#{molecule.numberComplexes}"/>
+                    <f:param name="resultsOutcome" value="#{resultsOutcome}"/>
+                </h:link>
+                <h:outputText rendered="#{!complexSearchEnabled}"
+                              value="#{molecule.numberComplexes}"/>
+            </p:column>
+            <p:column headerText="# Molecule sets">
+                <h:link id="linkRowSets" outcome="/search/sets" includeViewParams="true"
+                        value="#{molecule.numberMoleculeSets}">
+                    <f:param name="ac" value="#{molecule.ac}"/>
+                    <f:param name="shortLabel" value="#{molecule.shortName}"/>
+                    <f:param name="numMoleculeSets" value="#{molecule.numberMoleculeSets}"/>
+                    <f:param name="resultsOutcome" value="#{resultsOutcome}"/>
+                </h:link>
+            </p:column>
+
+        </p:dataTable>
+    </h:panelGroup>
+
+
+</ui:composition>

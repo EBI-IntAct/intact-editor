@@ -8,7 +8,11 @@
      xmlns:ia="http://java.sun.com/jsf/composite/intact-components">
 
 <f:view contentType="text/html">
-
+    <f:metadata>
+        <f:event type="preRenderView" listener="#{cvObjectService.loadDataIfNecessary}"/>
+        <f:event type="preRenderView" listener="#{bioSourceService.loadDataIfNecessary}"/>
+        <f:event type="preRenderView" listener="#{institutionService.loadDataIfNecessary}"/>
+    </f:metadata>
     <h:head>
         <title>Editor Login</title>
 

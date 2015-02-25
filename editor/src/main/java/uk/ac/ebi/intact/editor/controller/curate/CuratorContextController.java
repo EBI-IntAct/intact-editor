@@ -15,19 +15,14 @@
  */
 package uk.ac.ebi.intact.editor.controller.curate;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import psidev.psi.mi.jami.model.Complex;
-import psidev.psi.mi.jami.model.ModelledFeature;
-import psidev.psi.mi.jami.model.ModelledParticipant;
-import uk.ac.ebi.intact.core.util.DebugUtil;
+import psidev.psi.mi.jami.model.*;
 import uk.ac.ebi.intact.editor.controller.BaseController;
 import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
-import uk.ac.ebi.intact.model.AnnotatedObject;
-import uk.ac.ebi.intact.model.IntactObject;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Keeps the changes for each annotated object by AC.
@@ -39,36 +34,59 @@ import java.util.Collection;
 @Scope("session")
 public class CuratorContextController extends BaseController {
 
-    @Autowired
-    private PersistenceController persistenceController;
-
     public CuratorContextController() {
     }
 
-    public String intactObjectSimpleName(IntactObject io) {
-        if (io == null) return null;
-        return io.getClass().getSimpleName().replaceAll("Impl", "");
-    }
-
-    public String annotatedObjectToString(AnnotatedObject ao) {
-        return DebugUtil.annotatedObjectToString(ao, false);
-    }
-
-    public String jamiObjectSimpleName(IntactPrimaryObject io) {
-        if (io == null) return null;
-        if (io instanceof Complex){
+    public String intactObjectSimpleName(IntactPrimaryObject io) {
+        if (io == null) return "";
+        else if (io instanceof Publication){
+            return "Publication";
+        }
+        else if (io instanceof Experiment){
+            return "Experiment";
+        }
+        else if (io instanceof InteractionEvidence){
+            return "Interaction evidence";
+        }
+        else if (io instanceof Complex){
             return "Complex";
+        }
+        else if (io instanceof ParticipantEvidence){
+            return "Participant";
         }
         else if (io instanceof ModelledParticipant){
             return "Complex Participant";
         }
+        else if (io instanceof FeatureEvidence){
+            return "Feature";
+        }
         else if (io instanceof ModelledFeature){
             return "Complex Feature";
         }
-        return null;
+        else if (io instanceof Source){
+            return "Institution";
+        }
+        else if (io instanceof CvTerm){
+            return "Controlled vocabulary";
+        }
+        else if (io instanceof Organism){
+            return "Organism";
+        }
+        else if (io instanceof Interactor){
+            return "Interactor";
+        }
+        return "";
     }
 
-    public String acList(Collection<? extends IntactObject> aos) {
-        return DebugUtil.acList(aos).toString();
+    public String acList(Collection<? extends IntactPrimaryObject> aos) {
+        StringBuffer buffer = new StringBuffer();
+        Iterator<? extends IntactPrimaryObject> iterator = aos.iterator();
+        while (iterator.hasNext() ){
+           buffer.append(iterator.next().getAc());
+           if (iterator.hasNext()){
+              buffer.append(", ");
+           }
+        }
+        return buffer.toString();
     }
 }

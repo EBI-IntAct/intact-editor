@@ -17,9 +17,8 @@ package uk.ac.ebi.intact.editor.application;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.core.util.DebugUtil;
 import uk.ac.ebi.intact.editor.controller.curate.AnnotatedObjectController;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
@@ -46,11 +45,11 @@ public class HistoryPhaseListener implements PhaseListener {
             if (log.isDebugEnabled()) log.debug("\t"+requestUrl);
         }
 
-        Collection<AnnotatedObjectController> aocs = IntactContext.getCurrentInstance().getSpringContext()
+        Collection<AnnotatedObjectController> aocs = ApplicationContextProvider.getApplicationContext()
                 .getBeansOfType(AnnotatedObjectController.class).values();
 
         for (AnnotatedObjectController aoc : aocs) {
-            String ao = aoc.getAnnotatedObject() != null? DebugUtil.annotatedObjectToString(aoc.getAnnotatedObject(), false) : null;
+            String ao = aoc.getAnnotatedObject() != null?aoc.getObjectName() : null;
             log.debug("\t\t"+aoc.getClass().getSimpleName()+" - "+ao);
         }
     }

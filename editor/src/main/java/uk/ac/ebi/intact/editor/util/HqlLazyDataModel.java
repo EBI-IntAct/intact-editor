@@ -19,7 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortOrder;
-import uk.ac.ebi.intact.model.IntactObject;
+import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -30,7 +30,7 @@ import java.util.Map;
  * @author Bruno Aranda (baranda@ebi.ac.uk)
  * @version $Id$
  */
-public class HqlLazyDataModel<T extends IntactObject> extends LazyDataModel<T> {
+public class HqlLazyDataModel<T extends IntactPrimaryObject> extends LazyDataModel<T> {
 
     private static final Log log = LogFactory.getLog( HqlLazyDataModel.class );
 

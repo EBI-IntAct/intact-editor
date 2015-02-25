@@ -2,35 +2,25 @@ package uk.ac.ebi.intact.editor.controller.admin;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
 import org.primefaces.model.DualListModel;
-import org.primefaces.model.SelectableDataModelWrapper;
-import org.primefaces.model.UploadedFile;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.core.persistence.dao.user.UserDao;
-import uk.ac.ebi.intact.core.persistence.svc.UserService;
-import uk.ac.ebi.intact.core.persister.IntactCore;
 import uk.ac.ebi.intact.editor.controller.misc.AbstractUserController;
-import uk.ac.ebi.intact.editor.util.SelectableCollectionDataModel;
-import uk.ac.ebi.intact.model.user.Role;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.editor.services.admin.InstitutionAdminService;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.user.Role;
+import uk.ac.ebi.intact.jami.model.user.User;
+import uk.ac.ebi.intact.jami.synchronizer.FinderException;
+import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
+import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
 
-import javax.faces.context.ExternalContext;
+import javax.annotation.Resource;
 import javax.faces.context.FacesContext;
-import javax.faces.event.ActionEvent;
 import javax.faces.event.ComponentSystemEvent;
 import javax.faces.model.DataModel;
 import javax.faces.model.SelectItem;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -41,37 +31,24 @@ import java.util.List;
  * @since 2.0
  */
 @Controller
-@Scope( "session" )
-//@ConversationName( "admin" )
+@Scope("conversation.access")
+@ConversationName("general")
 public class UserAdminController extends AbstractUserController {
 
     private static final Log log = LogFactory.getLog( UserAdminController.class );
 
-
     private String loginParam;
     private DualListModel<String> roles;
 
-    private DataModel<User> allUsers;
+    private transient DataModel<User> allUsers;
 
     private User[] selectedUsers;
 
-    private boolean reset;
-
-    @Autowired
-    private UserService userService;
-
-    private List<UserWrapper> usersToImport = new ArrayList<UserWrapper>(  );
-
-    private boolean importUpdateEnabled = true;
-
-    private UserWrapper[] selectedUsersToImport;
-
-    private UploadedFile uploadedFile;
-
-    private boolean fileUploaded;
-
     private List<SelectItem> reviewerSelectItems;
     private List<SelectItem> complexReviewerSelectItems;
+    private List<SelectItem> allReviewerSelectItems;
+    @Resource(name = "institutionAdminService")
+    private transient InstitutionAdminService institutionAdminService;
 
     /////////////////
     // Users
@@ -86,88 +63,43 @@ public class UserAdminController extends AbstractUserController {
 
     ///////////////
     // Actions
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void loadUserToUpdate( ComponentSystemEvent event ) {
+    public void loadData( ComponentSystemEvent event ) {
 
-        log.info( "AbstractUserController.loadUserToUpdate" );
+        if (!FacesContext.getCurrentInstance().isPostback()) {
+            refreshContext();
+            log.info( "AbstractUserController.loadUserToUpdate" );
 
-        loadReviewerSelectItems();
+            this.reviewerSelectItems = getUserAdminService().loadPublicationReviewerSelectItems();
+            this.complexReviewerSelectItems = getUserAdminService().loadComplexReviewerSelectItems();
 
-        if ( loginParam != null ) {
-            // load user and prepare for update
-            log.debug( "Loading user by login '" + loginParam + "'..." );
-            User user = getDaoFactory().getUserDao().getByLogin( loginParam );
-            setUser(user);
+            if ( loginParam != null ) {
+                // load user and prepare for update
+                log.debug("Loading user by login '" + loginParam + "'...");
+                User user = getUserSessionService().loadUser( loginParam );
+                setUser(user);
 
-            if ( user == null ) {
-                addWarningMessage( "Could not find user by login: " + loginParam, "Please try again." );
-            } else {
-                log.debug( "User password hash: " + user.getPassword() );
+                if ( user == null ) {
+                    addWarningMessage( "Could not find user by login: " + loginParam, "Please try again." );
+                } else {
+                    log.debug( "User password hash: " + user.getPassword() );
+                }
             }
-        } else {
-            // prepare for the creation of the new user
-            setUser(new User());
+
+            log.debug( "UserAdminController.loadUsers" );
+            allUsers = getUserAdminService().loadAllUsers();
+            log.info( "AbstractUserController.loadRoles" );
+            roles = getUserAdminService().loadRoles(getUser());
         }
     }
 
-    private void loadReviewerSelectItems() {
-        this.reviewerSelectItems = new ArrayList<SelectItem>();
-        reviewerSelectItems.add(new SelectItem(null, "-- Random --", "Correction assigner", false, true, false));
-
-        List<User> reviewers = getDaoFactory().getUserDao().getReviewers();
-
-
-        for (User reviewer : reviewers) {
-            reviewerSelectItems.add(new SelectItem(reviewer, reviewer.getLogin()));
-        }
-    }
-
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void loadComplexReviewerSelectItems() {
-        this.complexReviewerSelectItems = new ArrayList<SelectItem>();
-        complexReviewerSelectItems.add(new SelectItem(null, "-- Random --", "Correction assigner", false, true, false));
-
-        Collection<uk.ac.ebi.intact.jami.model.user.User> reviewers = getIntactDao().getUserDao().getByRole("COMPLEX_REVIEWER");
-
-        for (uk.ac.ebi.intact.jami.model.user.User reviewer : reviewers) {
-            complexReviewerSelectItems.add(new SelectItem(reviewer, reviewer.getLogin()));
-        }
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void loadData() {
-        log.debug( "AbstractUserController.loadParticipants" );
-
-        Collection<User> users = getDaoFactory().getUserDao().getAll();
-        allUsers = new SelectableDataModelWrapper(new SelectableCollectionDataModel<User>(users), users);
-    }
-
-
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
     public String saveUser() {
-        final UserDao userDao = getDaoFactory().getUserDao();
-
         User user = getUser();
-
-        boolean created = false;
-        if ( !IntactCore.isManaged( user ) && ! IntactCore.isDetached( user ) ) {
-            userDao.persist( user );
-            created = true;
-        }
-
-        // We need to attach the object to the session if we want that orphan removal=true works when
-        // we delete a preference (e.g. mentor.reviewer)
-        if(IntactCore.isDetached( user )){
-            User newUser = getCoreEntityManager().merge(user);
-            setUser(newUser);
-            user = newUser;
-        }
 
         // handle roles
         final List<String> includedRoles = roles.getTarget();
         for ( String roleName : includedRoles ) {
             if ( !user.hasRole( roleName ) ) {
-                final Role r = getDaoFactory().getRoleDao().getRoleByName( roleName );
+                final Role r = new Role( roleName );
                 user.addRole( r );
                 log.info( "Added role " + roleName + "to user " + user.getLogin() );
             }
@@ -176,56 +108,67 @@ public class UserAdminController extends AbstractUserController {
         final List<String> excludedRoles = roles.getSource();
         for ( String roleName : excludedRoles ) {
             if ( user.hasRole( roleName ) ) {
-                final Role r = getDaoFactory().getRoleDao().getRoleByName( roleName );
+                final Role r = new Role( roleName );
                 user.removeRole( r );
                 log.info( "Removed role " + roleName + "to user " + user.getLogin() );
             }
         }
 
-        userDao.saveOrUpdate( user );
+        try {
+            user = getUserAdminService().saveUser(user);
+            addInfoMessage( "User " + user.getLogin() + " was updated successfully", "" );
+        } catch (SynchronizerException e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (FinderException e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (PersisterException e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (Throwable e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        }
 
-        addInfoMessage( "User " + user.getLogin() + " was " + ( created ? "created" : "updated" ) + " successfully", "" );
+        // reset properties before redirecting to the user list.
+        setUser(null);
+        setLoginParam(null);
 
-        // reset user before redirecting to the user list.
-        user = null;
+        this.reviewerSelectItems=null;
+        this.complexReviewerSelectItems=null;
+        this.allReviewerSelectItems=null;
+
+        return "admin.users.list";
+    }
+
+    public String deleteUser() {
+        User user = getUser();
+
+        try {
+            getUserAdminService().deleteUser(user);
+            addInfoMessage( "User " + user.getLogin() + " was deleted successfully", "" );
+        } catch (SynchronizerException e) {
+            addErrorMessage("Cannot delete user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (FinderException e) {
+            addErrorMessage("Cannot delete user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (PersisterException e) {
+            addErrorMessage("Cannot delete user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (Throwable e) {
+            addErrorMessage("Cannot delete user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        }
+
+        // reset properties before redirecting to the user list.
+        setUser(null);
+        setLoginParam(null);
+
+        this.reviewerSelectItems=null;
+        this.complexReviewerSelectItems=null;
+        this.allReviewerSelectItems=null;
 
         return "admin.users.list";
     }
 
     public String newUser() {
         loginParam = null;
-        setUser(null);
+        setUser(new User("to set", "to set","to set","to set"));
         return "/admin/users/edit?faces-redirect=true";
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void loadRoles( ComponentSystemEvent event ) {
-
-        log.info( "AbstractUserController.loadRoles" );
-
-        List<String> source = new ArrayList<String>();
-        List<String> target = new ArrayList<String>();
-
-        Collection<Role> allRoles = getDaoFactory().getRoleDao().getAll();
-        log.debug( "Found " + allRoles.size() + " role(s) in the database." );
-
-        User user = getUser();
-
-        if ( user == null ) {
-            for ( Role role : allRoles ) {
-                source.add( role.getName() );
-            }
-        } else {
-            for ( Role role : allRoles ) {
-                if ( user.getRoles().contains( role ) ) {
-                    target.add( role.getName() );
-                } else {
-                    source.add( role.getName() );
-                }
-            }
-        }
-
-        roles = new DualListModel<String>( source, target );
     }
 
     public List<Role> createRoleList( User user ) {
@@ -244,10 +187,6 @@ public class UserAdminController extends AbstractUserController {
     }
 
     public DataModel<User> getAllUsers() {
-        if (allUsers == null) {
-            loadData();
-        }
-
         return allUsers;
     }
 
@@ -289,201 +228,36 @@ public class UserAdminController extends AbstractUserController {
         return logins;
     }
 
-    public void exportSelectedUsers( ActionEvent evt ) {
-        if( ! hasSelectedUsers() ) {
-           addWarningMessage( "Cannot export empty user selection.", "Please select at least one user." );
-            return;
-        }
-
-        try {
-            final ExternalContext externalContext = FacesContext.getCurrentInstance().getExternalContext();
-            final HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();
-            final HttpServletResponse response = (HttpServletResponse) externalContext.getResponse();
-
-            response.sendRedirect(request.getContextPath()+"/service/export/users/byLogin?logins="+getSelectedUsersLogin( "," ));
-
-            FacesContext.getCurrentInstance().responseComplete();
-        } catch (IOException e) {
-            handleException(e);
-        }
-    }
-
-    ///////////////////////
-    // User Import
-
-
-    public boolean isReset() {
-        return reset;
-    }
-
-    public void setReset( boolean reset ) {
-        this.reset = reset;
-    }
-
-    public void initUserImport() {
-        if( reset ) {
-            usersToImport = new ArrayList<UserWrapper>();
-            fileUploaded = false;
-            selectedUsersToImport = null;
-            reset = false;
-        }
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void upload() {
-        usersToImport = new ArrayList<UserWrapper>();
-        try {
-            InputStream inputStream = uploadedFile.getInputstream();
-            Collection<User> users = Collections.EMPTY_LIST;
-            try{
-                users = userService.parseUsers( inputStream );
-            }
-            finally {
-                inputStream.close();
-            }
-
-            if( ! users.isEmpty() ) {
-                for ( User user : users ) {
-                    final UserWrapper uw = new UserWrapper( user );
-                    User dbUser = getDaoFactory().getUserDao().getByLogin( user.getLogin() );
-                    if( dbUser != null ) {
-                        uw.setAlreadyExistsInDB( true );
-                    }
-                    usersToImport.add( uw );
-                }
-            }
-
-            addInfoMessage( "Successful", usersToImport.size() + " users loaded from file " + uploadedFile.getFileName() );
-            fileUploaded = true;
-
-        } catch ( Exception e ) {
-            addWarningMessage( "Failed", "Could not parse user file: " + uploadedFile.getFileName() );
-        }
-    }
-
-
-    public void importSelectedUsers() {
-        if( selectedUsersToImport == null || selectedUsersToImport.length == 0 ) {
-            addWarningMessage( "Failed", "You must select at least one user to import." );
-            return;
-        }
-
-        Collection<User> users = new ArrayList<User>( );
-        int newUser = 0;
-        int existingUsers = 0;
-        for ( int i = 0; i < selectedUsersToImport.length; i++ ) {
-            UserWrapper wrapper = selectedUsersToImport[i];
-            users.add( wrapper.getUser() );
-            if( wrapper.isAlreadyExistsInDB() ) {
-                existingUsers++;
-            } else {
-                newUser++;
-            }
-        }
-
-        userService.importUsers( users, importUpdateEnabled );
-
-        // clear up data
-        usersToImport = new ArrayList<UserWrapper>();
-        fileUploaded = false;
-        selectedUsersToImport = null;
-
-        String msg = null;
-        if( importUpdateEnabled ) {
-            msg = newUser + " created, " + existingUsers + " updated users.";
-        } else {
-            msg = newUser + " users created.";
-        }
-        addInfoMessage( "Successful", msg );
-    }
-
-    public List<UserWrapper> getUsersToImport() {
-        return usersToImport;
-    }
-
-    public void setUsersToImport( List<UserWrapper> usersToImport ) {
-        this.usersToImport = usersToImport;
-    }
-
-    public boolean isImportUpdateEnabled() {
-        return importUpdateEnabled;
-    }
-
-    public void setImportUpdateEnabled( boolean importUpdateEnabled ) {
-        this.importUpdateEnabled = importUpdateEnabled;
-    }
-
-    public class UserWrapper extends User {
-
-        private User user;
-
-        private boolean alreadyExistsInDB;
-
-        public UserWrapper( User user ) {
-            this.user = user;
-        }
-
-        public User getUser() {
-            return user;
-        }
-
-        public void setUser( User user ) {
-            this.user = user;
-        }
-
-        public boolean isAlreadyExistsInDB() {
-            return alreadyExistsInDB;
-        }
-
-        public void setAlreadyExistsInDB( boolean alreadyExistsInDB ) {
-            this.alreadyExistsInDB = alreadyExistsInDB;
-        }
-    }
-
-    public UserWrapper[] getSelectedUsersToImport() {
-        return selectedUsersToImport;
-    }
-
-    public void setSelectedUsersToImport( UserWrapper[] selectedUsersToImport ) {
-        this.selectedUsersToImport = selectedUsersToImport;
-    }
-
-    public UploadedFile getUploadedFile() {
-        return uploadedFile;
-    }
-
-    public void setUploadedFile( UploadedFile uploadedFile ) {
-        this.uploadedFile = uploadedFile;
-    }
-
-    public boolean isFileUploaded() {
-        return fileUploaded;
-    }
-
-    public void setFileUploaded( boolean fileUploaded ) {
-        this.fileUploaded = fileUploaded;
-    }
-
     public List<SelectItem> getReviewerSelectItems() {
-        if (reviewerSelectItems == null) {
-            loadReviewerSelectItems();
+        if (reviewerSelectItems == null){
+            this.reviewerSelectItems = getUserAdminService().loadPublicationReviewerSelectItems();
         }
-
         return reviewerSelectItems;
-    }
-
-    public void setReviewerSelectItems(List<SelectItem> reviewerSelectItems) {
-        this.reviewerSelectItems = reviewerSelectItems;
     }
 
     public List<SelectItem> getComplexReviewerSelectItems() {
         if (complexReviewerSelectItems == null){
-            loadComplexReviewerSelectItems();
+            this.complexReviewerSelectItems = getUserAdminService().loadComplexReviewerSelectItems();
         }
         return complexReviewerSelectItems;
     }
 
-    public void setComplexReviewerSelectItems(List<SelectItem> complexReviewerSelectItems) {
-        this.complexReviewerSelectItems = complexReviewerSelectItems;
+    public List<SelectItem> getAllReviewerSelectItems() {
+        if (allReviewerSelectItems == null){
+            this.allReviewerSelectItems = getUserAdminService().loadAllReviewerSelectItems();
+        }
+        return allReviewerSelectItems;
+    }
+
+    public InstitutionAdminService getInstitutionAdminService() {
+        if (this.institutionAdminService == null){
+            this.institutionAdminService = ApplicationContextProvider.getBean("institutionAdminService");
+        }
+        return institutionAdminService;
+    }
+
+    public List<SelectItem> getInstitutionItems() {
+
+        return getInstitutionAdminService().getInstitutionItems();
     }
 }

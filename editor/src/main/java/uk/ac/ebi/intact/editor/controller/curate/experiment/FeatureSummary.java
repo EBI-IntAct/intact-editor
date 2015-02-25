@@ -1,5 +1,7 @@
 package uk.ac.ebi.intact.editor.controller.curate.experiment;
 
+import java.util.Collection;
+
 /**
  * Summary for a feature
  *
@@ -11,18 +13,18 @@ package uk.ac.ebi.intact.editor.controller.curate.experiment;
 public class FeatureSummary {
 
     private String feature;
-    private String biundDomain;
+    private Collection<String> bindDomains;
 
-    public FeatureSummary(String feature, String bind){
+    public FeatureSummary(String feature, Collection<String> bind){
         this.feature = feature;
-        this.biundDomain = bind;
+        this.bindDomains = bind;
     }
 
     public String getFeature() {
         return feature;
     }
 
-    public String getBindDomain() {
-        return biundDomain;
+    public Collection<String> getBindDomains() {
+        return bindDomains;
     }
 }

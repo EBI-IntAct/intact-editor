@@ -15,23 +15,15 @@
  */
 package uk.ac.ebi.intact.editor.controller.admin.report;
 
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
 import org.joda.time.DateTime;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.editor.controller.JpaAwareController;
-import uk.ac.ebi.intact.model.CvLifecycleEventType;
-import uk.ac.ebi.intact.model.LifecycleEvent;
+import uk.ac.ebi.intact.editor.controller.BaseController;
+import uk.ac.ebi.intact.editor.services.admin.report.AssignmentReportService;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 
+import javax.annotation.Resource;
 import javax.faces.event.ActionEvent;
-import javax.persistence.Query;
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -41,90 +33,57 @@ import java.util.List;
  */
 @Controller
 @Scope("session")
-public class AssignmentReportController extends JpaAwareController {
+public class AssignmentReportController extends BaseController {
 
-    private List<AssignmentInfo> assignmentInfos;
+    private List<AssignmentReportService.AssignmentInfo> publicationAssignmentInfos;
+    private List<AssignmentReportService.AssignmentInfo> complexAssignmentInfos;
     private Date fromDate;
     private Date toDate;
+
+    @Resource(name = "assignmentReportService")
+    private transient AssignmentReportService assignmentReportService;
 
     public AssignmentReportController() {
         fromDate = new DateTime().minusMonths(1).toDate();
         toDate = new DateTime().toDate();
     }
 
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED, readOnly = true)
-    public void calculate(ActionEvent evt) {
-        assignmentInfos = new ArrayList<AssignmentInfo>();
-
-        Query query = getDaoFactory().getEntityManager().createQuery("select e from LifecycleEvent e where " +
-                "e.event.identifier = :cvEventId and e.when >= :dateFrom and e.when <= :dateTo and e.note is null order by e.when");
-        query.setParameter("cvEventId", CvLifecycleEventType.READY_FOR_CHECKING.identifier());
-        query.setParameter("dateFrom", fromDate);
-        query.setParameter("dateTo", new DateTime(toDate).plusDays(1).minusSeconds(1).toDate());
-
-        List<LifecycleEvent> events = query.getResultList();
-
-        Multiset<String> multiset = HashMultiset.create();
-
-        for (LifecycleEvent event : events) {
-            multiset.add(event.getPublication().getCurrentReviewer().getLogin());
-        }
-
-        int total = multiset.size();
-
-        for (String reviewer : multiset.elementSet()) {
-            int count = multiset.count(reviewer);
-            int percentage = count * 100 / total;
-            assignmentInfos.add(new AssignmentInfo(reviewer, count, percentage));
-        }
+    public void calculatePublicationAssigments(ActionEvent evt) {
+        publicationAssignmentInfos = getAssignmentReportService().calculatePublicationReviewerAssignments(fromDate, toDate);
     }
 
-    public List<AssignmentInfo> getAssignmentInfos() {
-        return assignmentInfos;
+    public void calculateComplexAssigments(ActionEvent evt) {
+        complexAssignmentInfos = getAssignmentReportService().calculateComplexReviewerAssignments(fromDate, toDate);
     }
 
-    public void setAssignmentInfos(List<AssignmentInfo> assignmentInfos) {
-        this.assignmentInfos = assignmentInfos;
+    public List<AssignmentReportService.AssignmentInfo> getPublicationAssignmentInfos() {
+        return publicationAssignmentInfos;
+    }
+
+    public List<AssignmentReportService.AssignmentInfo> getComplexAssignmentInfos() {
+        return complexAssignmentInfos;
     }
 
     public Date getFromDate() {
         return fromDate;
     }
 
-    public void setFromDate(Date fromDate) {
-        this.fromDate = fromDate;
-    }
-
     public Date getToDate() {
         return toDate;
+    }
+
+    public void setFromDate(Date fromDate) {
+        this.fromDate = fromDate;
     }
 
     public void setToDate(Date toDate) {
         this.toDate = toDate;
     }
 
-    public class AssignmentInfo {
-
-        private String reviewer;
-        private int count;
-        private int percentage;
-
-        private AssignmentInfo(String reviewer, int count, int percentage) {
-            this.reviewer = reviewer;
-            this.count = count;
-            this.percentage = percentage;
+    public AssignmentReportService getAssignmentReportService() {
+        if (this.assignmentReportService == null){
+            this.assignmentReportService = ApplicationContextProvider.getBean("assignmentReportService");
         }
-
-        public String getReviewer() {
-            return reviewer;
-        }
-
-        public int getCount() {
-            return count;
-        }
-
-        public int getPercentage() {
-            return percentage;
-        }
+        return assignmentReportService;
     }
 }

@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ot="http://myfaces.apache.org/orchestra"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+
+                template="/dbmanager/dbmanager_template.xhtml">
+
+<ui:define name="metadata">
+    <f:metadata>
+        <f:viewParam name="query" value="#{jobSummaryController.query}"/>
+        <f:event type="preRenderView" listener="#{jobSummaryController.searchIfQueryPresent}"/>
+    </f:metadata>
+</ui:define>
+
+<ui:define name="dbManagerContent">
+
+<br/>
+
+<p:outputPanel rendered="#{jobSummaryController.hasNoResults() and not jobSummaryController.emptyQuery}">
+    Your import (<b>#{jobSummaryController.query}</b>) didn't return any results yet.
+    <br/>
+    <br/>
+</p:outputPanel>
+
+<p:outputPanel rendered="#{not jobSummaryController.emptyQuery and not jobSummaryController.hasNoResults()}">
+Results for import: <b>#{jobSummaryController.query}</b>
+<hr/>
+
+<p:accordionPanel autoHeight="false">
+
+<p:tab title="Publications (#{jobSummaryController.publications.rowCount})"
+       rendered="#{jobSummaryController.publicationSearchEnabled and jobSummaryController.publications != null and jobSummaryController.publications.rowCount != 0}">
+
+    <ui:include src="/dashboard/publications_table.xhtml">
+        <ui:param name="publicationsDataModel" value="#{jobSummaryController.publications}"/>
+    </ui:include>
+
+</p:tab>
+
+<p:tab title="Experiments (#{jobSummaryController.experiments.rowCount})"
+       rendered="#{jobSummaryController.publicationSearchEnabled and jobSummaryController.experiments != null and jobSummaryController.experiments.rowCount != 0}">
+
+    <ui:include src="/curate/experiments_table.xhtml">
+        <ui:param name="value" value="#{jobSummaryController.experiments}"/>
+        <ui:param name="lazy" value="#{true}"/>
+        <ui:param name="readonly" value="#{true}"/>
+    </ui:include>
+
+</p:tab>
+
+<p:tab title="Interactions (#{jobSummaryController.interactions.rowCount})"
+       rendered="#{jobSummaryController.publicationSearchEnabled and jobSummaryController.interactions != null and jobSummaryController.interactions.rowCount != 0}">
+
+    <ui:include src="/curate/interactions_table.xhtml">
+        <ui:param name="value" value="#{jobSummaryController.interactions}"/>
+        <ui:param name="readonly" value="#{true}"/>
+    </ui:include>
+
+</p:tab>
+
+<p:tab title="Molecules (#{jobSummaryController.molecules.rowCount})"
+       rendered="#{jobSummaryController.molecules != null and jobSummaryController.molecules.rowCount != 0}">
+
+    <ui:include src="/search/molecules_table.xhtml">
+        <ui:param name="molecules" value="#{jobSummaryController.molecules}"/>
+        <ui:param name="complexSearchEnabled" value="#{jobSummaryController.complexSearchEnabled}"/>
+        <ui:param name="resultsOutcome" value="/dbmanager/summary"/>
+    </ui:include>
+
+
+</p:tab>
+
+<p:tab title="Controlled Vocabularies (#{jobSummaryController.cvobjects.rowCount})"
+       rendered="#{jobSummaryController.cvobjects != null and jobSummaryController.cvobjects.rowCount != 0}">
+
+    <p:dataTable id="searchCvObjectTable" var="cvobject" value="#{jobSummaryController.cvobjects}"
+                 paginatorPosition="both"
+                 paginator="true" paginatorAlwaysVisible="false" rows="10"
+                 paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
+                 rowsPerPageTemplate="10,20,50,100"
+                 dynamic="true">
+        <p:column headerText="Name" sortBy="#{cvobject.shortName}">
+            <h:link outcome="/curate/cvobject" value="#{cvobject.shortName}" includeViewParams="true">
+                <f:param name="ac" value="#{cvobject.ac}"/>
+            </h:link>
+        </p:column>
+        <p:column>
+            <h:panelGroup rendered="#{cvobject.caution != null}">
+                <h:graphicImage alt="caution" library="images" name="warn.gif"
+                                title="#{cvobject.caution}"/>
+            </h:panelGroup>
+        </p:column>
+        <p:column headerText="Type">
+            <h:outputText value="#{cvobject.type}"/>
+        </p:column>
+        <p:column headerText="Identifier">
+            <h:outputText value="#{cvobject.identifier}"/>
+        </p:column>
+        <p:column headerText="AC" sortBy="#{cvobject.ac}">
+            <h:outputText value="#{cvobject.ac}"/>
+        </p:column>
+    </p:dataTable>
+
+</p:tab>
+
+<p:tab title="Organisms (#{jobSummaryController.organisms.rowCount})"
+       rendered="#{jobSummaryController.organisms != null and jobSummaryController.organisms.rowCount != 0}">
+
+    <p:dataTable id="organismFeaturesTable" var="organism" value="#{jobSummaryController.organisms}"
+                 paginatorPosition="both"
+                 paginator="true" paginatorAlwaysVisible="false" rows="10"
+                 paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
+                 rowsPerPageTemplate="10,20,50,100"
+                 dynamic="true">
+        <p:column headerText="Shortlabel" sortBy="#{organism.commonName}">
+            <h:link outcome="/curate/organism" value="#{organism.commonName}" includeViewParams="true">
+                <f:param name="ac" value="#{organism.ac}"/>
+            </h:link>
+        </p:column>
+        <p:column headerText="Short Name" sortBy="#{organism.commonName}">
+            <h:outputText value="#{organism.commonName}"/>
+        </p:column>
+        <p:column headerText="Full Name" sortBy="#{organism.scientificName}">
+            <h:outputText value="#{organism.scientificName}"/>
+        </p:column>
+        <p:column headerText="Tax ID" sortBy="#{organism.taxId}">
+            <h:outputText value="#{organism.taxId}"/>
+        </p:column>
+        <p:column headerText="AC" sortBy="#{organism.ac}">
+            <h:outputText value="#{organism.ac}"/>
+        </p:column>
+        <p:column headerText="Participants Express In">
+            <h:link outcome="/search/expressed_in" includeViewParams="true"
+                    value="#{organism.numberParticipants}"
+                    rendered="#{organism.numberParticipants > 0}">
+                <f:param name="ac" value="#{organism.ac}"/>
+                <f:param name="shortLabel" value="#{organism.commonName}"/>
+                <f:param name="numParticipants" value="#{organism.numberParticipants}"/>
+                <f:param name="resultsOutcome" value="/dbmanager/summary"/>
+            </h:link>
+        </p:column>
+        <p:column headerText="Experiments by Host Organism">
+            <h:link outcome="/search/host_organism" includeViewParams="true"
+                    value="#{organism.numberExperiments}"
+                    rendered="#{organism.numberExperiments > 0}">
+                <f:param name="ac" value="#{organism.ac}"/>
+                <f:param name="shortLabel" value="#{organism.commonName}"/>
+                <f:param name="numExperiments" value="#{organism.numberExperiments}"/>
+                <f:param name="resultsOutcome" value="/dbmanager/summary"/>
+            </h:link>
+        </p:column>
+        <p:column headerText="Interactors by Organism">
+            <h:link outcome="/search/organism" includeViewParams="true"
+                    value="#{organism.numberMolecules}"
+                    rendered="#{organism.numberMolecules > 0}">
+                <f:param name="ac" value="#{organism.ac}"/>
+                <f:param name="shortLabel" value="#{organism.commonName}"/>
+                <f:param name="numInteractors" value="#{organism.numberMolecules}"/>
+                <f:param name="resultsOutcome" value="/dbmanager/summary"/>
+            </h:link>
+        </p:column>
+        <p:column headerText="Complexes by Organism">
+            <h:link outcome="/search/complex" includeViewParams="true"
+                    value="#{organism.numberComplexes}"
+                    rendered="#{organism.numberComplexes > 0 and jobSummaryController.complexSearchEnabled}">
+                <f:param name="ac" value="#{organism.ac}"/>
+                <f:param name="shortLabel" value="#{organism.commonName}"/>
+                <f:param name="numComplexes" value="#{organism.numberComplexes}"/>
+                <f:param name="resultsOutcome" value="/dbmanager/summary"/>
+            </h:link>
+            <h:outputText rendered="#{organism.numberComplexes > 0 and !jobSummaryController.complexSearchEnabled}"
+                          value="#{organism.numberComplexes}"/>
+        </p:column>
+
+    </p:dataTable>
+
+</p:tab>
+
+<p:tab title="Features (#{jobSummaryController.features.rowCount})"
+       rendered="#{jobSummaryController.publicationSearchEnabled and jobSummaryController.features != null and jobSummaryController.features.rowCount != 0}">
+
+    <ui:include src="/search/features_table.xhtml">
+        <ui:param name="features" value="#{jobSummaryController.features}"/>
+        <ui:param name="slug" value="feature"/>
+    </ui:include>
+
+</p:tab>
+
+<p:tab title="Participants (#{jobSummaryController.participants.rowCount})"
+       rendered="#{jobSummaryController.publicationSearchEnabled and jobSummaryController.participants != null and jobSummaryController.participants.rowCount != 0}">
+
+    <ui:include src="/search/participants_table.xhtml">
+        <ui:param name="participants" value="#{jobSummaryController.participants}"/>
+    </ui:include>
+
+</p:tab>
+
+<br/>
+
+<p:tab title="Biological Complexes (#{jobSummaryController.complexes.rowCount})"
+       rendered="#{jobSummaryController.complexSearchEnabled and jobSummaryController.complexes != null and jobSummaryController.complexes.rowCount != 0}">
+
+    <ui:include src="/dashboard/complexes_table.xhtml">
+        <ui:param name="complexesDataModel" value="#{jobSummaryController.complexes}"/>
+    </ui:include>
+
+</p:tab>
+
+
+<p:tab title="Complex Features (#{jobSummaryController.modelledFeatures.rowCount})"
+       rendered="#{jobSummaryController.complexSearchEnabled and jobSummaryController.modelledFeatures != null and jobSummaryController.modelledFeatures.rowCount != 0}">
+
+    <ui:include src="/search/features_table.xhtml">
+        <ui:param name="features" value="#{jobSummaryController.modelledFeatures}"/>
+        <ui:param name="slug" value="cfeature"/>
+    </ui:include>
+
+</p:tab>
+
+<p:tab title="Complex Participants (#{jobSummaryController.modelledParticipants.rowCount})"
+       rendered="#{jobSummaryController.complexSearchEnabled and jobSummaryController.modelledParticipants != null and jobSummaryController.modelledParticipants.rowCount != 0}">
+
+    <p:dataTable id="searchModelledParticipantsTable" var="participant" value="#{jobSummaryController.modelledParticipants}"
+                 paginatorPosition="both"
+                 paginator="true" paginatorAlwaysVisible="false" rows="10"
+                 paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
+                 rowsPerPageTemplate="10,20,50,100"
+                 dynamic="true">
+
+        <p:column headerText="AC">
+            <h:outputText value="#{participant.ac}" rendered="#{participant.ac != null}"/>
+        </p:column>
+
+        <p:column headerText="Name" sortBy="#{participant.interactorShortName}">
+            <ot:separateConversationContext>
+                <h:link outcome="/curate/cparticipant" value="#{participant.interactorShortName}"
+                        rendered="#{not changesController.isDeletedAc(participant.ac)}" includeViewParams="true">
+                    <f:param name="ac" value="#{participant.ac}"/>
+                </h:link>
+            </ot:separateConversationContext>
+            <h:panelGroup rendered="#{changesController.isDeletedAc(participant.ac)}">
+                <h:outputText value="#{participant.interactorShortName}" styleClass="intact-deleted"/>
+            </h:panelGroup>
+
+        </p:column>
+
+        <p:column>
+            <h:panelGroup rendered="#{participant.caution != null}">
+                <h:graphicImage alt="caution" library="images" name="warn.gif"
+                                title="#{participant.caution}"/>
+            </h:panelGroup>
+            <h:panelGroup rendered="#{participant.noUniprotUpdate}">
+                <h:graphicImage alt="no uniprot update" library="images" name="no_uni_update.png"
+                                title="No Uniprot Update"/>
+            </h:panelGroup>
+        </p:column>
+
+        <p:column headerText="Identity">
+            <h:outputText id="participantId"
+                          value="#{participant.identityXref}"
+                          styleClass="#{changesController.isDeletedAc(participant.ac)? 'intact-deleted' : ''}"/>
+        </p:column>
+
+        <p:column headerText="Biological role">
+
+            <h:outputText
+                    value="#{participant.biologicalRole}"/>
+        </p:column>
+
+        <p:column headerText="# Features">
+            <h:outputText value="#{participant.featuresNumber}"/>
+        </p:column>
+
+        <p:column headerText="Min Stoich.">
+            <h:outputText id="minStoichiometryTxt1" value="#{participant.minStoichiometry}"/>
+        </p:column>
+        <p:column headerText="Max Stoich.">
+            <h:outputText id="maxStoichiometryTxt2" value="#{participant.maxStoichiometry}"/>
+        </p:column>
+    </p:dataTable>
+
+</p:tab>
+
+</p:accordionPanel>
+
+</p:outputPanel>
+
+<br/><br/>
+
+</ui:define>
+
+</ui:composition>

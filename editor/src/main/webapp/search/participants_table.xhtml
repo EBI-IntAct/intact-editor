@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+                xmlns:ot="http://myfaces.apache.org/orchestra">
+
+    <h:panelGroup id="participantsTable">
+
+        <p:dataTable id="searchParticipantsTable" var="participant" value="#{participants}"
+                     paginatorPosition="both"
+                     paginator="true" paginatorAlwaysVisible="false" rows="10"
+                     paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
+                     rowsPerPageTemplate="10,20,50,100"
+                     dynamic="true">
+
+            <p:column headerText="AC">
+                <h:outputText value="#{participant.ac}" rendered="#{participant.ac != null}"/>
+            </p:column>
+
+            <p:column headerText="Name" sortBy="#{participant.interactorShortName}">
+                <p:commandLink action="#{curateController.editByAc(participant.ac)}"
+                               value="#{participant.interactorShortName}"
+                               rendered="#{not changesController.isDeletedAc(participant.ac)}"
+                               styleClass="#{participant.ac == null? 'intact-new' :''}"
+                               ajax="false"/>
+                <h:panelGroup rendered="#{changesController.isDeletedAc(participant.ac)}">
+                    <h:outputText value="#{participant.interactorShortName}" styleClass="intact-deleted"/>
+                </h:panelGroup>
+            </p:column>
+
+            <p:column>
+                <h:panelGroup rendered="#{participant.caution != null}">
+                    <h:graphicImage alt="caution" library="images" name="warn.gif"
+                                    title="#{participant.caution}"/>
+                </h:panelGroup>
+                <h:panelGroup rendered="#{participant.noUniprotUpdate}">
+                    <h:graphicImage alt="no uniprot update" library="images" name="no_uni_update.png"
+                                    title="No Uniprot Update"/>
+                </h:panelGroup>
+            </p:column>
+
+            <p:column headerText="Identity">
+                <h:outputText id="participantId"
+                              value="#{participant.identityXref}"
+                              styleClass="#{changesController.isDeletedAc(participant.ac)? 'intact-deleted' : ''}"/>
+            </p:column>
+
+            <p:column headerText="Expressed in">
+                <h:outputText value="#{participant.expressedInOrganism}"/>
+            </p:column>
+
+            <p:column headerText="Experimental role">
+                <h:outputText value="#{participant.experimentalRole}"/>
+            </p:column>
+
+            <p:column headerText="Biological role">
+
+                <h:outputText
+                        value="#{participant.biologicalRole}"/>
+            </p:column>
+
+            <p:column headerText="# Features">
+                <h:outputText value="#{participant.featuresNumber}"/>
+            </p:column>
+
+            <p:column headerText="Min Stoich.">
+                <h:outputText id="minStoichiometryTxt1" value="#{participant.minStoichiometry}"/>
+            </p:column>
+            <p:column headerText="Max Stoich.">
+                <h:outputText id="maxStoichiometryTxt2" value="#{participant.maxStoichiometry}"/>
+            </p:column>
+        </p:dataTable>
+    </h:panelGroup>
+
+
+</ui:composition>

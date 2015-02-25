@@ -15,8 +15,7 @@
  */
 package uk.ac.ebi.intact.editor.config;
 
-import uk.ac.ebi.intact.core.annotations.PersistentConfiguration;
-import uk.ac.ebi.intact.core.annotations.PersistentProperty;
+
 import uk.ac.ebi.intact.editor.controller.BaseController;
 
 /**
@@ -25,37 +24,28 @@ import uk.ac.ebi.intact.editor.controller.BaseController;
  * @author Bruno Aranda (baranda@ebi.ac.uk)
  * @version $Id$
  */
-@PersistentConfiguration
 public class EditorConfig extends BaseController {
 
     private String buildVersion;
     private String buildTimestamp;
 
-    @PersistentProperty
     private String instanceName;
     private String databaseUrl;
     private String usersDatabaseUrl;
 
-    @PersistentProperty
     private String logoUrl;
 
-    @PersistentProperty
     private String googleUsername;
 
-    @PersistentProperty
     private String googlePassword;
 
-    @PersistentProperty(defaultValue = "0")
-    private float defaultStoichiometry;
+    private int defaultStoichiometry=0;
 
-    @PersistentProperty(defaultValue = "imex curation")
-    private String defaultCurationDepth;
+    private String defaultCurationDepth="imex curation";
 
-    @PersistentProperty(defaultValue = "5")
-    private int revertDecisionTime;
+    private int revertDecisionTime=5;
 
-    @PersistentProperty(defaultValue = "ebi")
-    private String theme;
+    private String theme="ebi";
     
     private String imexCentralUsername;
     private String imexCentralPassword;
@@ -104,11 +94,11 @@ public class EditorConfig extends BaseController {
         this.logoUrl = logoUrl;
     }
 
-    public float getDefaultStoichiometry() {
+    public int getDefaultStoichiometry() {
         return defaultStoichiometry;
     }
 
-    public void setDefaultStoichiometry(float defaultStoichiometry) {
+    public void setDefaultStoichiometry(int defaultStoichiometry) {
         this.defaultStoichiometry = defaultStoichiometry;
     }
 

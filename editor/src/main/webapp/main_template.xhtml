@@ -61,23 +61,6 @@
                             value="#{userSessionController.currentUser.firstName} #{userSessionController.currentUser.lastName}"
                             action="/dashboard/userprofile?faces-redirect=true" ajax="false"/>
                     </li>
-                    <!--<h:panelGroup rendered="#{userSessionController.hasRole('ADMIN')}">-->
-                    <!--&lt;!&ndash;<h:graphicImage url="/resources/images/database.png" alt="Database: "/>&ndash;&gt;-->
-                    <!--&lt;!&ndash;&#160;&ndash;&gt;-->
-                    <!--<h:outputText value="#{editorConfig.instanceName}" title="Database: #{editorConfig.databaseUrl}"/>-->
-                    <!--|&#160;-->
-                    <!---->
-                    <!--&lt;!&ndash;<h:graphicImage url="/resources/images/users.png" alt="Curators:"/>&ndash;&gt;-->
-                    <!--&lt;!&ndash;&#160;&ndash;&gt;-->
-                    <!--<p:commandLink onclick="loggedUsersDlg.show();" update="loggedUsersTable" >-->
-                                        <!--<h:outputText value="#{userManagerController.loggedInUserCount}"/>-->
-                                    <!--</p:commandLink>-->
-                    <!--|&#160;-->
-                    <!--</h:panelGroup>-->
-                    <!--<h:outputLink value="#{facesContext.externalContext.request.contextPath}/j_spring_security_logout" title="Logout">-->
-                                        <!--<h:graphicImage border="0" url="/resources/images/logout.jpg" alt="Logout"/>-->
-                                    <!--</h:outputLink>-->
-                    <!--&#160;-->
                     <li>
                     <h:outputLink style="color: #ffd98f" value="#{facesContext.externalContext.request.contextPath}/j_spring_security_logout" title="Logout">
                                         <h:outputText value="Logout"/>

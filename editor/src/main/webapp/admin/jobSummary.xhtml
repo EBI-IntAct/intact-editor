@@ -8,6 +8,12 @@
 
                 template="/admin/admin_template.xhtml">
 
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:event type="preRenderView" listener="#{adminJobController.load}"/>
+        </f:metadata>
+    </ui:define>
+
     <ui:define name="adminContent">
 
         <h2>Running jobs</h2>

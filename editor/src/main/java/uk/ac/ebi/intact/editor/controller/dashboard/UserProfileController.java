@@ -2,12 +2,16 @@ package uk.ac.ebi.intact.editor.controller.dashboard;
 
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.editor.controller.UserSessionController;
 import uk.ac.ebi.intact.editor.controller.misc.AbstractUserController;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.editor.services.UserSessionService;
+import uk.ac.ebi.intact.editor.services.dashboard.UserProfileService;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.user.User;
+import uk.ac.ebi.intact.jami.synchronizer.FinderException;
+import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
+import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
 
+import javax.annotation.Resource;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ComponentSystemEvent;
 
@@ -23,14 +27,16 @@ public class UserProfileController extends AbstractUserController {
     private String newPassword1;
     private String newPassword2;
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    @Resource(name = "userSessionService")
+    private transient UserSessionService userSessionService;
+
+    @Resource(name = "userProfileService")
+    private transient UserProfileService userProfileService;
+
     public void loadData(ComponentSystemEvent cse) {
-        UserSessionController userSessionController = getUserSessionController();
-        User user =  getDaoFactory().getUserDao().getByLogin(userSessionController.getCurrentUser().getLogin());
-        setUser(user);
+        setUser(getUserSessionService().loadUser(getCurrentUser().getLogin()));
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String updateProfile() {
         User user = getUser();
 
@@ -45,11 +51,19 @@ public class UserProfileController extends AbstractUserController {
              }
          }
 
-        getDaoFactory().getUserDao().update(user);
-
-        getUserSessionController().setCurrentUser(user);
-
-        addInfoMessage("User profile", "Profile was updated successfully");
+        try {
+            getUserSessionService().getIntactDao().getUserContext().setUser(getCurrentUser());
+            getUserSessionController().setCurrentUser(getUserProfileService().updateProfile(user));
+            addInfoMessage("User profile", "Profile was updated successfully");
+        } catch (SynchronizerException e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (FinderException e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (PersisterException e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (Throwable e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        }
 
         return "/dashboard/dashboard";
     }
@@ -76,5 +90,19 @@ public class UserProfileController extends AbstractUserController {
 
     public void setHashedPassword(String hashedPassword) {
         this.hashedPassword = hashedPassword;
+    }
+
+    public UserSessionService getUserSessionService() {
+        if (this.userSessionService == null){
+            this.userSessionService = ApplicationContextProvider.getBean("userSessionService");
+        }
+        return userSessionService;
+    }
+
+    public UserProfileService getUserProfileService() {
+        if (this.userProfileService == null){
+            this.userProfileService = ApplicationContextProvider.getBean("userProfileService");
+        }
+        return userProfileService;
     }
 }

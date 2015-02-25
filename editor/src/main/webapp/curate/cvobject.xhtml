@@ -7,6 +7,7 @@
                 xmlns:fn="http://java.sun.com/jsp/jstl/functions"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+                xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
 
                 template="/curate/curate_template.xhtml">
 
@@ -29,7 +30,7 @@
 
         <h:panelGroup id="info" rendered="#{cvObjectController.cvObject != null}">
 
-            <h2>CV Object: #{cvObjectController.cvObject['class'].simpleName}</h2>
+            <h2>#{cvObjectController.objClass}</h2>
 
             <p:panel id="basic" header="CV Object Details">
 
@@ -37,12 +38,6 @@
                     <ui:include src="common_info_panels.xhtml">
                         <ui:param name="annotatedObjectController" value="#{cvObjectController}"/>
                     </ui:include>
-
-                    <h:panelGroup rendered="#{participantController.isNoUniprotUpdate(participant.interactor)}">
-                        <ia:panelMessage level="warn">
-                            <b>No Uniprot Update: </b>The interactor for this participant won't be updated using Uniprot.
-                        </ia:panelMessage>
-                    </h:panelGroup>
                 </p:outputPanel>
 
                 <h:panelGroup rendered="#{cvObjectController.cvObject != null}">
@@ -57,8 +52,7 @@
                             <h:outputLabel value="Shortlabel: " for="shortlabelTxt"/>
                         </td>
                         <td>
-                            <p:inputText id="shortlabelTxt" value="#{cvObjectController.cvObject.shortLabel}" size="30"
-                                         validator="#{annotatedObjectController.validateAnnotatedObject}"
+                            <p:inputText id="shortlabelTxt" value="#{cvObjectController.shortName}" size="30"
                                          converter="trimmingConverter"
                                          required="true" requiredMessage="Shortlabel is required"
                                          onchange="markAsUnsaved()"/>
@@ -78,6 +72,18 @@
                                          onchange="markAsUnsaved()" converter="trimmingConverter"/>
                         </td>
                     </tr>
+
+                    <tr>
+                        <td class="firstCell">
+                            <h:outputLabel value="Definition: " for="definitionTxt"/>
+                        </td>
+                        <td>
+                            <p:inputTextarea id="definitionTxt" value="#{cvObjectController.definition}" rows="4" cols="50" autoResize="false"
+                                             converter="trimmingConverter" valueChangeListener="#{cvObjectController.onDefinitionChanged}">
+                                <ed:curation/>
+                            </p:inputTextarea>
+                        </td>
+                    </tr>
                     <tr>
                         <td class="firstCell">
                             <h:outputLabel value="Parent term(s): " for="parentsPick"/>
@@ -85,9 +91,8 @@
                         <td>
                             <p:pickList id="parentsPick" value="#{cvObjectController.parents}"
                                         var="p"
-                                        itemLabel="#{p.shortLabel}"
-                                        itemValue="#{p}" converter="cvObjectConverter"
-                                        valueChangeListener="#{cvObjectController.changed}"/>
+                                        itemLabel="#{p.shortName}"
+                                        itemValue="#{p}" converter="cvTermConverter" onTransfer="markAsUnsaved()"/>
                         </td>
                     </tr>
 
@@ -124,19 +129,12 @@
             <br/>
 
             <p:tabView id="cvobjectTabs" dynamic="true">
-                <p:ajax event="tabChange" listener="#{cvObjectController.onTabChanged}" />
+                <p:ajax event="tabChange" listener="#{cvObjectController.onTabChanged}" onstart="loadDialog.show()" oncomplete="loadDialog.hide()"/>
 
                 <ui:decorate template="propertiesTabs.xhtml">
                     <ui:param name="annotatedObjectSelectItems" value="#{cvObjectService.cvObjectTopicSelectItems}"/>
+                    <ui:param name="updateOnChange" value=":editorForm:acTxt :editorForm:cvobjectTabs"/>
                 </ui:decorate>
-
-                <p:tab id="advancedTab" title="Advanced">
-                    <h:panelGrid columns="2">
-                        <h:outputLabel for="idTxt" value="Identifier: "/>
-                        <p:inputText id="idTxt" value="#{cvObjectController.cvObject.identifier}" size="8"
-                                     onchange="markAsUnsaved()" converter="trimmingConverter"/>
-                    </h:panelGrid>
-                </p:tab>
 
             </p:tabView>
 

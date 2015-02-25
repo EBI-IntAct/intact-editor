@@ -2,12 +2,11 @@ package uk.ac.ebi.intact.editor.security;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ConfigurableApplicationContext;
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.core.context.UserContext;
 import uk.ac.ebi.intact.editor.controller.UserListener;
 import uk.ac.ebi.intact.editor.controller.admin.UserManagerController;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.context.UserContext;
+import uk.ac.ebi.intact.jami.model.user.User;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
@@ -40,14 +39,13 @@ public class AppSessionListener implements HttpSessionListener {
 
         if( userContext != null ) {
             log.info( "Attempting to logout user..." );
-            final ConfigurableApplicationContext springContext = IntactContext.getCurrentInstance().getSpringContext();
-            final UserManagerController userManagerController = (UserManagerController) springContext.getBean("userManagerController");
+            final UserManagerController userManagerController = ApplicationContextProvider.getBean("userManagerController");
 
             final String userId = userContext.getUserId();
             final User user = userManagerController.getUser( userId );
             if( user != null ) {
                 // get all the "user listener" beans and notify the logout
-                final Map<String,UserListener> userListeners = springContext.getBeansOfType(UserListener.class);
+                final Map<String,UserListener> userListeners = ApplicationContextProvider.getApplicationContext().getBeansOfType(UserListener.class);
 
                 for (UserListener userListener : userListeners.values()) {
                     log.debug( "Calling {}.userLoggedOut({});", userListener.getClass().getName(), user.getLogin() );

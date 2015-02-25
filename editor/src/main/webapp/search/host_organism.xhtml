@@ -15,14 +15,19 @@
             <f:viewParam name="ac" value="#{experimentHostOrganismController.ac}"/>
             <f:viewParam name="shortLabel" value="#{experimentHostOrganismController.shortLabel}"/>
             <f:viewParam name="numExperiments" value="#{experimentHostOrganismController.numExperiments}"/>
+            <f:viewParam name="resultsOutcome" value="#{experimentHostOrganismController.resultsOutcome}"/>
 
             <f:event type="preRenderView" listener="#{experimentHostOrganismController.loadData}"/>
         </f:metadata>
     </ui:define>
 
     <ui:define name="content">
+        <h:link outcome="#{experimentHostOrganismController.resultsOutcome}" value="&lt;&lt; Back to the search results" />
+        <br/>
+        <br/>
+
         <p:outputPanel>
-            Experiments with <b>#{experimentHostOrganismController.shortLabel}</b> involve.
+            Experiments with <b>#{experimentHostOrganismController.shortLabel}</b> involved.
             <hr/>
         </p:outputPanel>
         <p:accordionPanel autoHeight="false">

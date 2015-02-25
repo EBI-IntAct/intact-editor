@@ -4,12 +4,12 @@ import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
 import org.primefaces.model.LazyDataModel;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.editor.controller.JpaAwareController;
-import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
-import uk.ac.ebi.intact.model.Experiment;
+import uk.ac.ebi.intact.editor.controller.BaseController;
+import uk.ac.ebi.intact.editor.services.summary.ExperimentSummary;
+import uk.ac.ebi.intact.editor.services.search.SearchQueryService;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 
+import javax.annotation.Resource;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ComponentSystemEvent;
 
@@ -24,13 +24,17 @@ import javax.faces.event.ComponentSystemEvent;
 @Scope( "conversation.access" )
 @ConversationName("search")
 @SuppressWarnings("unchecked")
-public class SearchExperimentHostOrganismController extends JpaAwareController {
+public class SearchExperimentHostOrganismController extends BaseController {
 
 	private String ac;
 	private String shortLabel;
 	private String numExperiments;
+    private String resultsOutcome;
 
-	private LazyDataModel<Experiment> experiments = null;
+	private LazyDataModel<ExperimentSummary> experiments = null;
+
+    @Resource(name = "searchQueryService")
+    private transient SearchQueryService searchQueryService;
 
 	public String getAc() {
 		return ac;
@@ -40,24 +44,17 @@ public class SearchExperimentHostOrganismController extends JpaAwareController {
 		this.ac = ac;
 	}
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
 	public void loadData(ComponentSystemEvent evt) {
 		if (!FacesContext.getCurrentInstance().isPostback()) {
 
 			if (ac != null) {
-				experiments = LazyDataModelFactory.createLazyDataModel(
-						getDaoFactory().getExperimentDao().getByHostOrganism(ac)
-				);
+				experiments = getSearchQueryService().loadExperimentsByHostOrganism(ac);
 			}
 		}
 	}
 
-	public LazyDataModel<Experiment> getExperiments() {
+	public LazyDataModel<ExperimentSummary> getExperiments() {
 		return experiments;
-	}
-
-	public void setExperiments(LazyDataModel<Experiment> experiments) {
-		this.experiments = experiments;
 	}
 
 	public String getShortLabel() {
@@ -75,5 +72,20 @@ public class SearchExperimentHostOrganismController extends JpaAwareController {
 	public String getNumExperiments() {
 		return numExperiments;
 	}
+
+    public SearchQueryService getSearchQueryService() {
+        if (this.searchQueryService == null){
+            this.searchQueryService = ApplicationContextProvider.getBean("searchQueryService");
+        }
+        return searchQueryService;
+    }
+
+    public String getResultsOutcome() {
+        return resultsOutcome;
+    }
+
+    public void setResultsOutcome(String resultsOutcome) {
+        this.resultsOutcome = resultsOutcome;
+    }
 }
 

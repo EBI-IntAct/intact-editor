@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ot="http://myfaces.apache.org/orchestra"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+
+                template="/main_template.xhtml">
+
+    <ui:define name="topNavigation">
+        <ui:include src="/shared/top_navigation_links.xhtml">
+            <ui:param name="selected" value="advanced"/>
+        </ui:include>
+    </ui:define>
+
+<ui:define name="metadata">
+    <f:metadata>
+        <f:viewParam name="query" value="#{searchController.query}"/>
+        <f:viewParam name="quickQuery" value="#{searchController.quickQuery}"/>
+    </f:metadata>
+</ui:define>
+
+<ui:define name="content">
+    <p:outputPanel>
+        You can select the type of object you are looking for and then enter your query to have a more specific search.
+        <br/>
+        <br/>
+    </p:outputPanel>
+
+<br/>
+    <h:panelGrid columns="4">
+        <h:selectOneMenu id="objType" value="#{searchController.objType}">
+            <f:selectItem itemLabel="-- Select --" noSelectionOption="true"/>
+            <f:selectItem itemLabel="Publication" itemValue="publication"/>
+            <f:selectItem itemLabel="Experiment" itemValue="experiment"/>
+            <f:selectItem itemLabel="Interaction" itemValue="interaction"/>
+            <f:selectItem itemLabel="Biological complex" itemValue="complex"/>
+            <f:selectItem itemLabel="Organism" itemValue="organism"/>
+            <f:selectItem itemLabel="Molecule" itemValue="molecule"/>
+            <f:selectItem itemLabel="Controlled vocabulary" itemValue="cv"/>
+            <f:selectItem itemLabel="Participant" itemValue="participant"/>
+            <f:selectItem itemLabel="Feature" itemValue="feature"/>
+            <f:selectItem itemLabel="Complex participant" itemValue="cparticipant"/>
+            <f:selectItem itemLabel="Complex feature" itemValue="cfeature"/>
+        </h:selectOneMenu>
+        <p:inputText id="objQueryTxt" value="#{searchController.quickQuery}"
+                     converter="trimmingConverter"/>
+        <p:commandButton id="objSearchBtn" value="Search" action="#{searchController.doQuickObjectSearch}"
+                         ajax="false"
+                         process="objQueryTxt" global="true"/>
+        <p:commandButton id="objectClearBtn" value="Clear" actionListener="#{searchController.clearQuickSearch}"
+                         process="objQueryTxt objType " update=":editorForm:objType :editorForm:objQueryTxt"/>
+    </h:panelGrid>
+</ui:define>
+
+</ui:composition>

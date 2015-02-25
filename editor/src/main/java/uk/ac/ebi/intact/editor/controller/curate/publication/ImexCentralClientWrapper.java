@@ -1,13 +1,17 @@
 package uk.ac.ebi.intact.editor.controller.curate.publication;
 
-import edu.ucla.mbi.imex.central.ws.v20.Publication;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import uk.ac.ebi.intact.bridges.imexcentral.*;
-import uk.ac.ebi.intact.bridges.imexcentral.mock.MockImexCentralClient;
+import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
+import psidev.psi.mi.jami.bridges.imex.DefaultImexCentralClient;
+import psidev.psi.mi.jami.bridges.imex.ImexCentralClient;
+import psidev.psi.mi.jami.bridges.imex.Operation;
+import psidev.psi.mi.jami.bridges.imex.PublicationStatus;
+import psidev.psi.mi.jami.bridges.imex.mock.MockImexCentralClient;
 import uk.ac.ebi.intact.editor.ApplicationInitializer;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * Wrapper of the Imex central client
@@ -22,7 +26,7 @@ public class ImexCentralClientWrapper implements ImexCentralClient{
     private static final Log log = LogFactory.getLog(ApplicationInitializer.class);
     private ImexCentralClient imexCentralClient;
     
-    public ImexCentralClientWrapper(String username, String password, String endpoint) throws ImexCentralException {
+    public ImexCentralClientWrapper(String username, String password, String endpoint) throws BridgeFailedException {
         String localTrustStore = System.getProperty( "javax.net.ssl.trustStore" );
         String localTrustStorePwd = System.getProperty( "javax.net.ssl.keyStorePassword" );
         if(localTrustStore==null) {
@@ -47,52 +51,57 @@ public class ImexCentralClientWrapper implements ImexCentralClient{
     }
 
     @Override
-    public Publication getPublicationById(String identifier) throws ImexCentralException {
-        return imexCentralClient.getPublicationById(identifier);
+    public Collection<psidev.psi.mi.jami.model.Publication> fetchPublicationsByOwner(String owner, int first, int max) throws BridgeFailedException {
+        return imexCentralClient.fetchPublicationsByOwner(owner, first, max);
     }
 
     @Override
-    public List<Publication> getPublicationByOwner(String owner, int first, int max) throws ImexCentralException {
-        return imexCentralClient.getPublicationByOwner(owner, first, max);
+    public Collection<psidev.psi.mi.jami.model.Publication> fetchPublicationsByStatus(String status, int first, int max) throws BridgeFailedException {
+        return imexCentralClient.fetchPublicationsByStatus(status, first, max);
     }
 
     @Override
-    public List<Publication> getPublicationByStatus(String status, int first, int max) throws ImexCentralException {
-        return imexCentralClient.getPublicationByStatus(status, first, max);
+    public psidev.psi.mi.jami.model.Publication updatePublicationStatus(String identifier, String source, PublicationStatus status) throws BridgeFailedException {
+        return imexCentralClient.updatePublicationStatus(identifier, source, status);
     }
 
     @Override
-    public Publication updatePublicationStatus(String identifier, PublicationStatus status) throws ImexCentralException {
-        return imexCentralClient.updatePublicationStatus(identifier, status);
+    public psidev.psi.mi.jami.model.Publication updatePublicationAdminGroup(String identifier, String source, Operation operation, String group) throws BridgeFailedException {
+        return imexCentralClient.updatePublicationAdminGroup(identifier, source, operation, group);
     }
 
     @Override
-    public Publication updatePublicationAdminGroup(String identifier, Operation operation, String group) throws ImexCentralException {
-        return imexCentralClient.updatePublicationAdminGroup(identifier, operation, group);
+    public psidev.psi.mi.jami.model.Publication updatePublicationAdminUser(String identifier, String source, Operation operation, String user) throws BridgeFailedException {
+        return imexCentralClient.updatePublicationAdminUser(identifier, source, operation, user);
     }
 
     @Override
-    public Publication updatePublicationAdminUser(String identifier, Operation operation, String user) throws ImexCentralException {
-        return imexCentralClient.updatePublicationAdminUser(identifier, operation, user);
+    public psidev.psi.mi.jami.model.Publication updatePublicationIdentifier(String oldIdentifier, String oldSource, String newIdentifier, String source) throws BridgeFailedException {
+        return imexCentralClient.updatePublicationIdentifier(oldIdentifier, oldSource, newIdentifier, source);
     }
 
     @Override
-    public Publication updatePublicationIdentifier(String oldIdentifier, String newIdentifier) throws ImexCentralException {
-        return imexCentralClient.updatePublicationIdentifier(oldIdentifier, newIdentifier);
+    public void createPublication(psidev.psi.mi.jami.model.Publication publication) throws BridgeFailedException {
+        imexCentralClient.createPublication(publication);
     }
 
     @Override
-    public void createPublication(Publication publication) throws ImexCentralException {
-       imexCentralClient.createPublication(publication);
+    public psidev.psi.mi.jami.model.Publication createPublicationById(String identifier, String source) throws BridgeFailedException {
+        return imexCentralClient.createPublicationById(identifier, source);
     }
 
     @Override
-    public Publication createPublicationById(String identifier) throws ImexCentralException {
-        return imexCentralClient.createPublicationById(identifier);
+    public psidev.psi.mi.jami.model.Publication fetchPublicationImexAccession(String identifier, String source, boolean assign) throws BridgeFailedException {
+        return imexCentralClient.fetchPublicationImexAccession(identifier, source, assign);
     }
 
     @Override
-    public Publication getPublicationImexAccession(String identifier, boolean aBoolean) throws ImexCentralException {
-        return imexCentralClient.getPublicationImexAccession(identifier, aBoolean);
+    public psidev.psi.mi.jami.model.Publication fetchByIdentifier(String identifier, String source) throws BridgeFailedException {
+        return imexCentralClient.fetchByIdentifier(identifier, source);
+    }
+
+    @Override
+    public Collection<psidev.psi.mi.jami.model.Publication> fetchByIdentifiers(Map<String, Collection<String>> identifiers) throws BridgeFailedException {
+        return imexCentralClient.fetchByIdentifiers(identifiers);
     }
 }

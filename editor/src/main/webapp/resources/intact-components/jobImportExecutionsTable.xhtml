@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:composite="http://java.sun.com/jsf/composite">
+
+    <!-- INTERFACE -->
+  <composite:interface>
+    <composite:attribute name="value"/>
+  </composite:interface>
+
+  <!-- IMPLEMENTATION -->
+    <composite:implementation>
+
+        <p:dataTable value="#{cc.attrs.value}" var="jobExecution" >
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="ID"/>
+                </f:facet>
+                <h:outputText value="#{jobExecution.id}"/>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Start time"/>
+                </f:facet>
+                <h:outputText value="#{jobExecution.startTime}"/>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="End time"/>
+                </f:facet>
+                <h:outputText value="#{jobExecution.endTime}"/>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Status"/>
+                </f:facet>
+                <h:outputText value="#{jobExecution.status}"/>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Exit code"/>
+                </f:facet>
+                <h:outputText value="#{jobExecution.exitStatus.exitCode}"/>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Parameters"/>
+                </f:facet>
+                <h:outputText value="#{jobExecution.jobParameters}"/>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Statistics"/>
+                </f:facet>
+                <ui:repeat value="#{importJobController.getImportStatistics(jobExecution)}" var="mapEntry">
+                    <h:outputText value="#{mapEntry.key}: #{mapEntry.value}"/>
+                    <br/>
+                </ui:repeat>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Step Executions"/>
+                </f:facet>
+                <h:outputText value="#{jobExecution.stepExecutions}"/>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Errors"/>
+                </f:facet>
+                <h:panelGroup rendered="#{adminJobController.hasJobFailed(jobExecution)}">
+                    <ui:repeat value="#{adminJobController.getFailureExceptions(jobExecution)}" var="exception">
+                        #{adminJobController.printFullStackTrace(exception)}
+                    </ui:repeat>
+                </h:panelGroup>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Action"/>
+                </f:facet>
+                <h:link value="View" outcome="/dbmanager/summary" includeViewParams="true">
+                    <f:param name="query" value="#{importJobController.extractJobId(jobExecution)}"/>
+                </h:link>
+                &#160;
+                <h:commandLink value="Clear" actionListener="#{importJobController.acceptImport}"
+                               action="/dbmanager/jobSummary?faces-redirect=true">
+                    <f:param name="executionId" value="#{jobExecution.id}"/>
+                </h:commandLink>
+                &#160;
+                <h:commandLink value="Reject" actionListener="#{importJobController.discardImport}"
+                               action="/dbmanager/jobSummary?faces-redirect=true">
+                    <f:param name="executionId" value="#{jobExecution.id}"/>
+                </h:commandLink>
+                &#160;
+                <h:commandLink value="resume" actionListener="#{adminJobController.restart}" action="/dbmanager/jobSummary?faces-redirect=true">
+                    <f:param name="executionId" value="#{jobExecution.id}"/>
+                </h:commandLink>
+            </p:column>
+        </p:dataTable>
+
+    </composite:implementation>
+
+
+
+
+</ui:composition>

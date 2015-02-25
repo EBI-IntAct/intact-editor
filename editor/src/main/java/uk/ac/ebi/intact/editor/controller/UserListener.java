@@ -1,7 +1,7 @@
 package uk.ac.ebi.intact.editor.controller;
 
 
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.jami.model.user.User;
 
 /**
  * @author Bruno Aranda (baranda@ebi.ac.uk)

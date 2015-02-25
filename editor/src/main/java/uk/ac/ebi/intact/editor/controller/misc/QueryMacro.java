@@ -15,10 +15,8 @@
  */
 package uk.ac.ebi.intact.editor.controller.misc;
 
-import uk.ac.ebi.intact.model.IntactObject;
 
 import javax.faces.model.DataModel;
-import java.util.Collection;
 
 /**
  * TODO comment this class header.

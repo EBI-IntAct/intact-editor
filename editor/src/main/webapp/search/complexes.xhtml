@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ot="http://myfaces.apache.org/orchestra"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+
+                template="/search/search_template.xhtml">
+
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewParam name="ac" value="#{searchComplexesMoleculeController.ac}"/>
+            <f:viewParam name="shortLabel" value="#{searchComplexesMoleculeController.shortLabel}"/>
+            <f:viewParam name="numComplexes" value="#{searchComplexesMoleculeController.numComplexes}"/>
+            <f:viewParam name="resultsOutcome" value="#{searchComplexesMoleculeController.resultsOutcome}"/>
+            <f:event type="preRenderView" listener="#{searchComplexesMoleculeController.loadData}"/>
+        </f:metadata>
+    </ui:define>
+
+    <ui:define name="content">
+        <h:link outcome="#{searchComplexesMoleculeController.resultsOutcome}" value="&lt;&lt; Back to the search results" />
+        <br/>
+        <br/>
+
+        <p:outputPanel>
+        Biological complexes with <b>#{searchComplexesMoleculeController.shortLabel}</b> involved.
+        <hr/>
+        </p:outputPanel>
+        <p:panel header="Biological complexes (#{searchComplexesMoleculeController.numComplexes})">
+        <ui:include src="/dashboard/complexes_table.xhtml">
+            <ui:param name="complexesDataModel" value="#{searchComplexesMoleculeController.complexes}"/>
+        </ui:include>
+        </p:panel>
+    </ui:define>
+
+
+</ui:composition>

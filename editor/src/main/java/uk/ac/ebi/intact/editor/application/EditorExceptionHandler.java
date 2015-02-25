@@ -18,8 +18,8 @@ package uk.ac.ebi.intact.editor.application;
 
 import org.primefaces.context.DefaultRequestContext;
 import org.primefaces.util.Constants;
-import uk.ac.ebi.intact.core.context.IntactContext;
 import uk.ac.ebi.intact.editor.controller.misc.ErrorController;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 
 import javax.faces.FacesException;
 import javax.faces.FactoryFinder;
@@ -85,7 +85,7 @@ public class EditorExceptionHandler extends ExceptionHandlerWrapper {
                     final HttpServletRequest req = (HttpServletRequest) facesContext.getExternalContext().getRequest();
                     final String referer = req.getHeader("referer");
 
-                    ErrorController errorController = (ErrorController) IntactContext.getCurrentInstance().getSpringContext()
+                    ErrorController errorController = ApplicationContextProvider
                             .getBean("errorController");
                     errorController.setViewId(viewId);
                     errorController.setReferer(referer);

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+                xmlns:ed="http://ebi.ac.uk/intact/editor/ui">
+
+    <h:panelGrid id="newParamTxt" columns="5" class="intact-buttonBar">
+        <h:outputLabel value="Description: " for="paramDescription1Txt"/>
+        <p:inputTextarea id="paramDescription1Txt" value="#{experimentController.newParameterDescription}" rows="1" cols="50" autoResize="false"
+                         converter="trimmingConverter">
+        </p:inputTextarea>
+        <h:outputLabel value="Unit: " for="paramUnit1Sel"/>
+        <h:selectOneMenu id="paramUnit1Sel" value="#{experimentController.newParameterUnit}" disabled="#{!experimentController.isVariableParameterTab()}"
+                         converter="cvObjectConverter">
+            <f:selectItems value="#{cvObjectService.parameterUnitSelectItems}"/>
+        </h:selectOneMenu>
+        <p:commandButton id="newParamBtn" value="Add New Variable Parameter"
+                         actionListener="#{experimentController.newVariableParameter}"
+                         process="newParamTxt"
+                         update="newParamTxt vparametersTable #{update}" onclick="loadDialog.show()" oncomplete="loadDialog.hide()"/>
+    </h:panelGrid>
+
+    <p:dataTable id="vparametersTable" var="parameter" value="#{experimentController.collectVariableParameters()}" rendered="#{experimentController.isVariableParameterTab()}">
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Description"/>
+            </f:facet>
+            <p:inputTextarea id="paramDescriptionTxt" value="#{parameter.description}" required="true" requiredMessage="Parameter description is required"
+                             rows="1" cols="50" autoResize="false"
+                             converter="trimmingConverter">
+                <ed:curation/>
+            </p:inputTextarea>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Unit"/>
+            </f:facet>
+            <h:selectOneMenu id="paramUnitSel" value="#{parameter.unit}" rendered="#{parameterUnitSelectItems != null}" disabled="#{!experimentController.isVariableParameterTab()}"
+                             converter="cvObjectConverter">
+                <f:selectItems value="#{cvObjectService.parameterUnitSelectItems}"/>
+                <ed:curation/>
+            </h:selectOneMenu>
+            <h:outputText value="#{parameter.unit.shortName}" rendered="#{cvObjectService.parameterUnitSelectItems == null}"/>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Values"/>
+            </f:facet>
+            <h:panelGrid id="newValueTxt" columns="5" class="intact-buttonBar">
+                <h:outputLabel value="Value: " for="valueInputTxt"/>
+                <p:inputText id="valueInputTxt" value="#{experimentController.newValue}" converter="trimmingConverter"/>
+                <h:outputLabel value="Order: " for="valueOrderTxt"/>
+                <p:inputText id="valueOrderTxt" value="#{experimentController.newValueOrder}"/>
+                <p:commandButton id="newValueBtn" value="Add New Parameter Value"
+                                 actionListener="#{experimentController.newVariableParameterValue(parameter)}"
+                                 process="newValueTxt"
+                                 update=":editorForm:experimentTabs" onclick="loadDialog.show()" oncomplete="loadDialog.hide()"/>
+            </h:panelGrid>
+            <h:panelGroup id="vparamValueList" rendered="#{not empty parameter.variableValues}">
+                <ul>
+                    <ui:repeat value="#{parameter.variableValues}" var="value">
+                        <h:panelGrid columns="3" class="intact-variable-table">
+
+                        <p:inputText value="#{value.value}" required="true" requiredMessage="Parameter value is required" converter="trimmingConverter">
+                                <ed:curation/>
+                            </p:inputText>
+                            <p:inputText value="#{value.order}">
+                                <ed:curation/>
+                            </p:inputText>
+                            <p:commandLink styleClass="ui-icon ui-icon-closethick" process="@this"
+                                           actionListener="#{experimentController.removeVariableParameterValue(value, parameter)}"
+                                           oncomplete="markAsUnsaved()"
+                                           update=":editorForm:experimentTabs #{update}"/>
+                        </h:panelGrid>
+                    </ui:repeat>
+                </ul>
+            </h:panelGroup>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Actions"/>
+            </f:facet>
+            <p:commandLink id="removeParamBtn" styleClass="ui-icon ui-icon-closethick" process="removeParamBtn"
+                           actionListener="#{experimentController.removeVariableParameter(parameter)}"
+                           oncomplete="markAsUnsaved()"
+                           update=":editorForm:experimentTabs #{update}"/>
+        </p:column>
+    </p:dataTable>
+
+
+
+</ui:composition>

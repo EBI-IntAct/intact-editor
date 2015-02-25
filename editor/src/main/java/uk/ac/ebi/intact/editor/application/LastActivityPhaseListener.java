@@ -17,10 +17,9 @@ package uk.ac.ebi.intact.editor.application;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.context.ConfigurableApplicationContext;
-import uk.ac.ebi.intact.core.context.IntactContext;
 import uk.ac.ebi.intact.editor.controller.UserSessionController;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.user.User;
 
 import javax.faces.event.PhaseEvent;
 import javax.faces.event.PhaseId;
@@ -43,8 +42,7 @@ public class LastActivityPhaseListener implements PhaseListener {
 
     @Override
     public void beforePhase(PhaseEvent event) {
-        final ConfigurableApplicationContext springContext = IntactContext.getCurrentInstance().getSpringContext();
-        UserSessionController userSessionController = (UserSessionController) springContext.getBean("userSessionController");
+        UserSessionController userSessionController = ApplicationContextProvider.getBean("userSessionController");
 
         User user = userSessionController.getCurrentUser();
 

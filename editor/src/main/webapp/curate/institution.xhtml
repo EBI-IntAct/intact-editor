@@ -56,8 +56,7 @@
                                  size="10" readonly="true"/>
 
                     <h:outputLabel value="Shortlabel: " for="shortlabelTxt"/>
-                    <p:inputText id="shortlabelTxt" value="#{institutionController.institution.shortLabel}" size="30" converter="trimmingConverter"
-                                 validator="#{annotatedObjectController.validateAnnotatedObject}"
+                    <p:inputText id="shortlabelTxt" value="#{institutionController.shortName}" size="30" converter="trimmingConverter"
                                  valueChangeListener="#{institutionController.unsavedValueChange}"
                                  required="true" requiredMessage="Shortlabel is required">
                             <ed:curation/>
@@ -71,13 +70,13 @@
 
                     <h:outputLabel value="URL: " for="urlTxt"/>
                     <p:inputText id="urlTxt" value="#{institutionController.url}" size="50" converter="trimmingConverter"
-                                 valueChangeListener="#{institutionController.unsavedValueChange}">
+                                 valueChangeListener="#{institutionController.onUrlChanged}">
                         <ed:curation/>
                     </p:inputText>
 
                     <h:outputLabel value="Address: " for="postalTxt"/>
                     <p:inputText id="postalTxt" value="#{institutionController.postalAddress}" size="50" converter="trimmingConverter"
-                            valueChangeListener="#{institutionController.unsavedValueChange}">
+                            valueChangeListener="#{institutionController.onPostalAddressChanged}">
                             <ed:curation/>
                     </p:inputText>
 
@@ -88,10 +87,11 @@
             <br/>
 
             <p:tabView id="institutionTabs" dynamic="true">
-                <p:ajax event="tabChange" listener="#{institutionController.onTabChanged}" />
+                <p:ajax event="tabChange" listener="#{institutionController.onTabChanged}" onstart="loadDialog.show()" oncomplete="loadDialog.hide()"/>
 
                 <ui:decorate template="/curate/propertiesTabs.xhtml">
-                    <ui:param name="annotatedObjectSelectItems" value="#{cvObjectService.experimentTopicSelectItems}"/>
+                    <ui:param name="annotatedObjectSelectItems" value="#{cvObjectService.cvObjectTopicSelectItems}"/>
+                    <ui:param name="updateOnChange" value=":editorForm:acTxt :editorForm:institutionTabs"/>
                 </ui:decorate>
 
             </p:tabView>

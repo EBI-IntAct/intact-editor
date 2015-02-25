@@ -9,7 +9,7 @@
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
 
-                template="/curate/curate_template.xhtml">
+                template="/curate/curate_publication_template.xhtml">
 
 
 <ui:param name="annotatedObjectController" value="#{publicationController}"/>
@@ -18,6 +18,7 @@
     <f:metadata>
         <f:viewParam id="pubAcParam" name="ac" value="#{publicationController.ac}"/>
         <f:event type="preRenderView" listener="#{publicationController.loadData}"/>
+        <f:event type="preRenderView" listener="#{userAdminController.loadData}"/>
         <f:event type="preRenderView" listener="#{curateController.setCurrentAnnotatedObjectController(publicationController)}"/>
     </f:metadata>
 </ui:define>
@@ -35,27 +36,32 @@
                      action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Ready for checking"
                      styleClass="important-button-alt"
-                     rendered="#{publicationController.curationInProgress and not publicationController.beenRejectedBefore and userSessionController.isItMe(publicationController.publication.currentOwner)}"
+                     rendered="#{publicationController.curationInProgress and not publicationController.beenRejectedBefore
+                     and userSessionController.isItMe(publicationController.publication.currentOwner)}"
                      actionListener="#{publicationController.markAsReadyForChecking}"
                      action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Ready for checking (Again)"
                      styleClass="important-button-alt"
-                     rendered="#{publicationController.curationInProgress and publicationController.beenRejectedBefore and userSessionController.isItMe(publicationController.publication.currentOwner)}"
+                     rendered="#{publicationController.curationInProgress and publicationController.beenRejectedBefore
+                     and userSessionController.isItMe(publicationController.publication.currentOwner)}"
                      actionListener="#{publicationController.markAsReadyForChecking}"
                      action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Accept Publication"
                      styleClass="important-button-good"
-                     rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)
-                         and publicationController.allExperimentsAccepted}"
+                     rendered="#{publicationController.accepted
+                     and publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                      actionListener="#{publicationController.acceptPublication}"
                      action="#{publicationController.doSave}" ajax="false"/>
-    <!--<p:commandButton value="Reject Publication" type="button"-->
-    <!--styleClass="important-button-bad"-->
-    <!--rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"-->
-    <!--onclick="rejectPublicationDialog.show()"/>-->
+    <p:commandButton value="Revert Accepted"
+                     styleClass="important-button-alt"
+                     rendered="#{publicationController.readyForRelease and !publicationController.released
+                     and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                     actionListener="#{publicationController.revertAccepted}"
+                     action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Back to Curation in Progress"
                      styleClass="important-button-alt"
-                     rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentOwner) and publicationController.backToCurationButtonRendered}"
+                     rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentOwner)
+                     and publicationController.backToCurationButtonRendered}"
                      actionListener="#{publicationController.revertReadyForChecking}"
                      action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Send Back to Curation"
@@ -63,18 +69,28 @@
                      rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                      actionListener="#{publicationController.rejectPublication}"
                      action="#{publicationController.doSave}" ajax="false"/>
-    <p:commandButton value="Revert Accepted"
-                     styleClass="important-button-alt"
-                     rendered="#{publicationController.readyForRelease and !publicationController.released and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
-                     actionListener="#{publicationController.revertAccepted}"
-                     action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Put on hold" type="button"
                      styleClass="important-button-bad"
-                     rendered="#{(publicationController.readyForRelease or publicationController.released) and (userSessionController.isItMe(publicationController.publication.currentOwner) or userSessionController.isItMe(publicationController.publication.currentReviewer))}"
+                     rendered="#{(publicationController.readyForRelease or publicationController.released) and
+                     (userSessionController.isItMe(publicationController.publication.currentOwner)
+                     or userSessionController.isItMe(publicationController.publication.currentReviewer))}"
                      onclick="putOnHoldDialog.show()"/>
+    <p:commandButton value="Remove on hold"
+                     styleClass="important-button-bad"
+                     rendered="#{publicationController.onHold and
+                     (userSessionController.isItMe(complexController.complex.currentOwner)
+                     or userSessionController.isItMe(complexController.complex.currentReviewer))}"
+                     actionListener="#{publicationController.removeOnHold}"
+                     action="#{publicationController.doSave}" ajax="false"/>
+    <p:commandButton value="Remove to be reviewed"
+                     styleClass="important-button-bad"
+                     rendered="#{publicationController.toBeReviewed != null and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                     actionListener="#{publicationController.removeToBeReviewed}"
+                     action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Ready for Release (removes on-hold)"
                      styleClass="important-button-alt"
-                     rendered="#{publicationController.acceptedOnHold and (userSessionController.isItMe(publicationController.publication.currentReviewer) or userSessionController.isItMe(publicationController.publication.currentOwner))}"
+                     rendered="#{publicationController.acceptedOnHold and (userSessionController.isItMe(publicationController.publication.currentReviewer)
+                     or userSessionController.isItMe(publicationController.publication.currentOwner))}"
                      actionListener="#{publicationController.readyForReleaseFromOnHold}"
                      action="#{publicationController.doSave}" ajax="false"/>
 </ui:define>
@@ -126,37 +142,21 @@
 <p:panel id="basic" header="Publication Details">
 
 <p:outputPanel id="infoPanels">
-    <!--<h:panelGroup rendered="#{publicationController.accepted}">-->
-    <!--<ia:panelMessage level="ok">-->
-    <!--This publication is <b>accepted</b>.&#160;-->
-    <!--<h:outputText value="#{publicationController.acceptedMessage}" rendered="#{publicationController.acceptedMessage != null}"/>-->
 
-    <!--<h:panelGroup rendered="#{publicationController.acceptedMessage == null}">-->
-    <!--<h:outputText value="(All its experiments are accepted)" rendered="#{publicationController.acceptedMessage == null}"/>-->
-    <!--&#160;-->
-    <!--<p:commandLink value="Add annotation to publication" actionListener="#{publicationController.acceptPublication}"-->
-    <!--update="centralUnit"/>-->
-    <!--</h:panelGroup>-->
-    <!--</ia:panelMessage>-->
-    <!--</h:panelGroup>-->
-
-    <h:panelGroup rendered="#{not empty publicationController.toBeReviewed}">
+    <h:panelGroup rendered="#{publicationController.publicationToBeReviewed}">
         <ia:panelMessage level="warn">
             <b>To be reviewed: </b> #{publicationController.toBeReviewed}
-            &#160;&#160;&#160;
-            <p:commandButton value="Clear" rendered="#{userSessionController.isItMe(publicationController.publication.currentReviewer)}" actionListener="#{publicationController.clearToBeReviewed}" update=":editorForm:centralUnit"/>
         </ia:panelMessage>
     </h:panelGroup>
 
-    <h:panelGroup rendered="#{not empty publicationController.onHold}">
+    <h:panelGroup rendered="#{publicationController.publicationOnHold}">
         <ia:panelMessage level="warn">
             This publication is <b>on-hold</b>. Reason: #{publicationController.onHold}
-            &#160;&#160;&#160;
-            <p:commandButton value="Clear" onclick="document.getElementById('clearOnHoldBtn').click();" />
         </ia:panelMessage>
     </h:panelGroup>
 
-    <h:panelGroup rendered="#{publicationController.publication.shortLabel != null and empty publicationController.publication.fullName and not publicationController.unassigned}">
+    <h:panelGroup rendered="#{publicationController.publication.pubmedId != null
+    and empty publicationController.publication.title and not publicationController.unassigned}">
         <ia:panelMessage level="error">
             This publication does not contain some essential data (e.g. title).
             <p:commandButton value="Try to fix" actionListener="#{publicationController.doFormAutocomplete}"
@@ -178,16 +178,13 @@
     </div>
 </h:panelGroup>
 
-<!--<ia:panelFormLayout id="basicInfoPanel" columns="1">-->
-
 <table class="intact-tableBasicForm">
     <tr>
         <td class="firstCell">
             <h:outputLabel value="Identifier: " for="idTxt"/>
         </td>
         <td>
-            <p:inputText id="idTxt" value="#{publicationController.publication.shortLabel}"
-                         validator="#{annotatedObjectController.validateAnnotatedObject}"
+            <p:inputText id="idTxt" value="#{publicationController.publication.pubmedId}"
                          size="10"
                          valueChangeListener="#{publicationController.publicationIdentifierChanged}"
                          converter="trimmingConverter"
@@ -195,20 +192,13 @@
                 <ed:curation/>
             </p:inputText>
 
-            <!--<p:remoteCommand name="enableAutocomplete" update="autocompleteBtn" async="true">-->
-            <!--<f:setPropertyActionListener value="#{true}"-->
-            <!--target="#{requestScope.autocompleteEnabled}"/>-->
-            <!--</p:remoteCommand>-->
-
             <p:commandButton id="autocompleteBtn" value="Auto-complete"
                              actionListener="#{publicationController.doFormAutocomplete}" async="true"
                              process="idTxt"
+                             onclick="autocompleteDialog.show()"
+                             oncomplete="autocompleteDialog.hide()"
                              update=":editorForm:basic,:editorForm:publicationTabs,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo">
                 <f:setPropertyActionListener value="#{true}" target="#{publicationController.unsavedChanges}"/>
-                <!--<p:confirmDialog yesLabel="Auto-complete" noLabel="Not now" width="300px"-->
-                <!--draggable="false"-->
-                <!--message="Auto-completing an existing publication will update its cross references and annotations. Are you sure?"-->
-                <!--header="Auto-complete confirmation" severity="warn"/>-->
             </p:commandButton>
         </td>
         <td style="padding-left: 45px;">
@@ -247,11 +237,6 @@
         </td>
         <td colspan="1" style="text-align: right;">
             <h:outputLabel value="Year: " for="yearTxt"/>
-            <!--<p:spinner id="yearTxt" value="#{publicationController.year}"-->
-            <!--min="1950" max="2020" maxlength="4" stepFactor="1"-->
-            <!--validatorMessage="Invalid year"-->
-            <!--style="width:50px"-->
-            <!--onchange="markAsUnsaved(); refreshTabs()"/>-->
             <p:inputText id="yearTxt" value="#{publicationController.year}" size="4" maxlength="4"
                          validatorMessage="Year provided is invalid"
                          valueChangeListener="#{publicationController.publicationYearChanged}">
@@ -265,9 +250,28 @@
         <td colspan="1" class="firstCell">
             <h:outputLabel value="Contact email: " for="contactTxt"/>
         </td>
-        <td colspan="3">
+        <td colspan="2">
             <p:inputText id="contactTxt" value="#{publicationController.contactEmail}" size="50" converter="trimmingConverter"
                          valueChangeListener="#{publicationController.contactEmailChanged}">
+                <ed:curation/>
+            </p:inputText>
+        </td>
+        <td colspan="1" style="text-align: right;">
+            <h:outputLabel value="Journal: " for="journalTxt"/>
+            <p:inputText id="journalTxt" value="#{publicationController.journal}" size="50" converter="trimmingConverter"
+                         valueChangeListener="#{publicationController.onJournalChanged}">
+                <ed:curation/>
+            </p:inputText>
+
+        </td>
+    </tr>
+    <tr>
+        <td class="firstCell">
+            <h:outputLabel value="Authors: " for="authorsTxt"/>
+        </td>
+        <td colspan="3">
+            <p:inputText id="authorsTxt" value="#{publicationController.authors}" size="50" converter="trimmingConverter"
+                         valueChangeListener="#{publicationController.onAuthorsChanged}">
                 <ed:curation/>
             </p:inputText>
         </td>
@@ -306,9 +310,9 @@
             <h:panelGroup id="curationDepthMenu">
                 <h:selectOneMenu id="selectCurationDepth" value="#{publicationController.curationDepth}">
                     <f:selectItem itemLabel="-- Not specified --"/>
-                    <f:selectItem itemLabel="IMEx" itemValue="imex curation"/>
-                    <f:selectItem itemLabel="MIMIx" itemValue="mimix curation"/>
-                    <f:selectItem itemLabel="rapid" itemValue="rapid curation"/>
+                    <f:selectItem itemLabel="IMEx" itemValue="IMEx"/>
+                    <f:selectItem itemLabel="MIMIx" itemValue="MIMIx"/>
+                    <f:selectItem itemLabel="rapid" itemValue="rapid_curation"/>
                     <p:ajax event="change" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:publicationTabs,:editorForm:messagesComponent,:editorForm:basic"
                             process="@this" listener="#{publicationController.curationDepthChanged()}"/>
                 </h:selectOneMenu>
@@ -316,25 +320,36 @@
         </td>
     </tr>
     <tr>
-        <td class="firstCell">
-            <h:outputLabel value="On hold: " for="onHoldTxt"/>
-        </td>
-        <td colspan="3">
-            <h:panelGroup>
-                <p:inputText id="onHoldTxt" value="#{publicationController.onHold}" size="70"
-                             valueChangeListener="#{publicationController.onHoldChanged}">
-                    <ed:curation/>
-                </p:inputText>
-
-                <p:commandButton id="clearOnHoldBtn" value="Clear" actionListener="#{publicationController.setUnsavedChanges(true)}"
-                                 onclick="document.getElementById('onHoldTxt').value = ''"
-                                 update=":editorForm:infoPanels,:editorForm:publicationTabs,:editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
-            </h:panelGroup>
-        </td>
+        <h:panelGroup rendered="#{publicationController.publicationOnHold}">
+            <td class="firstCell">
+                <h:outputLabel value="On hold: " for="onHoldTxt"/>
+            </td>
+            <td colspan="3">
+                <h:panelGroup>
+                    <p:inputText id="onHoldTxt" value="#{publicationController.onHold}" size="70"
+                                 valueChangeListener="#{publicationController.onHoldChanged}">
+                        <ed:curation/>
+                    </p:inputText>
+                </h:panelGroup>
+            </td>
+        </h:panelGroup>
+    </tr>
+    <tr>
+        <h:panelGroup rendered="#{publicationController.publicationToBeReviewed}">
+            <td class="firstCell">
+                <h:outputLabel value="To be reviewed: " for="toBeReviewedTxt"/>
+            </td>
+            <td colspan="3">
+                <h:panelGroup>
+                    <p:inputText id="toBeReviewedTxt" value="#{publicationController.toBeReviewed}" size="70"
+                                 valueChangeListener="#{publicationController.onToBeReviewedChanged}">
+                        <ed:curation/>
+                    </p:inputText>
+                </h:panelGroup>
+            </td>
+        </h:panelGroup>
     </tr>
 </table>
-
-<!--</ia:panelFormLayout>-->
 
 </p:panel>
 
@@ -343,25 +358,26 @@
 <br/>
 
 <p:tabView id="publicationTabs" dynamic="true">
-    <p:ajax event="tabChange" listener="#{publicationController.onTabChanged}" update=":editorForm:publicationTabs,:editorForm:messagesComponent" />
+    <p:ajax event="tabChange" listener="#{publicationController.onTabChanged}"
+            onstart="loadDialog.show()" oncomplete="loadDialog.hide()"/>
 
-    <p:tab title="Experiments (#{publicationController.experimentSize})">
+    <p:tab id="experimentTab" title="Experiments (#{publicationController.experimentsSize})">
         <div class="intact-buttonBar">
             <p:commandButton value="New experiment" action="#{experimentController.newExperiment(publicationController.publication)}" ajax="false"/>
         </div>
 
         <ui:include src="experiments_table.xhtml">
-            <ui:param name="value" value="#{publicationController.publication.experiments}"/>
+            <ui:param name="value" value="#{publicationController.collectExperiments()}"/>
             <ui:param name="lazy" value="#{false}"/>
             <ui:param name="readonly" value="#{false}"/>
         </ui:include>
     </p:tab>
 
-    <p:tab title="Interactions (#{publicationController.interactionDataModel != null? publicationController.interactionDataModel.rowCount : 0})">
+    <p:tab id="interactionTab" title="Interactions (#{publicationController.interactionDataModel != null? publicationController.interactionDataModel.rowCount : 0})">
         <div class="intact-buttonBar">
             <p:commandButton id="newInteractionBtn" value="New interaction"
                              action="#{interactionController.newInteraction(publicationController.publication, null)}"
-                             disabled="#{empty publicationController.publication.experiments}"
+                             disabled="#{publicationController.experimentsSize == 0}"
                              ajax="false"/>
         </div>
 
@@ -377,18 +393,7 @@
 
     <ui:decorate template="basicPropertiesTabs.xhtml">
         <ui:param name="annotatedObjectSelectItems" value="#{cvObjectService.publicationTopicSelectItems}"/>
-        <ui:param name="updateOnChange" value=":editorForm:basic"/>
-
-        <ui:define name="xrefSyncValues">
-            <ed:syncValue with="editorForm:idTxt" rendered="#{xref.cvDatabase != null and xref.cvDatabase.identifier == 'MI:0446' and xref.cvXrefQualifier != null and xref.cvXrefQualifier.identifier == 'MI:0358'}"/>
-            <ed:syncValue with="editorForm:imexIdTxt" rendered="#{xref.cvDatabase != null and xref.cvDatabase.identifier == 'MI:0670' and xref.cvXrefQualifier != null and xref.cvXrefQualifier.identifier == 'MI:0662'}"/>
-        </ui:define>
-
-        <ui:define name="annotationSyncValues">
-            <ed:syncValue with="editorForm:onHoldTxt" rendered="#{annotation.cvTopic != null and annotation.cvTopic.shortLabel == 'on-hold'}"/>
-            <ed:syncValue with="editorForm:yearTxt" rendered="#{annotation.cvTopic != null and annotation.cvTopic.identifier == 'MI:0886'}"/>
-            <ed:syncValue with="editorForm:contactTxt" rendered="#{annotation.cvTopic != null and annotation.cvTopic.identifier == 'MI:0634'}"/>
-        </ui:define>
+        <ui:param name="updateOnChange" value=":editorForm:basic :editorForm:acTxt :editorForm:publicationTabs"/>
 
     </ui:decorate>
 
@@ -396,7 +401,7 @@
 
         <h:panelGrid columns="2">
             <h:outputLabel for="statusTxt" value="Status: "/>
-            <h:outputText id="statusTxt" value="#{publicationController.publication.status.shortLabel}"/>
+            <h:outputText id="statusTxt" value="#{publicationController.publication.status}"/>
 
             <h:outputLabel for="ownerTxt" value="Owner: "/>
             <h:outputText id="ownerTxt" value="#{publicationController.publication.currentOwner.login}"/>
@@ -408,6 +413,7 @@
 
             <h:selectOneMenu value="#{publicationController.publication.currentReviewer}" hideNoSelectionOption="true"
                              rendered="#{(userSessionController.hasRole('ADMIN') and publicationController.publication.currentReviewer != null) or publicationController.isLifeCycleDisabled()}"
+                             converter="userConverter"
                     >
                 <f:selectItems value="#{userAdminController.reviewerSelectItems}"/>
                 <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
@@ -419,14 +425,14 @@
 
         <p:fieldset legend="Events">
 
-            <p:dataTable var="event" value="#{publicationController.publication.lifecycleEvents}">
+            <p:dataTable var="event" value="#{publicationController.collectLifeCycleEvents()}">
                 <p:column headerText="Date">
                     <h:outputText value="#{event.when}">
                         <f:convertDateTime pattern="dd-MM-yyyy HH:mm"/>
                     </h:outputText>
                 </p:column>
                 <p:column headerText="Event">
-                    <h:outputText value="#{event.event.shortLabel}"/>
+                    <h:outputText value="#{event.event}"/>
                 </p:column>
                 <p:column headerText="Who">
                     <h:outputText value="#{event.who}"/>
@@ -439,6 +445,15 @@
         </p:fieldset>
 
     </p:tab>
+    <p:tab id="graphTab" title="Graph" rendered="#{publicationController.interactionDataModel != null and publicationController.interactionDataModel.rowCount gt 0}">
+        <p:outputPanel id="graphPanel" autoUpdate="false">
+            <ui:decorate template="graph_tab.xhtml">
+                <ui:param name="objType" value="publication"/>
+                <ui:param name="ac" value="#{publicationController.ac}"/>
+            </ui:decorate>
+        </p:outputPanel>
+
+    </p:tab>
 
 </p:tabView>
 
@@ -446,13 +461,11 @@
 
 </h:panelGroup>
 
-<!-- DIALOGS -->
-
 <p:dialog header="Put on hold" width="600" widgetVar="putOnHoldDialog" draggable="false"
           modal="true" position="center">
     <h:panelGrid columns="3" style="margin-bottom:10px">
         <h:outputLabel for="putOnHoldTxt" value="Reason for on-hold:"/>
-        <p:inputTextarea id="putOnHoldTxt" value="#{publicationController.reasonForOnHoldFromDialog}" rows="4" cols="60" converter="trimmingConverter"/>
+        <p:inputTextarea id="putOnHoldTxt" value="#{publicationController.onHold}" rows="4" cols="60" converter="trimmingConverter"/>
 
         <p:commandButton value="Put on hold" actionListener="#{publicationController.putOnHold}"
                          action="#{publicationController.doSave}"
@@ -478,6 +491,7 @@
 </p:dialog>
 
 <ia:loadingDialog widgetVar="dataset_load" message="Creating and adding dataset..." modal="false"/>
+<ia:loadingDialog widgetVar="autocompleteDialog" message="Auto completing publication..." modal="false"/>
 
 </ui:define>
 

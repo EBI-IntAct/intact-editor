@@ -28,8 +28,8 @@ import org.springframework.stereotype.Component;
 import uk.ac.ebi.intact.editor.config.EditorConfig;
 import uk.ac.ebi.intact.editor.controller.BaseController;
 import uk.ac.ebi.intact.editor.controller.UserSessionController;
-import uk.ac.ebi.intact.model.user.Preference;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.jami.model.user.Preference;
+import uk.ac.ebi.intact.jami.model.user.User;
 
 import javax.faces.event.ActionEvent;
 import java.io.ByteArrayOutputStream;

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+                xmlns:ed="http://ebi.ac.uk/intact/editor/ui">
+
+
+    <div class="intact-buttonBar">
+        <h:selectOneMenu id="newPrepTxt" value="#{participantController.preparationToAdd}"
+                         disabled="#{disablePreparationSelectItems}"
+                         converter="cvObjectConverter">
+            <f:selectItems value="#{cvObjectService.participantExperimentalPreparationsSelectItems}"/>
+        </h:selectOneMenu>
+        <p:commandButton id="newPrepBtn" value="Add Experimental Preparation"
+                         actionListener="#{participantController.addExperimentalPreparation}"
+                         process="newPrepTxt"
+                         update="newPrepTxt preparationsTable #{update}"/>
+    </div>
+
+    <p:dataTable id="preparationsTable" var="method" value="#{participantController.collectExperimentalPreparations()}">
+        <p:column>
+            <f:facet name="description">
+                <h:outputText value=""/>
+            </f:facet>
+            <h:outputText value="#{method.shortName}"/>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Actions"/>
+            </f:facet>
+            <p:commandLink id="removePrepBtn" styleClass="ui-icon ui-icon-closethick" process="removePrepBtn"
+                           actionListener="#{annotatedObjectController.removeExperimentalPreparation(method)}"
+                           oncomplete="markAsUnsaved()"
+                           update="preparationsTable #{update}"/>
+        </p:column>
+    </p:dataTable>
+
+</ui:composition>

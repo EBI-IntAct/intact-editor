@@ -18,39 +18,28 @@ package uk.ac.ebi.intact.editor.controller.curate.feature;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
-import org.hibernate.Hibernate;
 import org.primefaces.event.TabChangeEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.core.persistence.dao.IntactObjectDao;
-import uk.ac.ebi.intact.core.persister.IntactCore;
+import psidev.psi.mi.jami.model.*;
 import uk.ac.ebi.intact.editor.controller.curate.AnnotatedObjectController;
-import uk.ac.ebi.intact.editor.controller.curate.ChangesController;
-import uk.ac.ebi.intact.editor.controller.curate.PersistenceController;
-import uk.ac.ebi.intact.editor.controller.curate.cloner.FeatureIntactCloner;
-import uk.ac.ebi.intact.editor.controller.curate.cvobject.CvObjectService;
+import uk.ac.ebi.intact.editor.controller.curate.UnsavedChange;
+import uk.ac.ebi.intact.editor.controller.curate.cloner.EditorCloner;
+import uk.ac.ebi.intact.editor.controller.curate.cloner.FeatureEvidenceCloner;
 import uk.ac.ebi.intact.editor.controller.curate.experiment.ExperimentController;
 import uk.ac.ebi.intact.editor.controller.curate.interaction.InteractionController;
 import uk.ac.ebi.intact.editor.controller.curate.participant.ParticipantController;
 import uk.ac.ebi.intact.editor.controller.curate.publication.PublicationController;
-import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
-import uk.ac.ebi.intact.model.*;
-import uk.ac.ebi.intact.model.clone.IntactCloner;
-import uk.ac.ebi.intact.model.util.FeatureUtils;
+import uk.ac.ebi.intact.jami.model.extension.*;
+import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
+import uk.ac.ebi.intact.jami.utils.IntactUtils;
 
-import javax.faces.application.FacesMessage;
-import javax.faces.component.UIComponent;
-import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
-import javax.faces.event.ComponentSystemEvent;
-import javax.faces.validator.ValidatorException;
-import javax.persistence.Query;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -62,18 +51,9 @@ import java.util.List;
 @Controller
 @Scope( "conversation.access" )
 @ConversationName( "general" )
-public class FeatureController extends AnnotatedObjectController {
+public class FeatureController extends AbstractFeatureController<IntactFeatureEvidence> {
 
     private static final Log log = LogFactory.getLog( FeatureController.class );
-
-    private Feature feature;
-    private List<RangeWrapper> rangeWrappers;
-    private boolean containsInvalidRanges;
-
-    /**
-     * The AC of the feature to be loaded.
-     */
-    private String ac;
 
     @Autowired
     private PublicationController publicationController;
@@ -87,339 +67,179 @@ public class FeatureController extends AnnotatedObjectController {
     @Autowired
     private ParticipantController participantController;
 
-    private String newRangeValue;
+    private boolean isParametersDisabled;
+    private boolean isDetectionMethodDisabled;
+    private IntactCvTerm detectionMethodToAdd=null;
 
-    private boolean isRangeDisabled;
+    private CvTerm newParameterType;
+    private Double newParameterFactor;
+    private CvTerm newParameterUnit;
+    private Integer newParameterBase;
+    private Integer newParameterExponent;
+    private Double newParameterUncertainty;
 
-    public FeatureController() {
+    @Override
+    public Class<IntactFeatureEvidence> getFeatureClass() {
+        return IntactFeatureEvidence.class;
     }
 
     @Override
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String clone() {
-
-        String value = clone(getAnnotatedObject(), newClonerInstance());
-
-        refreshRangeWrappers();
-
-        return value;
+    public Class<? extends AbstractIntactResultingSequence> getResultingSequenceClass() {
+        return ExperimentalResultingSequence.class;
     }
 
     @Override
-    public IntactPrimaryObject getJamiObject() {
-        return null;
+    public Class<? extends AbstractIntactXref> getResultingSequenceXrefClass() {
+        return ExperimentalResultingSequenceXref.class;
     }
 
     @Override
-    public void setJamiObject(IntactPrimaryObject annotatedObject) {
-        // nothing to do
+    protected AnnotatedObjectController getParentController() {
+        return participantController;
     }
 
     @Override
-    public AnnotatedObject getAnnotatedObject() {
-        return getFeature();
+    protected String getPageContext() {
+        return "participant";
     }
 
     @Override
-    public void setAnnotatedObject(AnnotatedObject annotatedObject) {
-        setFeature((Feature)annotatedObject);
-    }
+    protected void refreshParentControllers() {
+        // different loaded participant
+        if (participantController.getParticipant() != getFeature().getParticipant()){
+            // different participant to load
+            if (participantController.getAc() == null ||
+                    (getFeature().getParticipant() instanceof IntactParticipantEvidence
+                            && !participantController.getAc().equals(((IntactParticipantEvidence)getFeature().getParticipant()).getAc()))){
+                IntactParticipantEvidence intactParticipant = (IntactParticipantEvidence)getFeature().getParticipant();
+                participantController.setParticipant(intactParticipant);
 
-    @Override
-    public String goToParent() {
-        return "/curate/participant?faces-redirect=true&includeViewParams=true";
-    }
+                // reload other parents
+                if( intactParticipant.getInteraction() instanceof IntactInteractionEvidence ) {
+                    final IntactInteractionEvidence interaction = (IntactInteractionEvidence)intactParticipant.getInteraction();
+                    interactionController.setInteraction( interaction );
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void loadData( ComponentSystemEvent event ) {
-        if (!FacesContext.getCurrentInstance().isPostback()) {
+                    if (interaction.getExperiment() instanceof IntactExperiment){
+                        IntactExperiment exp = (IntactExperiment)interaction.getExperiment();
+                        experimentController.setExperiment( exp );
 
-            if ( ac != null ) {
-                if ( feature == null || !ac.equals( feature.getAc() ) ) {
-                    feature = loadByAc(getDaoFactory().getFeatureDao(), ac);
-                    if (feature != null){
-                        // initialise ranges
-                        Hibernate.initialize(feature.getRanges());
-                        // initialise xrefs
-                        Hibernate.initialize(feature.getXrefs());
-                        // initialise aliases
-                        Hibernate.initialize(feature.getAliases());
-                        // initialise annotations
-                        Hibernate.initialize(feature.getAnnotations());
+                        if ( exp.getPublication() instanceof IntactPublication ) {
+                            IntactPublication publication = (IntactPublication)exp.getPublication();
+                            publicationController.setPublication( publication );
+                        }
+                        else{
+                            publicationController.setPublication(null);
+                        }
+                    }
+                    else{
+                        experimentController.setExperiment(null);
                     }
                 }
-            } else {
-                if ( feature != null ) ac = feature.getAc();
+                else{
+                    interactionController.setInteraction(null);
+                }
             }
-
-            if (feature == null) {
-                super.addErrorMessage("Feature does not exist", ac);
-                return;
-            }
-
-            if (!Hibernate.isInitialized(feature.getRanges())
-                    || !Hibernate.isInitialized(feature.getAnnotations())
-                    || !Hibernate.isInitialized(feature.getXrefs())
-                    || !Hibernate.isInitialized(feature.getAliases())){
-                feature = loadByAc(getDaoFactory().getFeatureDao(), feature.getAc());
-                // initialise ranges
-                Hibernate.initialize(feature.getRanges());
-                // initialise xrefs
-                Hibernate.initialize(feature.getXrefs());
-                // initialise aliases
-                Hibernate.initialize(feature.getAliases());
-                // initialise annotations
-                Hibernate.initialize(feature.getAnnotations());
-            }
-
-            final Component participant = feature.getComponent();
-
-            if (participantController.getParticipant() == null) {
-                participantController.setParticipant(participant);
-            }
-
-            if( interactionController.getInteraction() == null ) {
-                final Interaction interaction = participant.getInteraction();
-                interactionController.setInteraction( interaction );
-            }
-
-            if ( publicationController.getPublication() == null ) {
-                Publication publication = participant.getInteraction().getExperiments().iterator().next().getPublication();
-                publicationController.setPublication( publication );
-            }
-
-            if ( experimentController.getExperiment() == null ) {
-                experimentController.setExperiment( participant.getInteraction().getExperiments().iterator().next() );
-            }
-
-            refreshTabsAndFocusXref();
-        }
-
-        refreshRangeWrappers();
-
-        if (containsInvalidRanges) {
-            addWarningMessage("This feature contains invalid ranges", "Ranges must be fixed before being able to save");
-        }
-
-        generalLoadChecks();
-    }
-
-    @Override
-    protected <T extends AnnotatedObject> T loadByAc(IntactObjectDao<T> dao, String ac) {
-        T ao = (T) getChangesController().findByAc(ac);
-
-        if (ao == null) {
-            Query query = getCoreEntityManager().createQuery("select f from Feature f where f.ac = :ac and f.category = :evidence");
-            query.setParameter("ac", ac);
-            query.setParameter("evidence", "evidence");
-            List<Feature> features = query.getResultList();
-            if (features.size() == 1){
-                ao = (T)features.iterator().next();
-            }
-        }
-
-        return ao;
-    }
-
-    public void refreshRangeWrappers() {
-        this.rangeWrappers = new ArrayList<RangeWrapper>(feature.getRanges().size());
-
-        String sequence = getSequence();
-
-        containsInvalidRanges = false;
-
-        for (Range range : feature.getRanges()) {
-            rangeWrappers.add(new RangeWrapper(range, sequence));
-
-            if (!containsInvalidRanges && FeatureUtils.isABadRange(range, sequence)) {
-                containsInvalidRanges = true;
+            // replace old feature instance with new one in feature tables of participant
+            else{
+                getFeature().setParticipant(participantController.getParticipant());
+                participantController.reloadSingleFeature(getFeature());
             }
         }
     }
 
     @Override
-    protected IntactCloner newClonerInstance() {
-        return new FeatureIntactCloner();
-    }
-
-    public String newFeature(Component participant) {
-        Feature feature = new Feature("feature", participant, new CvFeatureType());
-        feature.setShortLabel(null);
-        feature.setCvFeatureType(null);
-
-        setFeature(feature);
-
-        //participant.addBindingDomain(feature);
-
-        refreshRangeWrappers();
-        changed();
-        //getUnsavedChangeManager().markAsUnsaved(feature);
-
-        return navigateToObject(feature);
-    }
-
-    public void newRange(ActionEvent evt) {
-        if (newRangeValue == null || newRangeValue.isEmpty()) {
-            addErrorMessage("Range value field is empty", "Please provide a range value before clicking on the New Range button");
-            return;
-        }
-
-        newRangeValue = newRangeValue.trim();
-
-        if (!newRangeValue.contains("-")) {
-            addErrorMessage("Illegal range value", "The range must contain a hyphen");
-            return;
-        }
-
-        String sequence = getSequence();
-
-        if (FeatureUtils.isABadRange(newRangeValue, sequence)) {
-            String problemMsg = FeatureUtils.getBadRangeInfo(newRangeValue, sequence);
-            addErrorMessage("Range is not valid", problemMsg);
-            return;
-        }
-
-        Range newRange = FeatureUtils.createRangeFromString(newRangeValue, sequence);
-        newRange.setLinked(false);
-
-        // replace CVs by ones with ACs
-
-        CvObjectService cvObjectService = (CvObjectService) getSpringContext().getBean("cvObjectService");
-        CvFuzzyType fromFuzzyType = cvObjectService.findCvObjectByIdentifier(CvFuzzyType.class, newRange.getFromCvFuzzyType().getIdentifier());
-        CvFuzzyType toFuzzyType = cvObjectService.findCvObjectByIdentifier(CvFuzzyType.class, newRange.getToCvFuzzyType().getIdentifier());
-
-        newRange.setFromCvFuzzyType(fromFuzzyType);
-        newRange.setToCvFuzzyType(toFuzzyType);
-
-        feature.addRange(newRange);
-
-        refreshRangeWrappers();
-
-        newRangeValue = null;
-
-        setUnsavedChanges(true);
-    }
-
-    public void validateFeature(FacesContext context, UIComponent component, Object value) throws ValidatorException {
-
-        if (feature.getRanges().isEmpty()) {
-            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Feature without ranges", "One range is mandatory");
-            throw new ValidatorException(message);
-        }
-    }
-
-    private String getSequence() {
-        Interactor interactor = feature.getComponent().getInteractor();
-
-        String sequence = null;
-
-        if (interactor instanceof Polymer) {
-            Polymer polymer = (Polymer) interactor;
-            sequence = polymer.getSequence();
-        }
-        return sequence;
-    }
-
-    public void markRangeToDelete(Range range) {
-        if (range == null) return;
-
-        if (range.getAc() == null) {
-            feature.removeRange(range);
-            refreshRangeWrappers();
-        } else {
-            getChangesController().markToDeleteRange(range, range.getFeature());
-        }
-    }
-
-    public List<RangeWrapper> getWrappedRanges() {
-        return rangeWrappers;
-    }
-
-    public String getAc() {
-        if ( ac == null && feature != null ) {
-            return feature.getAc();
-        }
-        return ac;
-    }
-
-    public void setAc( String ac ) {
-        this.ac = ac;
-    }
-
-    public Feature getFeature() {
-        return feature;
+    protected void generalLoadChecks() {
+        super.generalLoadChecks();
+        generalPublicationLoadChecks();
     }
 
     @Override
-    public void refreshTabsAndFocusXref(){
-        refreshTabs();
+    protected EditorCloner<FeatureEvidence, IntactFeatureEvidence> newClonerInstance() {
+        return new FeatureEvidenceCloner();
+    }
+
+    @Override
+    protected ExperimentalRange instantiateRange(Position start, Position end) {
+        return new ExperimentalRange(start, end);
+    }
+
+    @Override
+    protected ExperimentalResultingSequence instantiateResultingSequence(String original, String newSequence) {
+        return new ExperimentalResultingSequence(original, newSequence);
+    }
+
+    public int getParametersSize() {
+        if (getFeature() == null){
+            return 0;
+        }
+        else {
+            return getFeature().getParameters().size();
+        }
+    }
+
+    public int getDetectionMethodsSize() {
+        if (getFeature() == null){
+            return 0;
+        }
+        else {
+            return getFeature().getDetectionMethods().size();
+        }
     }
 
     @Override
     public void refreshTabs(){
         super.refreshTabs();
 
-        this.isRangeDisabled = false;
-    }
-
-    public void setFeature( Feature feature ) {
-        this.feature = feature;
-
-        if (feature != null){
-            this.ac = feature.getAc();
-        }
+        this.isParametersDisabled = true;
+        this.isDetectionMethodDisabled = true;
     }
 
     @Override
-    public void doPreSave() {
+    public void doPostSave() {
         // the feature was just created, add it to the list of features of the participant
-        if (feature.getAc() == null){
-            participantController.getParticipant().addFeature(feature);
+        if (getFeature().getParticipant() != null){
+            participantController.reloadSingleFeature(getFeature());
+        }
+    }
+
+    /**
+     * When reverting, we need to refresh the collection of wrappers because they are not part of the IntAct model.
+     */
+    @Override
+    protected void postRevert() {
+        // the feature was just created, add it to the list of features of the participant
+        if (getFeature().getParticipant() != null){
+            participantController.reloadSingleFeature(getFeature());
         }
     }
 
     @Override
-    public String doDelete(){
-        if (feature.getBoundDomain() != null){
-            Feature bound = feature.getBoundDomain();
-
-            if (bound.getBoundDomain() != null && feature.getAc() != null && feature.getAc().equalsIgnoreCase(bound.getBoundDomain().getAc())){
-                bound.setBoundDomain(null);
-                getPersistenceController().doSave(bound);
-            }
-            else if (bound.getBoundDomain() != null && feature.getAc() == null && feature.equals(bound.getBoundDomain())){
-                bound.setBoundDomain(null);
-                getPersistenceController().doSave(bound);
-            }
-
-            feature.setBoundDomain(null);
-        }
-
+    public String doDelete() {
+        participantController.removeFeature(getFeature());
         return super.doDelete();
     }
 
-    public String getNewRangeValue() {
-        return newRangeValue;
+    @Override
+    protected FeatureEvidenceXref newXref(CvTerm db, String id, String secondaryId, String version, CvTerm qualifier) {
+        FeatureEvidenceXref ref = new FeatureEvidenceXref(db, id, version, qualifier);
+        ref.setSecondaryId(secondaryId);
+        return ref;
     }
 
-    public void setNewRangeValue(String newRangeValue) {
-        this.newRangeValue = newRangeValue;
-    }
-
-    public boolean isContainsInvalidRanges() {
-        return containsInvalidRanges;
-    }
-
-    public void setContainsInvalidRanges(boolean containsInvalidRanges) {
-        this.containsInvalidRanges = containsInvalidRanges;
+    @Override
+    public FeatureEvidenceXref newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+        return new FeatureEvidenceXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, dbMI != null ? dbMI : db),
+                id,
+                secondaryId,
+                getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
     }
 
     @Override
     public Collection<String> collectParentAcsOfCurrentAnnotatedObject(){
         Collection<String> parentAcs = new ArrayList<String>();
 
-        if (feature.getComponent() != null){
-            Component comp = feature.getComponent();
+        if (getFeature().getParticipant() instanceof IntactParticipantEvidence){
+            IntactParticipantEvidence comp = (IntactParticipantEvidence)getFeature().getParticipant();
             if (comp.getAc() != null){
                 parentAcs.add(comp.getAc());
             }
@@ -430,30 +250,14 @@ public class FeatureController extends AnnotatedObjectController {
         return parentAcs;
     }
 
-    @Override
-    protected void refreshUnsavedChangesBeforeRevert(){
-        Collection<String> parentAcs = new ArrayList<String>();
-
-        if (feature.getComponent() != null){
-            Component comp = feature.getComponent();
-            if (comp.getAc() != null){
-                parentAcs.add(comp.getAc());
-            }
-
-            addParentAcsTo(parentAcs, comp);
-        }
-
-        getChangesController().revertFeature(feature, parentAcs);
-    }
-
     /**
      * Get the publication ac of this participant if it exists, the ac of the interaction if it exists and the component ac if it exists and add it to the list or parentAcs
      * @param parentAcs
      * @param comp
      */
-    private void addParentAcsTo(Collection<String> parentAcs, Component comp) {
-        if (comp.getInteraction() != null){
-            Interaction inter = comp.getInteraction();
+    private void addParentAcsTo(Collection<String> parentAcs, IntactParticipantEvidence comp) {
+        if (comp.getInteraction() instanceof IntactInteractionEvidence){
+            IntactInteractionEvidence inter = (IntactInteractionEvidence)comp.getInteraction();
             addParentAcsTo(parentAcs, inter);
         }
     }
@@ -463,40 +267,14 @@ public class FeatureController extends AnnotatedObjectController {
      * @param parentAcs
      * @param inter
      */
-    protected void addParentAcsTo(Collection<String> parentAcs, Interaction inter) {
+    protected void addParentAcsTo(Collection<String> parentAcs, IntactInteractionEvidence inter) {
         if (inter.getAc() != null){
             parentAcs.add(inter.getAc());
         }
 
-        if (IntactCore.isInitialized(inter.getExperiments()) && !inter.getExperiments().isEmpty()){
-            for (Experiment exp : inter.getExperiments()){
-                addParentAcsTo(parentAcs, exp);
-            }
+        if (inter.getExperiment() instanceof IntactExperiment){
+            addParentAcsTo(parentAcs, (IntactExperiment)inter.getExperiment());
         }
-        else if (interactionController.getExperiment() != null){
-            Experiment exp = interactionController.getExperiment();
-            addParentAcsTo(parentAcs, exp);
-        }
-        else if (!IntactCore.isInitialized(inter.getExperiments())){
-            Collection<Experiment> experiments = IntactCore.ensureInitializedExperiments(inter);
-
-            for (Experiment exp : experiments){
-                addParentAcsTo(parentAcs, exp);
-            }
-        }
-    }
-
-    public boolean isRangeDisabled() {
-        return isRangeDisabled;
-    }
-
-    public void setRangeDisabled(boolean rangeDisabled) {
-        isRangeDisabled = rangeDisabled;
-    }
-
-    @Override
-    public void modifyClone(AnnotatedObject clone) {
-        refreshTabs();
     }
 
     public void onTabChanged(TabChangeEvent e) {
@@ -505,86 +283,185 @@ public class FeatureController extends AnnotatedObjectController {
         super.onTabChanged(e);
 
         // all the tabs selectOneMenu are disabled, we can process the tabs specific to interaction
-        if (isAliasDisabled() && isXrefDisabled() && isAnnotationTopicDisabled()){
-            if (e.getTab().getId().equals("rangesTab")){
-                isRangeDisabled = false;
+        if (isRangeDisabled() && isAliasDisabled() && isXrefDisabled() && isAnnotationTopicDisabled()){
+            if (e.getTab().getId().equals("parametersTab")){
+                isParametersDisabled = false;
+                isDetectionMethodDisabled = true;
             }
             else {
-                isRangeDisabled = true;
+                isParametersDisabled = true;
+                isDetectionMethodDisabled = false;
             }
         }
         else {
-            isRangeDisabled = true;
+            isParametersDisabled = true;
+            isDetectionMethodDisabled = true;
+        }
+
+    }
+
+    public boolean isParametersDisabled() {
+        return isParametersDisabled;
+    }
+
+    public boolean isDetectionMethodDisabled() {
+        return isDetectionMethodDisabled;
+    }
+
+    @Override
+    public IntactDbSynchronizer getDbSynchronizer() {
+        return getEditorService().getIntactDao().getSynchronizerContext().getFeatureEvidenceSynchronizer();
+    }
+
+    @Override
+    public FeatureEvidenceAlias newAlias(CvTerm aliasType, String name) {
+        return new FeatureEvidenceAlias(aliasType, name);
+    }
+
+    public void newParameter(ActionEvent evt) {
+        if (this.newParameterType != null && this.newParameterFactor != null
+                && this.newParameterBase != null && this.newParameterExponent != null){
+            FeatureEvidenceParameter param = new FeatureEvidenceParameter(this.newParameterType, new ParameterValue(new BigDecimal(this.newParameterFactor), this.newParameterBase.shortValue(),
+                    this.newParameterExponent.shortValue()));
+            if (this.newParameterUncertainty != null){
+                param.setUncertainty(new BigDecimal(this.newParameterUncertainty));
+            }
+            param.setUnit(this.newParameterUnit);
+            getFeature().getParameters().add(param);
+            doSave(false);
+
+            this.newParameterBase = null;
+            this.newParameterFactor = null;
+            this.newParameterType = null;
+            this.newParameterUncertainty = null;
+            this.newParameterUnit = null;
+            this.newParameterExponent = null;
+        }
+        else{
+            addErrorMessage("Cannot add new parameter as it does not have any type/value", "Missing parameter type/value");
+        }
+    }
+
+    public void newDetectionMethod(ActionEvent evt) {
+        if (this.detectionMethodToAdd != null){
+            getFeature().getDetectionMethods().add(this.detectionMethodToAdd);
+            doSave(false);
+
+            this.detectionMethodToAdd = null;
         }
     }
 
     @Override
-    public void doSave(boolean refreshCurrentView) {
-        ChangesController changesController = (ChangesController) getSpringContext().getBean("changesController");
-        PersistenceController persistenceController = getPersistenceController();
+    public FeatureEvidenceAlias newAlias(String alias, String aliasMI, String name) {
+        return new FeatureEvidenceAlias(getCvService().findCvObject(IntactUtils.ALIAS_TYPE_OBJCLASS, aliasMI != null ? aliasMI : alias),
+                name);
+    }
 
-        doSaveIntact(refreshCurrentView, changesController, persistenceController);
+    public void removeParameter(Parameter parameter) {
+        getFeature().getParameters().remove(parameter);
+    }
+
+    public void removeDetectionMethod(CvTerm cv) {
+
+        getFeature().getDetectionMethods().remove(cv);
+    }
+
+    public List<Parameter> collectParameters() {
+
+        List<Parameter> variableParameters = new ArrayList<Parameter>(getFeature().getParameters());
+        Collections.sort(variableParameters, new AuditableComparator());
+        return variableParameters;
+    }
+
+    public List<CvTerm> collectDetectionMethods() {
+
+        List<CvTerm> methods = new ArrayList<CvTerm>(getFeature().getDetectionMethods());
+        Collections.sort(methods, new AuditableComparator());
+        return methods;
     }
 
     @Override
-    public String doSave() {
-        return super.doSave();
+    public FeatureEvidenceAnnotation newAnnotation(CvTerm annotation, String text) {
+        return new FeatureEvidenceAnnotation(annotation, text);
     }
 
     @Override
-    public void doSaveIfNecessary(ActionEvent evt) {
-        super.doSaveIfNecessary(evt);
+    public FeatureEvidenceAnnotation newAnnotation(String topic, String topicMI, String text) {
+        return new FeatureEvidenceAnnotation(getCvService().findCvObject(IntactUtils.TOPIC_OBJCLASS, topicMI != null ? topicMI: topic), text);
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getCautionMessage() {
-        if (feature == null){
-            return null;
-        }
-        if (!Hibernate.isInitialized(feature.getAnnotations())){
-            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getFeatureDao().getByAc(feature.getAc()),
-                    CvTopic.CAUTION_MI_REF, getDaoFactory());
-        }
-        return findAnnotationText(CvTopic.CAUTION_MI_REF);
+    @Override
+    protected IntactDbSynchronizer getRangeSynchronzer() {
+        return getEditorService().getIntactDao().getSynchronizerContext().getExperimentalRangeSynchronizer();
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getInternalRemarkMessage() {
-        if (feature == null){
-            return null;
-        }
-        if (!Hibernate.isInitialized(feature.getAnnotations())){
-            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getFeatureDao().getByAc(feature.getAc()),
-                    CvTopic.INTERNAL_REMARK, getDaoFactory());
-        }
-        return findAnnotationText(CvTopic.INTERNAL_REMARK);
+    public IntactCvTerm getDetectionMethodToAdd() {
+        return detectionMethodToAdd;
     }
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int getFeatureRangeSize() {
-        if (feature != null && Hibernate.isInitialized(feature.getRanges())){
-            return feature.getRanges().size();
-        }
-        else if (feature != null){
-            return getDaoFactory().getRangeDao().getByFeatureAc(feature.getAc()).size();
-        }
-        else {
-            return 0;
-        }
+
+    public void setDetectionMethodToAdd(IntactCvTerm detectionMethodToAdd) {
+        this.detectionMethodToAdd = detectionMethodToAdd;
+    }
+
+    @Override
+    protected void postProcessDeletedEvent(UnsavedChange unsaved) {
+        super.postProcessDeletedEvent(unsaved);
+        participantController.reloadSingleFeature(getFeature());
+    }
+
+    @Override
+    public void newRange(ActionEvent evt) {
+        super.newRange(evt);
+        participantController.reloadSingleFeature(getFeature());
+    }
+
+    public Double getNewParameterUncertainty() {
+        return newParameterUncertainty;
+    }
+
+    public void setNewParameterUncertainty(Double newParameterUncertainty) {
+        this.newParameterUncertainty = newParameterUncertainty;
+    }
+
+    public Integer getNewParameterExponent() {
+        return newParameterExponent;
+    }
+
+    public void setNewParameterExponent(Integer newParameterExponent) {
+        this.newParameterExponent = newParameterExponent;
+    }
+
+    public Integer getNewParameterBase() {
+        return newParameterBase;
+    }
+
+    public void setNewParameterBase(Integer newParameterBase) {
+        this.newParameterBase = newParameterBase;
+    }
+
+    public CvTerm getNewParameterUnit() {
+        return newParameterUnit;
+    }
+
+    public void setNewParameterUnit(CvTerm newParameterUnit) {
+        this.newParameterUnit = newParameterUnit;
+    }
+
+    public Double getNewParameterFactor() {
+        return newParameterFactor;
+    }
+
+    public void setNewParameterFactor(Double newParameterFactor) {
+        this.newParameterFactor = newParameterFactor;
+    }
+
+    public CvTerm getNewParameterType() {
+        return newParameterType;
+    }
+
+    public void setNewParameterType(CvTerm newParameterType) {
+        this.newParameterType = newParameterType;
     }
 
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectAnnotations() {
-        return super.collectAnnotations();
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectAliases() {
-        return super.collectAliases();
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectXrefs() {
-        return super.collectXrefs();
-    }
 }

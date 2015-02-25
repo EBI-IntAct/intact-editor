@@ -19,20 +19,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import uk.ac.ebi.intact.editor.controller.BaseController;
-import uk.ac.ebi.intact.editor.controller.curate.organism.EditorOrganismService;
+import uk.ac.ebi.intact.editor.services.curate.organism.BioSourceService;
 import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 import uk.ac.ebi.intact.jami.model.extension.IntactOrganism;
 
+import javax.annotation.Resource;
 import javax.faces.event.ActionEvent;
-import javax.faces.event.AjaxBehaviorEvent;
 import javax.faces.event.ComponentSystemEvent;
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -50,51 +44,42 @@ public class InputOrganismController extends BaseController {
     private List<IntactOrganism> bioSources;
     private String dialogId;
 
+    @Resource(name = "bioSourceService")
+    private transient BioSourceService bioSourceService;
+
     public InputOrganismController() {
     }
 
     public void loadBioSources( ComponentSystemEvent evt) {
         if (log.isTraceEnabled()) log.trace("Load Biosources");
-//        setQuery(null);
-//
+
         if (query == null) {
-            EditorOrganismService dao = ApplicationContextProvider.getBean("editorOrganismService");
-            Collection<IntactOrganism> bioSources = dao.getAllOrganisms();
-
-            setBioSources(new ArrayList<IntactOrganism>(bioSources));
+            setBioSources(getBioSourceService().loadAllBioSources());
         }
     }
 
-    public void autoSearch(AjaxBehaviorEvent evt) {
-        if (getQuery().length() >= 2) {
-            search(null);
+    public void loadOrganisms( ComponentSystemEvent evt) {
+        if (log.isTraceEnabled()) log.trace("Load Organisms");
+
+        if (query == null) {
+            setBioSources(getBioSourceService().loadAllOrganisms());
         }
     }
 
-    @SuppressWarnings({"JpaQlInspection", "unchecked"})
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void search(ActionEvent evt) {
+    public void searchBioSources(ActionEvent evt) {
         String query = getQuery();
 
         if (log.isTraceEnabled()) log.trace("Searching with query: "+query);
 
-        if (query == null) {
-            return;
-        }
+        this.bioSources = getBioSourceService().searchBioSources(query);
+    }
 
-        EntityManager manager = ApplicationContextProvider.getBean("jamiEntityManager");
+    public void searchOrganisms(ActionEvent evt) {
+        String query = getQuery();
 
-        Query jpaQuery = manager
-                .createQuery("select b from IntactOrganism b " +
-                        "where lower(b.commonName) like lower(:commonName) or " +
-                        "lower(b.scientificName) like lower(:scientificName) or " +
-                        "b.dbTaxid = :taxId");
-        jpaQuery.setParameter("commonName", query+"%");
-        jpaQuery.setParameter("scientificName", query+"%");
-        jpaQuery.setParameter("taxId", query);
+        if (log.isTraceEnabled()) log.trace("Searching with query: "+query);
 
-
-        this.bioSources = jpaQuery.getResultList();
+        this.bioSources = getBioSourceService().searchOrganisms(query);
     }
 
     public void selectBioSource( IntactOrganism bioSource ) {
@@ -131,5 +116,12 @@ public class InputOrganismController extends BaseController {
 
     public void setDialogId(String dialogId) {
         this.dialogId = dialogId;
+    }
+
+    public BioSourceService getBioSourceService() {
+        if (this.bioSourceService == null){
+            this.bioSourceService = ApplicationContextProvider.getBean("bioSourceService");
+        }
+        return bioSourceService;
     }
 }

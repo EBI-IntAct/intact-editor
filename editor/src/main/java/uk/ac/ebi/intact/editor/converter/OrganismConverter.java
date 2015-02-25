@@ -15,7 +15,7 @@
  */
 package uk.ac.ebi.intact.editor.converter;
 
-import uk.ac.ebi.intact.editor.controller.curate.organism.EditorOrganismService;
+import uk.ac.ebi.intact.editor.services.curate.organism.BioSourceService;
 import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 import uk.ac.ebi.intact.jami.model.extension.IntactOrganism;
 
@@ -35,8 +35,8 @@ public class OrganismConverter implements Converter {
     public Object getAsObject( FacesContext facesContext, UIComponent uiComponent, String ac ) throws ConverterException {
         if ( ac == null ) return null;
 
-        EditorOrganismService dao = ApplicationContextProvider.getBean("editorOrganismService");
-        return dao.findOrganismByAc(ac);
+        BioSourceService biosourceService = ApplicationContextProvider.getBean("bioSourceService");
+        return biosourceService.findBioSourceByAc(ac);
     }
 
     @Override

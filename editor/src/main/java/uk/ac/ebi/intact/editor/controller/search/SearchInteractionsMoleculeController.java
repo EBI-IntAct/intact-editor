@@ -1,16 +1,17 @@
 package uk.ac.ebi.intact.editor.controller.search;
 
 import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
+import org.primefaces.model.LazyDataModel;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.editor.controller.JpaAwareController;
-import uk.ac.ebi.intact.model.Interaction;
+import uk.ac.ebi.intact.editor.controller.BaseController;
+import uk.ac.ebi.intact.editor.services.search.SearchQueryService;
+import uk.ac.ebi.intact.editor.services.summary.InteractionSummary;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 
+import javax.annotation.Resource;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ComponentSystemEvent;
-import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,12 +23,13 @@ import java.util.List;
 @Controller
 @Scope( "conversation.access" )
 @ConversationName("search")
-public class SearchInteractionsMoleculeController extends JpaAwareController {
+public class SearchInteractionsMoleculeController extends BaseController {
 
 	private String ac;
-	private List<Interaction> interactions = null;
+	private LazyDataModel<InteractionSummary> interactions = null;
 	private String shortLabel;
 	private String numInteractions;
+    private String resultsOutcome;
 
 	public String getAc() {
 		return ac;
@@ -37,22 +39,20 @@ public class SearchInteractionsMoleculeController extends JpaAwareController {
 		this.ac = ac;
 	}
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    @Resource(name = "searchQueryService")
+    private transient SearchQueryService searchQueryService;
+
 	public void loadData(ComponentSystemEvent evt) {
 		if (!FacesContext.getCurrentInstance().isPostback()) {
 
 			if (ac != null) {
-				interactions = getDaoFactory().getInteractionDao().getInteractionsByInteractorAc(ac);
+				interactions = getSearchQueryService().loadInteractionsByMolecule(ac);
 			}
 		}
 	}
 
-	public List<Interaction> getInteractions() {
+	public LazyDataModel<InteractionSummary> getInteractions() {
 		return interactions;
-	}
-
-	public void setInteractions(List<Interaction> interactions) {
-		this.interactions = interactions;
 	}
 
 	public String getShortLabel() {
@@ -70,4 +70,19 @@ public class SearchInteractionsMoleculeController extends JpaAwareController {
 	public String getNumInteractions() {
 		return numInteractions;
 	}
+
+    public SearchQueryService getSearchQueryService() {
+        if (this.searchQueryService == null){
+            this.searchQueryService = ApplicationContextProvider.getBean("searchQueryService");
+        }
+        return searchQueryService;
+    }
+
+    public String getResultsOutcome() {
+        return resultsOutcome;
+    }
+
+    public void setResultsOutcome(String resultsOutcome) {
+        this.resultsOutcome = resultsOutcome;
+    }
 }

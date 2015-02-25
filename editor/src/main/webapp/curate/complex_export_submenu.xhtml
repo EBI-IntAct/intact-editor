@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+                xmlns:ed="http://ebi.ac.uk/intact/editor/ui">
+
+    <p:menuitem value="PSI-MI XML 2.5.4 (compact)" url="/service/export/mi/complex?ac=#{ac}&amp;format=xml254_compact"
+                target="_blank"/>
+    <p:menuitem value="PSI-MI XML 2.5.4 (expanded)" url="/service/export/mi/complex?ac=#{ac}&amp;format=xml254_expanded"
+                target="_blank"/>
+    <p:menuitem value="PSI-MI XML 3.0.0 (compact)" url="/service/export/mi/complex?ac=#{ac}&amp;format=xml300_compact"
+                target="_blank"/>
+    <p:menuitem value="PSI-MI XML 3.0.0 (expanded)" url="/service/export/mi/complex?ac=#{ac}&amp;format=xml300_expanded"
+                target="_blank"/>
+    <p:menuitem value="MI Json" url="/service/export/mi/complex?ac=#{ac}&amp;format=json"
+                target="_blank"/>
+    <p:menuitem value="HTML" url="/service/export/mi/complex?ac=#{ac}&amp;format=html"
+                target="_blank"/>
+    <p:menuitem value="FEBS SDA" url="/service/export/mi/complex?ac=#{ac}&amp;format=sda"
+                target="_blank"/>
+
+</ui:composition>

@@ -56,7 +56,7 @@
                         </p:inputText>
 
                         <p:commandButton id="autoFillBtn" value="Auto-fill" actionListener="#{bioSourceController.autoFill}"
-                                         update=":editorForm:basic,:editorForm:organismTabs" ajax="true" process="taxIdTxt">
+                                         update=":editorForm:basic,:editorForm:organismTabs,:editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent" ajax="true" process="taxIdTxt">
                         </p:commandButton>
 
                     </h:panelGroup>
@@ -66,29 +66,28 @@
                                  size="10" readonly="true"/>
 
                     <h:outputLabel value="Shortlabel: " for="shortlabelTxt"/>
-                    <p:inputText id="shortlabelTxt" value="#{bioSourceController.bioSource.shortLabel}" size="30" converter="trimmingConverter"
-                                 validator="#{annotatedObjectController.validateAnnotatedObject}"
+                    <p:inputText id="shortlabelTxt" value="#{bioSourceController.bioSource.commonName}" size="30" converter="trimmingConverter"
                                  valueChangeListener="#{bioSourceController.unsavedValueChange}"
                                  required="true" requiredMessage="Shortlabel is required">
                         <ed:curation/>
                     </p:inputText>
 
                     <h:outputLabel value="Fullname: " for="fullnameTxt"/>
-                    <p:inputText id="fullnameTxt" value="#{bioSourceController.bioSource.fullName}" size="50" converter="trimmingConverter"
+                    <p:inputText id="fullnameTxt" value="#{bioSourceController.bioSource.scientificName}" size="50" converter="trimmingConverter"
                                  valueChangeListener="#{bioSourceController.unsavedValueChange}">
                         <ed:curation/>
                     </p:inputText>
 
                     <h:outputLabel value="Cell type: " for="cellTypeTxt"/>
-                    <h:selectOneMenu id="cellTypeTxt" value="#{bioSourceController.bioSource.cvCellType}"
-                                     valueChangeListener="#{bioSourceController.unsavedValueChange}">
+                    <h:selectOneMenu id="cellTypeTxt" value="#{bioSourceController.bioSource.cellType}"
+                                     onchange="markAsUnsaved()" converter="cvObjectConverter">
                         <f:selectItems value="#{cvObjectService.cellTypeSelectItems}"/>
                         <ed:curation/>
                     </h:selectOneMenu>
 
                     <h:outputLabel value="Tissue: " for="tissueTxt"/>
-                    <h:selectOneMenu id="tissueTxt" value="#{bioSourceController.bioSource.cvTissue}"
-                                     valueChangeListener="#{bioSourceController.unsavedValueChange}">
+                    <h:selectOneMenu id="tissueTxt" value="#{bioSourceController.bioSource.tissue}"
+                                     converter="cvObjectConverter" onchange="markAsUnsaved()">
                         <f:selectItems value="#{cvObjectService.tissueSelectItems}"/>
                         <ed:curation/>
                     </h:selectOneMenu>
@@ -102,11 +101,11 @@
             <p:tabView id="organismTabs" dynamic="true">
                 <p:ajax event="tabChange" listener="#{bioSourceController.onTabChanged}" />
 
-                <p:tab id="aliasesTab" title="Aliases (#{bioSourceController.objectAliasesSize})">
-                    <p:outputPanel id="aliasesPanel" autoUpdate="true">
+                <p:tab id="aliasesTab" title="Aliases (#{bioSourceController.aliasesSize})">
+                    <p:outputPanel id="aliasesPanel" autoUpdate="false">
                         <ui:decorate template="aliases_table.xhtml">
                             <ui:param name="annotatedObjectController" value="#{bioSourceController}"/>
-                            <ui:param name="update" value=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent #{updateOnChange}"/>
+                            <ui:param name="update" value=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent,:editorForm:acTxt,:editorForm:organismTabs"/>
                             <ui:param name="valueChangeRender" value="#{updateOnChange} :editorForm:changesPanel"/>
                         </ui:decorate>
 

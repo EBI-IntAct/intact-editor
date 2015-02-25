@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ot="http://myfaces.apache.org/orchestra">
+
+    <h2>Network visualisation</h2>
+
+
+    <h:outputScript library="javascript" name="complexViewer-0.0.1.min.js"/>
+
+    <h:panelGroup>
+        <div id="messageContainer"/>
+        <div id='controls'>
+            <button onclick="xlv.autoLayout();">Auto layout</button>
+            <button onclick="xlv.resetZoom();">Reset zoom</button>
+            <button onclick="xlv.exportSVG();">Export SVG</button>
+        </div>
+        <div id="networkContainer" style="width: 100%; height: 500px">
+            Interaction Graph should show here in a few moments
+            <br/>It can take a few minutes if you try to upload a lot of interactions...
+        </div>
+        <script type="text/javascript">
+            //<![CDATA[
+            var ac = '#{ac}';
+            var objType = '#{objType}';
+
+            var exportUrl = '#{facesContext.externalContext.requestContextPath}/service/export/mi/'+objType+'?ac='+ac+'&format=json';
+
+            var targetDiv = document.getElementById('networkContainer');
+            var xlv = new xiNET(targetDiv);
+
+            // wait for the data to be loaded prior, handy for larger network.
+            var miJson;
+            var element = document.getElementById("messageContainer");
+            $(element).append("Interaction Graph should show here in a few moments.");
+            jQuery.ajax({
+                url: exportUrl,
+                success: function(gotJson) {
+
+                    miJson = gotJson;
+                    $(element).empty();
+                    xlv.readMIJSON(miJson, true);
+                },
+                error: function() {
+                    var element = document.getElementById("messageContainer");
+                    $(element).empty();
+                    $(element).append("An error occurred while loading the data.");
+                }});
+            //]]>
+        </script>
+    </h:panelGroup>
+
+
+</ui:composition>

@@ -44,7 +44,7 @@
                     <h:panelGroup>
                     <p:commandButton id="importSelected" value="Import selected" rendered="#{not empty modelledParticipantController.interactorCandidates}"
                                      actionListener="#{modelledParticipantController.addInteractorToParticipant}"
-                                     onstart="candidatesDialog.hide();adding_load.show()" onerror="adding_load.hide(); jcandidatesDialog.show();"
+                                     onstart="jcandidatesDialog.hide();adding_load.show()" onerror="adding_load.hide(); jcandidatesDialog.show();"
                                      oncomplete="adding_load.hide();  "
                                      update=":editorForm" />
                     <p:commandButton type="button" value="Back" rendered="#{empty modelledParticipantController.interactorCandidates}"
@@ -81,11 +81,15 @@
                     </p:column>
                     <p:column>
                         <f:facet name="header"><h:outputText value="IntAct AC"/></f:facet>
-                        <h:outputText value="#{candidate.interactor.ac}" rendered="#{candidate.persistentInteractor}"/>
+                        <h:outputText value="#{candidate.interactor.ac}" rendered="#{candidate.interactor != null}"/>
                     </p:column>
                     <p:column>
                         <f:facet name="header"><h:outputText value="IntAct label"/></f:facet>
                         <h:outputText value="#{candidate.interactor.shortName}" rendered="#{candidate.interactor != null}"/>
+                    </p:column>
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="Interactor type"/></f:facet>
+                        <h:outputText value="#{candidate.interactor.interactorType.shortName}" rendered="#{candidate.interactor != null}"/>
                     </p:column>
                     <p:column>
                         <f:facet name="header"><h:outputText value="Query"/></f:facet>
@@ -94,6 +98,9 @@
                 </p:dataTable>
 
                 <br/>
+
+                <h:outputLabel value="Load as molecule set: " for="moleculeSetTxt"/>
+                <h:selectBooleanCheckbox id="moleculeSetTxt" value="#{modelledParticipantController.loadAsMoleculeSet}"/>
 
             </ia:panelDialogLayout>
 

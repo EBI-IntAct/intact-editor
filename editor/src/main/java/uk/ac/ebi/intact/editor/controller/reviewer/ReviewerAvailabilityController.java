@@ -18,17 +18,19 @@ package uk.ac.ebi.intact.editor.controller.reviewer;
 import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.editor.controller.JpaAwareController;
-import uk.ac.ebi.intact.model.user.Preference;
-import uk.ac.ebi.intact.model.user.User;
-import uk.ac.ebi.intact.model.util.UserUtils;
+import uk.ac.ebi.intact.editor.controller.BaseController;
+import uk.ac.ebi.intact.editor.services.reviewer.ReviewerAvailabilityService;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.user.User;
+import uk.ac.ebi.intact.jami.synchronizer.FinderException;
+import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
+import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
+import uk.ac.ebi.intact.jami.utils.UserUtils;
 
+import javax.annotation.Resource;
 import javax.faces.event.ActionEvent;
 import javax.faces.event.ComponentSystemEvent;
-import javax.persistence.Query;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * @author Bruno Aranda (baranda@ebi.ac.uk)
@@ -37,68 +39,62 @@ import java.util.List;
 @Controller
 @Scope( "conversation.access" )
 @ConversationName( "reviewer" )
-public class ReviewerAvailabilityController extends JpaAwareController {
+public class ReviewerAvailabilityController extends BaseController {
 
-    private List<User> reviewers;
-    private List<User> complexReviewers;
+    private Collection<User> reviewers;
+    private Collection<User> complexReviewers;
+
+    @Resource(name = "reviewerAvailabilityService")
+    private transient ReviewerAvailabilityService reviewerAvailabilityService;
 
     public ReviewerAvailabilityController() {
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void loadData(ComponentSystemEvent evt) {
-        reviewers = getDaoFactory().getUserDao().getReviewers();
-        final Query query = getCoreEntityManager().createQuery("select u from User as u join u.roles as role where role.name = :roleName");
-        query.setParameter("roleName", "COMPLEX_REVIEWER");
-
-        complexReviewers = query.getResultList();
+        reviewers = getReviewerAvailabilityService().loadAllReviewers();
+        complexReviewers = getReviewerAvailabilityService().loadAllComplexReviewers();
     }
 
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
     public void save(ActionEvent evt) {
-        for (User reviewer : reviewers) {
-
-            Preference pref = reviewer.getPreference(Preference.KEY_REVIEWER_AVAILABILITY);
-
-            if (pref != null) {
-                getDaoFactory().getPreferenceDao().merge(pref);
-            }
-
+        try {
+            getReviewerAvailabilityService().getIntactDao().getUserContext().setUser(getCurrentUser());
+            getReviewerAvailabilityService().saveUsers(this.reviewers);
+            addInfoMessage("Saved", "The reviewers' availability has been updated");
+        } catch (SynchronizerException e) {
+            addErrorMessage("Cannot save reviewer availabilities ", e.getCause() + ": " + e.getMessage());
+        } catch (FinderException e) {
+            addErrorMessage("Cannot save reviewer availabilities ", e.getCause() + ": " + e.getMessage());
+        } catch (PersisterException e) {
+            addErrorMessage("Cannot save reviewer availabilities ", e.getCause() + ": " + e.getMessage());
+        } catch (Throwable e) {
+            addErrorMessage("Cannot save reviewer availabilities ", e.getCause() + ": " + e.getMessage());
         }
 
-        addInfoMessage("Saved", "The reviewers' availability has been updated");
-
-        for (User reviewer : complexReviewers) {
-
-            Preference pref = reviewer.getPreference(Preference.KEY_REVIEWER_AVAILABILITY);
-
-            if (pref != null) {
-                getDaoFactory().getPreferenceDao().merge(pref);
-            }
-
+        try {
+            getReviewerAvailabilityService().getIntactDao().getUserContext().setUser(getCurrentUser());
+            getReviewerAvailabilityService().saveUsers(this.complexReviewers);
+            addInfoMessage("Saved", "The complex reviewers' availability has been updated");
+        } catch (SynchronizerException e) {
+            addErrorMessage("Cannot save complex reviewer availabilities ", e.getCause() + ": " + e.getMessage());
+        } catch (FinderException e) {
+            addErrorMessage("Cannot save complex reviewer availabilities ", e.getCause() + ": " + e.getMessage());
+        } catch (PersisterException e) {
+            addErrorMessage("Cannot save complex reviewer availabilities ", e.getCause() + ": " + e.getMessage());
+        } catch (Throwable e) {
+            addErrorMessage("Cannot save complex reviewer availabilities ", e.getCause() + ": " + e.getMessage());
         }
-
-        addInfoMessage("Saved", "The complex reviewers' availability has been updated");
     }
 
     public ReviewerWrapper wrapReviewer(User user) {
         return new ReviewerWrapper(user);
     }
 
-    public List<User> getReviewers() {
+    public Collection<User> getReviewers() {
         return reviewers;
     }
 
-    public void setReviewers(List<User> reviewers) {
-        this.reviewers = reviewers;
-    }
-
-    public List<User> getComplexReviewers() {
+    public Collection<User> getComplexReviewers() {
         return complexReviewers;
-    }
-
-    public void setComplexReviewers(List<User> complexReviewers) {
-        this.complexReviewers = complexReviewers;
     }
 
     public class ReviewerWrapper {
@@ -115,5 +111,12 @@ public class ReviewerAvailabilityController extends JpaAwareController {
         public void setAvailability(int value) {
             UserUtils.setReviewerAvailability(reviewer, value);
         }
+    }
+
+    public ReviewerAvailabilityService getReviewerAvailabilityService() {
+        if (this.reviewerAvailabilityService == null){
+             this.reviewerAvailabilityService = ApplicationContextProvider.getBean("reviewerAvailabilityService");
+        }
+        return reviewerAvailabilityService;
     }
 }

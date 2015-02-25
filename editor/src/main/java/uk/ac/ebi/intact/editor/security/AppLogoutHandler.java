@@ -2,13 +2,12 @@ package uk.ac.ebi.intact.editor.security;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.security.Authentication;
 import org.springframework.security.ui.logout.LogoutHandler;
-import uk.ac.ebi.intact.core.context.IntactContext;
 import uk.ac.ebi.intact.editor.controller.UserListener;
 import uk.ac.ebi.intact.editor.controller.admin.UserManagerController;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.user.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,8 +37,7 @@ public class AppLogoutHandler implements LogoutHandler {
 
         log.debug( "Logout [" + authentication.getPrincipal() + "]" );
 
-        final ConfigurableApplicationContext springContext = IntactContext.getCurrentInstance().getSpringContext();
-        UserManagerController userManagerController = (UserManagerController) springContext.getBean("userManagerController");
+        UserManagerController userManagerController = ApplicationContextProvider.getBean("userManagerController");
 
         User user = userManagerController.getUser(authentication.getPrincipal().toString());
 
@@ -47,7 +45,7 @@ public class AppLogoutHandler implements LogoutHandler {
             log.debug( "Destroying session for user " + authentication.getPrincipal() + ": " );
 
             // get all the "user listener" beans and notify the logout
-            final Map<String,UserListener> userListeners = springContext.getBeansOfType(UserListener.class);
+            final Map<String,UserListener> userListeners = ApplicationContextProvider.getApplicationContext().getBeansOfType(UserListener.class);
 
             for (UserListener userListener : userListeners.values()) {
                 userListener.userLoggedOut(user);

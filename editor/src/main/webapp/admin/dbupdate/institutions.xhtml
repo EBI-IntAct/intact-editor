@@ -5,7 +5,7 @@
                 xmlns:f="http://java.sun.com/jsf/core"
                 xmlns:c="http://java.sun.com/jsp/jstl/core"
                 xmlns:p="http://primefaces.org/ui"
-
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 template="/admin/admin_template.xhtml">
 
     <ui:define name="metadata">
@@ -17,6 +17,8 @@
     <ui:define name="adminContent">
 
         <p:tabView dynamic="true" id="institutionTab">
+            <p:ajax event="tabChange" onstart="loadDialog.show()" oncomplete="loadDialog.hide()"/>
+
             <p:tab title="Institutions">
                 <p:commandButton value="New institution"
                                  action="#{institutionController.newInstitution}" ajax="false"/>
@@ -31,10 +33,12 @@
                             <h:selectOneMenu value="#{institutionAdminController.mergeDestinationInstitution}">
                                 <f:selectItem itemLabel="-- Merge into --" itemValue="#{null}"
                                               noSelectionOption="true"/>
-                                <f:selectItems value="#{institutionService.getInstitutionSelectItems(false)}"/>
+                                <f:selectItems value="#{institutionAdminController.institutionItems}"/>
                             </h:selectOneMenu>
                             <p:commandButton value="Merge" actionListener="#{institutionAdminController.mergeSelected}"
-                                             update=":editorForm:messagesComponent, :editorForm:institutionTab"/>
+                                             onstart="mergeDialog.show();"
+                                             oncomplete="mergeDialog.hide();"
+                                             update=":editorForm:messagesComponent :editorForm:institutionTab"/>
                             &#160;|&#160;
                             <p:commandButton value="Delete" onclick="confirmation.show()" type="button"/>
 
@@ -42,8 +46,9 @@
                                              modal="true"
                                              header="Institution deletion" severity="alert" widgetVar="confirmation">
 
-                                <p:commandButton value="Yes Sure" update=":editorForm:messagesComponent, :editorForm:institutionTab"
-                                                 oncomplete="confirmation.hide()"
+                                <p:commandButton value="Yes Sure" update=":editorForm:messagesComponent :editorForm:institutionTab"
+                                                 onstart="deleteDialog.show(); confirmation.hide()"
+                                                 oncomplete="deleteDialog.hide();"
                                                  actionListener="#{institutionAdminController.deleteSelected}"
                                                  />
                                 <p:commandButton value="Not Yet" onclick="confirmation.hide()" type="button"/>
@@ -54,7 +59,7 @@
 
                     <p:column selectionMode="multiple"/>
                     <p:column headerText="Short label">
-                        <h:link outcome="/curate/institution" value="#{institution.shortLabel}"
+                        <h:link outcome="/curate/institution" value="#{institution.shortName}"
                                 includeViewParams="true">
                             <f:param name="ac" value="#{institution.ac}"/>
                         </h:link>
@@ -66,13 +71,16 @@
                         <h:outputText value="#{institution.ac}"/>
                     </p:column>
                     <p:column headerText="# Publications">
-                        <h:outputText value="#{publicationDaoImpl.countByInstitutionAc(institution.ac)}"/>
+                        <h:outputText value="#{institutionAdminService.countNumberPublicationsFor(institution.ac)}"/>
                     </p:column>
                     <p:column headerText="# Experiments">
-                        <h:outputText value="#{experimentDaoImpl.countByInstitutionAc(institution.ac)}"/>
+                        <h:outputText value="#{institutionAdminService.countNumberExperimentsFor(institution.ac)}"/>
                     </p:column>
                     <p:column headerText="# Interactions">
-                        <h:outputText value="#{interactionDaoImpl.countByInstitutionAc(institution.ac)}"/>
+                        <h:outputText value="#{institutionAdminService.countNumberInteractionsFor(institution.ac)}"/>
+                    </p:column>
+                    <p:column headerText="# Biological complexes">
+                        <h:outputText value="#{institutionAdminService.countNumberComplexesFor(institution.ac)}"/>
                     </p:column>
                 </p:dataTable>
             </p:tab>
@@ -83,10 +91,11 @@
 
                 <h:outputLabel value="User(s):" for="userPick"/>
                 <p:pickList id="userPick" value="#{institutionAdminController.usersDualListModel}" var="user" converter="userConverter"
-                            itemLabel="#{user.firstName} #{user.lastName} (#{userAdminController.getInstitutionNameForUser(user)})" itemValue="#{user}">
+                            itemLabel="#{user.firstName} #{user.lastName} (#{institutionAdminService.getInstitutionNameFor(user)})" itemValue="#{user}">
                 </p:pickList>
 
-                <p:commandButton value="Fix" actionListener="#{institutionAdminController.fixAnnotatedObjectOwners}" update=":editorForm:messagesComponent, :editorForm:institutionTab"/>
+                <p:commandButton value="Fix" onstart="fixDialog.show();"
+                                 oncomplete="fixDialog.hide();" actionListener="#{institutionAdminController.fixReleasableOwners}" update=":editorForm:messagesComponent :editorForm:institutionTab"/>
             </p:tab>
         </p:tabView>
 
@@ -94,8 +103,10 @@
     </ui:define>
 
     <ui:define name="dialogs">
-
-
+        <ia:loadingDialog widgetVar="mergeDialog" message="Merging institutions..."/>
+        <ia:loadingDialog widgetVar="deleteDialog" message="Deleting institution..."/>
+        <ia:loadingDialog widgetVar="fixDialog" message="Fixing user publications/complexes..."/>
+        <ia:loadingDialog widgetVar="loadDialog" message="Loading..."/>
     </ui:define>
 
 </ui:composition>

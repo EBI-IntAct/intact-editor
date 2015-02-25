@@ -37,7 +37,7 @@
 
              <h:panelGroup rendered="#{interactionRemoteController.publication != null}">
                  <p>The interaction of proteins <b>#{interactionRemoteController.proteinsAsString}</b> does not exist in the database
-                     for publication <b>#{interactionRemoteController.publication.publicationId}</b> (#{interactionRemoteController.publication.ac}). Create a new interaction?</p>
+                     for publication <b>#{interactionRemoteController.publication.pubmedId}</b> (#{interactionRemoteController.publication.ac}). Create a new interaction?</p>
 
                  <p>Select an existing experiment:</p>
 
@@ -69,18 +69,20 @@
                                             disabled="#{interactionRemoteController.experiment != null}"/>
 
                          <h:outputLabel value="Interaction detection method: " for="detMethodTxt"/>
-                         <ia:inputCvObject id="detMethodTxt" value="#{interactionRemoteController.cvInteraction}"
+                         <ia:inputCvTerm id="detMethodTxt" value="#{interactionRemoteController.cvInteraction}"
                                            selectItems="#{cvObjectService.interactionDetectionMethodSelectItems}"
                                            cvIdentifier="MI:0001"
                                            update=":editorForm:messagesComponent"
-                                            disabled="#{interactionRemoteController.experiment != null}"/>
+                                            disabled="#{interactionRemoteController.experiment != null}"
+                                            cvClass="uk.ac.ebi.intact.model.CvInteraction"/>
 
                          <h:outputLabel value="Participant detection method: " for="partDetMethodTxt"/>
-                         <ia:inputCvObject id="partDetMethodTxt" value="#{interactionRemoteController.cvIdentification}"
+                         <ia:inputCvTerm id="partDetMethodTxt" value="#{interactionRemoteController.cvIdentification}"
                                            selectItems="#{cvObjectService.participantDetectionMethodSelectItems}"
                                            cvIdentifier="MI:0002"
                                            update=":editorForm:messagesComponent"
-                                            disabled="#{interactionRemoteController.experiment != null}"/>
+                                            disabled="#{interactionRemoteController.experiment != null}"
+                                            cvClass="uk.ac.ebi.intact.model.CvIdentification"/>
 
 
                      </h:panelGrid>
@@ -106,23 +108,23 @@
                     <ui:param name="ao" value="#{interaction}"/>
                 </ui:include>
             </p:column>
-            <p:column headerText="Shortlabel" sortBy="#{interaction.shortLabel}">
+            <p:column headerText="Shortlabel" sortBy="#{interaction.shortName}">
                 <h:panelGroup rendered="#{not changesController.isDeletedAc(interaction.ac)}">
                     <p:commandLink onclick="load_int.show()" action="/curate/interaction?faces-redirect=true&amp;includeViewParams=true"
                                style="#{interaction.ac == null? 'color:blue' :''}"
-                               value="#{interaction.shortLabel}" ajax="false">
+                               value="#{interaction.shortName}" ajax="false">
                         <f:setPropertyActionListener value="#{interaction}" target="#{interactionController.interaction}"/>
                     </p:commandLink>
                 </h:panelGroup>
                 <h:panelGroup rendered="#{changesController.isDeletedAc(interaction.ac)}">
-                    <h:outputText value="#{interaction.shortLabel}" style="color:red; text-decoration:line-through"/>
+                    <h:outputText value="#{interaction.shortName}" style="color:red; text-decoration:line-through"/>
                 </h:panelGroup>
             </p:column>
             <p:column headerText="Experiment">
-                <h:outputText value="#{not empty interaction.experiments? interactionController.completeExperimentLabel(interaction.experiments[0]) : ''}"/>
+                <h:outputText value="#{interaction.experiment != null ? interactionController.completeExperimentLabel(interaction.experiment) : ''}"/>
             </p:column>
             <p:column headerText="Type">
-                <h:outputText value="#{interaction.cvInteractionType.shortLabel}"/>
+                <h:outputText value="#{interaction.interactionType.shortName}"/>
             </p:column>
              </p:dataTable>
 

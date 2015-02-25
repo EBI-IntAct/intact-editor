@@ -15,10 +15,10 @@
  */
 package uk.ac.ebi.intact.editor.controller.curate;
 
-import uk.ac.ebi.intact.core.util.DebugUtil;
-import uk.ac.ebi.intact.model.AnnotatedObject;
-import uk.ac.ebi.intact.model.IntactObject;
+import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
+import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -26,17 +26,19 @@ import java.util.Collection;
  * @author Bruno Aranda (baranda@ebi.ac.uk)
  * @version $Id$
  */
-public class UnsavedChange {
+public class UnsavedChange implements Serializable{
 
     public static final String DELETED = "deleted";
     public static final String CREATED = "created";
     public static final String UPDATED = "updated";
     public static final String CREATED_TRANSCRIPT = "created-transcript";
 
-    private IntactObject unsavedObject;
-    private AnnotatedObject parentObject;
+    private IntactPrimaryObject unsavedObject;
+    private IntactPrimaryObject parentObject;
     private String action;
     private Collection<String> acsToDeleteOn = new ArrayList<String>();
+    private IntactDbSynchronizer dbSynchronizer;
+    private String description;
 
     /**
      * This is the global scope of change in case we delete an object from its parent. We know during which update we can save this change
@@ -44,14 +46,18 @@ public class UnsavedChange {
      */
     private String scope;
 
-    public UnsavedChange(IntactObject unsavedObject, String action, String scope) {
+    public UnsavedChange(IntactPrimaryObject unsavedObject, String action, String scope,
+                             IntactDbSynchronizer dbSynchronizer, String description) {
         this.unsavedObject = unsavedObject;
         this.action = action;
         this.scope = scope;
+        this.dbSynchronizer = dbSynchronizer;
+        this.description = description;
     }
 
-    public UnsavedChange(IntactObject unsavedObject, String action, AnnotatedObject parentObject, String scope) {
-        this(unsavedObject, action, scope);
+    public UnsavedChange(IntactPrimaryObject unsavedObject, String action, IntactPrimaryObject parentObject,
+                             String scope, IntactDbSynchronizer dbSynchronizer,String description) {
+        this(unsavedObject, action, scope, dbSynchronizer, description);
         this.parentObject = parentObject;
         this.scope = scope;
     }
@@ -60,20 +66,16 @@ public class UnsavedChange {
         return action;
     }
 
-    public IntactObject getUnsavedObject() {
+    public IntactPrimaryObject getUnsavedObject() {
         return unsavedObject;
     }
 
-    public AnnotatedObject getParentObject() {
+    public IntactPrimaryObject getParentObject() {
         return parentObject;
     }
 
-    public String getDescription(IntactObject intactObject) {
-        if (intactObject instanceof AnnotatedObject) {
-            return ((AnnotatedObject)intactObject).getShortLabel();
-        }
-        
-        return DebugUtil.intactObjectToString(intactObject, true);
+    public String getDescription() {
+        return this.description;
     }
 
     public Collection<String> getAcsToDeleteOn() {
@@ -87,13 +89,14 @@ public class UnsavedChange {
 
         UnsavedChange that = (UnsavedChange) o;
 
+        if (unsavedObject == that.unsavedObject){
+            return true;
+        }
+
         if (action != null ? !action.equals(that.action) : that.action != null) return false;
         if (unsavedObject != null && unsavedObject.getAc() != null && that.unsavedObject != null && that.unsavedObject.getAc() != null) {
             return unsavedObject.getAc().equals(that.unsavedObject.getAc());
         }
-
-        if (unsavedObject != null ? System.identityHashCode(unsavedObject) != System.identityHashCode(that.unsavedObject) : that.unsavedObject != null)
-            return false;
 
         return true;
     }
@@ -113,5 +116,13 @@ public class UnsavedChange {
 
     public String getScope() {
         return scope;
+    }
+
+    public IntactDbSynchronizer getDbSynchronizer() {
+        return dbSynchronizer;
+    }
+
+    public void setDbSynchronizer(IntactDbSynchronizer dbSynchronizer) {
+        this.dbSynchronizer = dbSynchronizer;
     }
 }

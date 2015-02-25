@@ -17,7 +17,8 @@
       <composite:attribute name="oncomplete"/>
       <composite:attribute name="selectItems" required="true"/>
       <composite:attribute name="size" default="30"/>
-      <composite:attribute name="value" type="uk.ac.ebi.intact.model.CvObject" required="true" />
+      <composite:attribute name="value" type="uk.ac.ebi.intact.jami.model.extension.IntactCvTerm" required="true" />
+      <composite:attribute name="cvClass" required="true" shortDescription="Class of the CvObject"/>
   </composite:interface>
 
     <!-- IMPLEMENTATION -->
@@ -30,7 +31,7 @@
 
         <script type="text/javascript">
             var #{dialogWidgetId}_icv = new InputCvObject('#{cc.clientId}');
-            #{dialogWidgetId}_icv.setUrl('#{facesContext.externalContext.requestContextPath}/comp/inputcvobject_inner.xhtml?identifier=#{cc.attrs.cvIdentifier}&amp;dialogId=#{dialogWidgetId}&amp;clientId=#{cc.clientId}&amp;visible=true');
+            #{dialogWidgetId}_icv.setUrl('#{facesContext.externalContext.requestContextPath}/comp/inputcvterm_inner.xhtml?identifier=#{cc.attrs.cvIdentifier}&amp;dialogId=#{dialogWidgetId}&amp;clientId=#{cc.clientId}&amp;visible=true&amp;className=#{cc.attrs.cvClass}');
         </script>
 
          <h:panelGrid columns="2" id="inputPanel" onmouseover="document.getElementById('#{cc.clientId}:cvButtons').style.visibility = 'visible';"
@@ -51,7 +52,7 @@
             Loading controlled vocabulary...
         </p:dialog>
 
-        <p:dialog header="#{cc.attrs.value['class'].simpleName} selection" resizable="true" position="center"
+        <p:dialog header="#{cc.attrs.cvClass} selection" resizable="true" position="center"
                   widgetVar="#{dialogWidgetId}" modal="#{cc.attrs.modal}" width="510">
             <p:outputPanel id="cvObjectBrowserDialog">
             <div style="height: 500px; overflow-x: auto;">

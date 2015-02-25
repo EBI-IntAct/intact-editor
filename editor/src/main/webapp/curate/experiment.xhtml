@@ -35,21 +35,12 @@
                 <h:panelGroup rendered="#{not empty experimentController.toBeReviewed}">
                     <ia:panelMessage level="warn">
                         <b>To be reviewed: </b> #{experimentController.toBeReviewed}
-                        &#160;&#160;&#160;
-                        <p:commandButton id="clearToBeReviewed" value="Clear" rendered="#{userSessionController.isItMe(publicationController.publication.currentReviewer)}" actionListener="#{experimentController.clearToBeReviewed}"
-                                         update=":editorForm:centralUnit"/>
                     </ia:panelMessage>
                 </h:panelGroup>
 
                 <h:panelGroup rendered="#{experimentController.correctionComment != null}">
                     <ia:panelMessage level="info">
                         <b>Correction comment: </b>#{experimentController.correctionComment}
-                    </ia:panelMessage>
-                </h:panelGroup>
-
-                <h:panelGroup rendered="#{not empty experimentController.onHold}">
-                    <ia:panelMessage level="warn">
-                        This experiment is <b>on-hold</b>. Reason: #{experimentController.onHold}
                     </ia:panelMessage>
                 </h:panelGroup>
 
@@ -73,7 +64,7 @@
                     </td>
                     <td>
                         <p:inputText id="shortLabelTxt" value="#{experimentController.experiment.shortLabel}" size="20"
-                                     validator="#{annotatedObjectController.validateAnnotatedObject}" converter="trimmingConverter"
+                                     converter="trimmingConverter"
                                      required="true" requiredMessage="Short label is required">
                         </p:inputText>
                     </td>
@@ -88,7 +79,7 @@
                         <h:outputLabel value="Host organism: " for="hostOrganismTxt"/>
                     </td>
                     <td colspan="3">
-                        <ia:inputBioSource id="hostOrganismTxt" value="#{experimentController.experiment.bioSource}"
+                        <ia:inputBioSource id="hostOrganismTxt" value="#{experimentController.experiment.hostOrganism}"
                                            selectItems="#{bioSourceService.bioSourceSelectItems}"
                                            required="true" requiredMessage="Host organism is required"
                                            oncomplete="ia_enableSave()"
@@ -101,46 +92,77 @@
                         <h:outputLabel value="Interaction detection method: " for="detMethodTxt"/>
                     </td>
                     <td colspan="3">
-                        <ia:inputCvObject id="detMethodTxt" value="#{experimentController.experiment.cvInteraction}"
+                        <ia:inputCvTerm id="detMethodTxt" value="#{experimentController.experiment.interactionDetectionMethod}"
                                           selectItems="#{cvObjectService.interactionDetectionMethodSelectItems}"
                                           cvIdentifier="MI:0001"
                                           beforeTimeoutEvent="ia_disableSave()" oncomplete="ia_enableSave()"
                                           required="true" requiredMessage="Interaction detection method is required"
                                           update=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent"
-                                          valueChangeAwareObject="#{experimentController}"/>
+                                          valueChangeAwareObject="#{experimentController}"
+                                          cvClass="uk.ac.ebi.intact.model.CvInteraction"/>
                     </td>
                 </tr>
                 <tr>
                     <td colspan="1"><h:outputLabel value="Participant detection method: " for="partDetMethodTxt"/></td>
                     <td colspan="3">
-                        <ia:inputCvObject id="partDetMethodTxt" value="#{experimentController.experiment.cvIdentification}"
+                        <ia:inputCvTerm id="partDetMethodTxt" value="#{experimentController.experiment.participantIdentificationMethod}"
                                           selectItems="#{cvObjectService.participantDetectionMethodSelectItems}"
                                           cvIdentifier="MI:0002"
                                           beforeTimeoutEvent="ia_disableSave()" oncomplete="ia_enableSave()"
                                           required="true" requiredMessage="Participant identification method is required"
                                           update=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent"
-                                          valueChangeAwareObject="#{experimentController}"/>
+                                          valueChangeAwareObject="#{experimentController}"
+                                          cvClass="uk.ac.ebi.intact.model.CvIdentification"/>
                     </td>
                 </tr>
-            </table>
+                <tr>
+                    <h:panelGroup rendered="#{experimentController.rejected}">
 
-            <!--</ia:panelFormLayout>-->
+                        <td class="firstCell">
+                            <h:outputLabel value="To be reviewed: " for="toBeReviewedTxt"/>
+                        </td>
+                        <td colspan="3">
+                            <p:inputTextarea id="toBeReviewedTxt" value="#{experimentController.toBeReviewed}" size="70"
+                                             valueChangeListener="#{complexController.onToBeReviewedChanged}">
+                                <ed:curation/>
+                            </p:inputTextarea>
+                        </td>
+                    </h:panelGroup>
+                </tr>
+                <tr>
+                    <h:panelGroup rendered="#{experimentController.corrected}">
+
+                        <td class="firstCell">
+                            <h:outputLabel value="Correction comment: " for="correctionCommentTxt"/>
+                        </td>
+                        <td colspan="3">
+                            <p:inputTextarea id="correctionCommentTxt" value="#{experimentController.correctionComment}" size="70"
+                                             valueChangeListener="#{experimentController.onCorrectionCommentChanged}">
+                                <ed:curation/>
+                            </p:inputTextarea>
+                        </td>
+                    </h:panelGroup>
+                </tr>
+            </table>
         </p:panel>
 
         <br/>
 
         <p:tabView id="experimentTabs" dynamic="true">
 
-            <p:ajax event="tabChange" listener="#{experimentController.onTabChanged}" />
+            <p:ajax event="tabChange" listener="#{experimentController.onTabChanged}" onstart="loadDialog.show()" oncomplete="loadDialog.hide()"/>
 
-            <p:tab title="Interactions (#{experimentController.interactionDataModel.rowCount})">
+            <p:tab id="interactionsTab" title="Interactions (#{experimentController.interactionDataModel.rowCount})">
                 <div class="intact-buttonBar">
-                    <p:commandButton id="newInteractionBtn" value="New interaction" actionListener="#{annotatedObjectController.doSaveIfNecessary}" process="editorForm"
-                                     action="#{interactionController.newInteraction(experimentController.experiment.publication, experimentController.experiment)}" ajax="false" />
+                    <p:commandButton id="newInteractionBtn" value="New interaction" actionListener="#{annotatedObjectController.doSaveIfNecessary}"
+                                     process="editorForm"
+                                     action="#{interactionController.newInteraction(experimentController.experiment.publication, experimentController.experiment)}"
+                                     ajax="false" />
 
                     |&#160;
 
-                    <p:commandLink id="overviewLink" value="Summary view" action="/curate/experiment_overview?faces-redirect=true&amp;includeViewParams=true" ajax="false">
+                    <p:commandLink id="overviewLink" value="Summary view" action="/curate/experiment_overview?faces-redirect=true&amp;includeViewParams=true"
+                                   ajax="false">
                         <f:param name="ac" value="#{experimentController.experiment.ac}"/>
                     </p:commandLink>
                 </div>
@@ -153,7 +175,27 @@
 
             <ui:decorate template="basicPropertiesTabs.xhtml">
                 <ui:param name="annotatedObjectSelectItems" value="#{cvObjectService.experimentTopicSelectItems}"/>
+                <ui:param name="updateOnChange" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:acTxt :editorForm:experimentTabs"/>
             </ui:decorate>
+
+            <p:tab id="vParametersTab" title="Variable Parameters (#{experimentController.variableParametersSize})">
+                <ui:decorate template="variable_parameters_table.xhtml">
+                    <ui:param name="annotatedObjectController" value="#{experimentController}"/>
+                    <ui:param name="parameterUnitSelectItems" value="#{cvObjectService.parameterUnitSelectItems}"/>
+                    <ui:param name="update" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:acTxt :editorForm:experimentTabs"/>
+                </ui:decorate>
+            </p:tab>
+
+            <p:tab id="graphTab" title="Graph" rendered="#{experimentController.interactionDataModel.rowCount gt 0}">
+
+                <p:outputPanel id="graphPanel" autoUpdate="false">
+                    <ui:decorate template="graph_tab.xhtml">
+                        <ui:param name="objType" value="experiment"/>
+                        <ui:param name="ac" value="#{experimentController.ac}"/>
+                    </ui:decorate>
+                </p:outputPanel>
+
+            </p:tab>
 
         </p:tabView>
 

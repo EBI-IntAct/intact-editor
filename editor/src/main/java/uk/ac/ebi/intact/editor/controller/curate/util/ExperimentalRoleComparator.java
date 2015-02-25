@@ -1,6 +1,6 @@
 package uk.ac.ebi.intact.editor.controller.curate.util;
 
-import uk.ac.ebi.intact.model.CvExperimentalRole;
+import psidev.psi.mi.jami.model.CvTerm;
 
 import java.util.Comparator;
 
@@ -11,24 +11,24 @@ import java.util.Comparator;
  * Time: 15:54
  * To change this template use File | Settings | File Templates.
  */
-public class ExperimentalRoleComparator implements Comparator<CvExperimentalRole> {
+public class ExperimentalRoleComparator implements Comparator<CvTerm> {
 
     @Override
-    public int compare(CvExperimentalRole cvExpRole1, CvExperimentalRole cvExpRole2) {
+    public int compare(CvTerm cvExpRole1, CvTerm cvExpRole2) {
         if (cvExpRole1 != null && cvExpRole2 != null) {
-            if (cvExpRole1.getShortLabel() != null && cvExpRole2.getShortLabel() != null) {
-                if (cvExpRole1.getShortLabel().equals("bait")) {
+            if (cvExpRole1.getShortName() != null && cvExpRole2.getShortName() != null) {
+                if (cvExpRole1.getShortName().equals("bait")) {
                     return -1;
-                } else if (cvExpRole2.getShortLabel().equals("bait")) {
+                } else if (cvExpRole2.getShortName().equals("bait")) {
                     return 1;
                 } else {
-                    return cvExpRole1.getShortLabel().compareTo(cvExpRole2.getShortLabel());
+                    return cvExpRole1.getShortName().compareTo(cvExpRole2.getShortName());
                 }
             }
             else {
-                if (cvExpRole1.getShortLabel() == null && cvExpRole2.getShortLabel() != null) {
+                if (cvExpRole1.getShortName() == null && cvExpRole2.getShortName() != null) {
                     return -1;
-                } else if (cvExpRole1.getShortLabel() != null && cvExpRole2.getShortLabel() == null) {
+                } else if (cvExpRole1.getShortName() != null && cvExpRole2.getShortName() == null) {
                     return 1;
                 }
             }

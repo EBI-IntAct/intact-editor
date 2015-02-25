@@ -20,7 +20,7 @@
         <composite:attribute name="update"/>
         <composite:attribute name="required" default="false"/>
         <composite:attribute name="requiredMessage"/>
-        <composite:attribute name="value" type="uk.ac.ebi.intact.model.BioSource" required="true"/>
+        <composite:attribute name="value" type="uk.ac.ebi.intact.jami.model.extension.IntactOrganism" required="true"/>
         <composite:attribute name="valueChangeAwareObject" type="uk.ac.ebi.intact.editor.controller.curate.ValueChangeAware"/>
     </composite:interface>
 
@@ -42,11 +42,12 @@
 
         <h:panelGroup onmouseover="#{dialogWidgetId}_ibs.displayButtons()" onmouseout="#{dialogWidgetId}_ibs.displayInfo()">
 
-            <h:selectOneMenu id="selectObject" value="#{cc.attrs.value}" size="#{cc.attrs.size}" converter="bioSourceConverter"
-                    required="#{cc.attrs.required}" requiredMessage="#{cc.attrs.requiredMessage}" disabled="#{cc.attrs.disabled}">
+            <h:selectOneMenu id="selectObject" value="#{cc.attrs.value}" size="#{cc.attrs.size}" converter="organismConverter"
+                             required="#{cc.attrs.required}" requiredMessage="#{cc.attrs.requiredMessage}" disabled="#{cc.attrs.disabled}">
                 <f:selectItems value="#{cc.attrs.selectItems}"/>
-                <f:ajax event="valueChange" update="#{cc.attrs.update}" process="@this"
-                             oncomplete="#{cc.attrs.oncomplete}"
+                <p:ajax event="change" process="@this"
+                        onerror="alert('ERROR!')"
+                        onsuccess="markAsUnsaved(); #{cc.attrs.oncomplete}"
                         disabled="#{cc.attrs.valueChangeAwareObject == null}"
                         listener="#{cc.attrs.valueChangeAwareObject.changed}"/>
             </h:selectOneMenu>
@@ -54,27 +55,26 @@
             <p:commandButton id="selectBtn" value="Browse" style="visibility: hidden; display:none" onclick="#{dialogWidgetId}_ibs.browse(#{dialogWidgetId})"
                              type="button"/>
 
+            <p:commandButton id="refreshBtn" value="Refresh list" style="visibility: hidden; display:none" actionListener="#{editorOrganismService.refresh}"
+                             update="selectObject"/>
 
-            <p:commandButton id="refreshBtn" value="Refresh list" style="visibility: hidden; display:none" actionListener="#{bioSourceService.refresh}"
-                    update="selectObject"/>
-
-           <h:panelGroup id="info" style="color: gray">
-               <h:panelGroup rendered="#{cc.attrs.value != null}">
-                   <h:outputText value=" #{cc.attrs.value.taxId} | #{cc.attrs.value.fullName}"/>
-                   <h:outputText value=" | #{cc.attrs.value.cvTissue.shortLabel}" rendered="#{cc.attrs.value.cvTissue != null}"/>
-                   <h:outputText value=" | #{cc.attrs.value.cvCellType.shortLabel}" rendered="#{cc.attrs.value.cvCellType != null}"/>
-               </h:panelGroup>
-           </h:panelGroup>
+            <h:panelGroup id="info" style="color: gray">
+                <h:panelGroup rendered="#{cc.attrs.value != null}">
+                    <h:outputText value=" #{cc.attrs.value.taxId} | #{cc.attrs.value.scientificName}"/>
+                    <h:outputText value=" | #{cc.attrs.value.tissue.shortName}" rendered="#{cc.attrs.value.tissue != null}"/>
+                    <h:outputText value=" | #{cc.attrs.value.cellType.shortName}" rendered="#{cc.attrs.value.cellType != null}"/>
+                </h:panelGroup>
+            </h:panelGroup>
 
         </h:panelGroup>
 
         <ia:loadingDialog widgetVar="#{dialogWidgetId}_load" message="Loading organisms..."/>
 
         <p:dialog id="organismSelector" header="Organism selection" widgetVar="#{dialogWidgetId}" modal="#{cc.attrs.modal}" position="center"
-                width="600" closeOnEscape="true">
+                  width="600" closeOnEscape="true">
 
             <iframe id="#{cc.clientId}_bioSourceFrame" src="" style="height: 570px; width: 570px; border: 0; overflow-x: auto;">
-                    Loading...
+                Loading...
             </iframe>
 
         </p:dialog>

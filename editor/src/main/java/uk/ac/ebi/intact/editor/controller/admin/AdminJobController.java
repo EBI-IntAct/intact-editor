@@ -15,28 +15,30 @@
  */
 package uk.ac.ebi.intact.editor.controller.admin;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobInstance;
-import org.springframework.batch.core.JobParametersInvalidException;
-import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.explore.JobExplorer;
-import org.springframework.batch.core.launch.JobExecutionNotRunningException;
-import org.springframework.batch.core.launch.JobOperator;
-import org.springframework.batch.core.launch.NoSuchJobException;
-import org.springframework.batch.core.launch.NoSuchJobExecutionException;
+import org.springframework.batch.core.launch.*;
 import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
 import org.springframework.batch.core.repository.JobRestartException;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
+import psidev.psi.mi.jami.batch.MIBatchJobManager;
+import uk.ac.ebi.intact.dataexchange.dbimporter.writer.AbstractIntactDbImporter;
 import uk.ac.ebi.intact.editor.controller.BaseController;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 
 import javax.annotation.Resource;
 import javax.faces.component.UIParameter;
+import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.List;
+import javax.faces.event.ComponentSystemEvent;
+import java.util.*;
 
 /**
  * @author Bruno Aranda (baranda@ebi.ac.uk)
@@ -48,37 +50,30 @@ import java.util.List;
 @Lazy
 public class AdminJobController extends BaseController {
 
-    @Resource( name = "editorJobOperator" )
-    private JobOperator jobOperator;
+    @Resource( name = "psiMIJobManager" )
+    private transient MIBatchJobManager psiMIJobManager;
 
     @Resource( name = "intactJobExplorer" )
-    private JobExplorer jobExplorer;
+    private transient JobExplorer jobExplorer;
+
+    @Resource( name = "intactJobLauncher" )
+    private transient JobLauncher intactJobLauncher;
+
+    private static final Log log = LogFactory.getLog(AdminJobController.class);
 
     public AdminJobController() {
     }
 
-    public List<String> getJobNames() {
-        return jobExplorer.getJobNames();
-    }
+    public void load( ComponentSystemEvent event ) {
 
-    public List<JobExecution> getRunningJobExecutions( String jobName ) {
-        return new ArrayList<JobExecution>( jobExplorer.findRunningJobExecutions( jobName ) );
-    }
+        if (!FacesContext.getCurrentInstance().isPostback()) {
 
-    public List<JobInstance> getJobInstances( String jobName ) {
-        return jobExplorer.getJobInstances( jobName, 0, 50 );
-    }
-
-    public List<JobExecution> getJobExecutions( Long jobInstanceId ) {
-        if ( jobInstanceId > 0 ) {
-            JobInstance jobInstance = jobExplorer.getJobInstance( jobInstanceId );
-            return jobExplorer.getJobExecutions( jobInstance );
+            log.debug( "Load job summary" );
         }
-        return new ArrayList<JobExecution>();
     }
 
-    public List<StepExecution> getStepExecutions( JobExecution jobExecution ) {
-        return new ArrayList<StepExecution>( jobExecution.getStepExecutions() );
+    public List<String> getJobNames() {
+        return new ArrayList<String>(getPsiMIJobManager().getJobOperator().getJobNames());
     }
 
     public void restart( ActionEvent evt ) {
@@ -89,23 +84,26 @@ public class AdminJobController extends BaseController {
             long executionId = ( Long ) param.getValue();
 
             try {
-                jobOperator.restart( executionId );
+                getPsiMIJobManager().restartJob(executionId);
 
                 addInfoMessage( "Job restarted", "Execution ID: " + executionId );
             } catch ( JobInstanceAlreadyCompleteException e ) {
-                addErrorMessage( "Job is already complete", "Execution ID: " + executionId );
+                addErrorMessage( "Job is already complete "+e.getMessage(), "Execution ID: " + executionId );
                 e.printStackTrace();
             } catch ( NoSuchJobExecutionException e ) {
-                addErrorMessage( "Job execution does not exist", "Execution ID: " + executionId );
+                addErrorMessage( "Job execution does not exist"+e.getMessage(), "Execution ID: " + executionId );
                 e.printStackTrace();
             } catch ( NoSuchJobException e ) {
-                addErrorMessage( "Job does not exist", "Execution ID: " + executionId );
+                addErrorMessage( "Job does not exist"+e.getMessage(), "Execution ID: " + executionId );
                 e.printStackTrace();
             } catch ( JobRestartException e ) {
-                addErrorMessage( "Problem restarting job", "Execution ID: " + executionId );
+                addErrorMessage( "Problem restarting job"+e.getMessage(), "Execution ID: " + executionId );
                 e.printStackTrace();
             } catch ( JobParametersInvalidException e ) {
-                addErrorMessage( "Job parameters are invalid", "Execution ID: " + executionId );
+                addErrorMessage( "Job parameters are invalid"+e.getMessage(), "Execution ID: " + executionId );
+                e.printStackTrace();
+            } catch (NoSuchJobInstanceException e) {
+                addErrorMessage("Job instance does not exist"+e.getMessage(), "Execution ID: " + executionId);
                 e.printStackTrace();
             }
         }
@@ -116,15 +114,86 @@ public class AdminJobController extends BaseController {
         long executionId = ( Long ) param.getValue();
 
         try {
-            jobOperator.stop( executionId );
+            getPsiMIJobManager().getJobOperator().stop(executionId);
 
             addInfoMessage( "Job stopped", "Execution ID: " + executionId );
         } catch ( NoSuchJobExecutionException e ) {
-            addErrorMessage( "Job does not exist", "Execution ID: " + executionId );
+            addErrorMessage( "Job does not exist "+e.getMessage(), "Execution ID: " + executionId );
             e.printStackTrace();
         } catch ( JobExecutionNotRunningException e ) {
-            addErrorMessage( "Job is not running anymore", "Execution ID: " + executionId );
+            addErrorMessage( "Job is not running anymore "+e.getMessage(), "Execution ID: " + executionId );
             e.printStackTrace();
         }
+    }
+
+    public List<JobExecution> getRunningJobExecutions( String jobName ) {
+        return new ArrayList<JobExecution>( getJobExplorer().findRunningJobExecutions(jobName) );
+    }
+
+    public List<JobInstance> getJobInstances( String jobName ) {
+        return getJobExplorer().getJobInstances(jobName, 0, 10);
+    }
+
+    public List<JobExecution> getJobExecutions( Long jobInstanceId ) {
+        if ( jobInstanceId > 0 ) {
+            JobInstance jobInstance = getJobExplorer().getJobInstance(jobInstanceId);
+            return getJobExplorer().getJobExecutions(jobInstance);
+        }
+        return new ArrayList<JobExecution>();
+    }
+
+    public List<StepExecution> getStepExecutions( JobExecution jobExecution ) {
+        return new ArrayList<StepExecution>( jobExecution.getStepExecutions() );
+    }
+
+    public List<Throwable> getFailureExceptions( JobExecution jobExecution ) {
+
+        return new ArrayList<Throwable>( jobExecution.getAllFailureExceptions() );
+    }
+
+    public Map<String,String> getImportStatistics( JobExecution jobExecution ) {
+        Collection<StepExecution> stepExecutions = jobExecution.getStepExecutions();
+        Map<String,String> statistics = new HashMap<String, String>();
+        if (!stepExecutions.isEmpty()){
+            StepExecution firstStep = stepExecutions.iterator().next();
+            ExecutionContext stepContext = firstStep.getExecutionContext();
+
+            for (Map.Entry<String, Object> entry : stepContext.entrySet()){
+                // persisted count
+                if (entry.getKey().startsWith(AbstractIntactDbImporter.PERSIST_MAP_COUNT)){
+                    statistics.put(entry.getKey().substring(entry.getKey().lastIndexOf("_")+1), Integer.toString((Integer)entry.getValue()));
+                }
+            }
+        }
+        return statistics;
+    }
+
+    public boolean hasJobFailed( JobExecution jobExecution ) {
+        return jobExecution.getExitStatus().equals(ExitStatus.FAILED);
+    }
+
+    public String printFullStackTrace( Throwable e ) {
+        return ExceptionUtils.getFullStackTrace(e);
+    }
+
+    public MIBatchJobManager getPsiMIJobManager() {
+        if (this.psiMIJobManager == null){
+            this.psiMIJobManager = ApplicationContextProvider.getBean("psiMIJobManager");
+        }
+        return psiMIJobManager;
+    }
+
+    public JobExplorer getJobExplorer() {
+        if (this.jobExplorer == null){
+            this.jobExplorer = ApplicationContextProvider.getBean("intactJobExplorer");
+        }
+        return jobExplorer;
+    }
+
+    public JobLauncher getIntactJobLauncher() {
+        if (this.intactJobLauncher == null){
+            this.intactJobLauncher = ApplicationContextProvider.getBean("intactJobLauncher");
+        }
+        return intactJobLauncher;
     }
 }

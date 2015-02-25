@@ -32,8 +32,36 @@
         </ia:panelDialogLayout>
     </p:dialog>
 
-    <ia:loadingDialog widgetVar="searching_load" message="Searching interactors..."/>
-    <ia:loadingDialog widgetVar="adding_load" message="Adding participants..." modal="false"/>
+    <p:dialog id="ipPoolDialog" widgetVar="importInteractorMemberDialog" header="Import interactor Member" modal="true"
+              position="center"
+              width="500">
+
+        <ia:panelDialogLayout id="ipPoolDialogPanel">
+            <f:facet name="buttonBar">
+                <p:commandButton id="interactorMemberSearchBtn" value="Search" actionListener="#{interactorController.importInteractor}"
+                                 process="searchInteractorPoolTxt"
+                                 update=":editorForm:messagesComponent"
+                                 onstart="searching_load.show()"
+                                 onerror="alert('Error opening candidates dialog')"
+                                 oncomplete="searching_load.hide(); importInteractorMemberDialog.hide()"
+                                 onsuccess="candidatesPoolDialog.show()" />
+            </f:facet>
+
+            <h:panelGrid columns="2">
+                <p>
+                    Import interactor by UniprotKB accession, ChEBI accession, Ensembl accession, interactor accession, short label or xref:<br/>
+                </p>
+
+                <p:inputTextarea id="searchInteractorPoolTxt" value="#{interactorController.setMembers}"
+                                 converter="arrayConverter"
+                                 cols="30" rows="5" autoResize="false"/>
+            </h:panelGrid>
+
+        </ia:panelDialogLayout>
+    </p:dialog>
+
+    <ia:loadingDialog widgetVar="searching_load" message="Searching interactor(s)..."/>
+    <ia:loadingDialog widgetVar="adding_load" message="Adding interactor(s)..." modal="false"/>
 
     <p:dialog id="candidatesDialog" widgetVar="candidatesDialog" header="Import participants" modal="true" dynamic="true"
               position="center"
@@ -85,7 +113,79 @@
                     </p:column>
                     <p:column>
                         <f:facet name="header"><h:outputText value="IntAct label"/></f:facet>
-                        <h:outputText value="#{candidate.interactor.shortLabel}" rendered="#{candidate.interactor != null}"/>
+                        <h:outputText value="#{candidate.interactor.shortName}" rendered="#{candidate.interactor != null}"/>
+                    </p:column>
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="Interactor type"/></f:facet>
+                        <h:outputText value="#{candidate.interactor.interactorType.shortName}" rendered="#{candidate.interactor != null}"/>
+                    </p:column>
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="Query"/></f:facet>
+                        <h:outputText value="#{candidate.query}"/>
+                    </p:column>
+                </p:dataTable>
+
+                <br/>
+
+                <h:outputLabel value="Load as molecule set: " for="moleculeSetTxt"/>
+                <h:selectBooleanCheckbox id="moleculeSetTxt" value="#{participantController.loadAsMoleculeSet}"/>
+
+            </ia:panelDialogLayout>
+
+        </p:outputPanel>
+    </p:dialog>
+
+    <p:dialog id="candidatesPoolDialog" widgetVar="candidatesPoolDialog" header="Import set member" modal="true" dynamic="true"
+              position="center"
+              width="800">
+        <p:outputPanel id="candidatesPoolContent">
+            <ia:panelDialogLayout id="candidatesPoolDialogContent">
+                <f:facet name="buttonBar">
+                    <h:panelGroup>
+                        <p:commandButton id="importPoolSelected" value="Import selected" rendered="#{not empty interactorController.interactorCandidates}"
+                                         actionListener="#{interactorController.addInteractorToPool}"
+                                         onstart="candidatesPoolDialog.hide();adding_load.show()" onerror="adding_load.hide(); candidatesPoolDialog.show();"
+                                         oncomplete="adding_load.hide();  "
+                                         update=":editorForm" />
+                        <p:commandButton type="button" value="Back" rendered="#{empty interactorController.interactorCandidates}"
+                                         onclick="candidatesPoolDialog.hide(); importInteractorMemberDialog.show()"/>
+                    </h:panelGroup>
+                </f:facet>
+
+
+                <p:dataTable id="candidatesPoolTable" var="candidate" rendered="#{not empty interactorController.interactorCandidates}"
+                             paginatorAlwaysVisible="false"
+                             value="#{interactorController.interactorCandidates}" paginator="true"  rows="10">
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="Select"/></f:facet>
+                        <h:selectBooleanCheckbox value="#{candidate.selected}"/>
+                    </p:column>
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="Source"/></f:facet>
+                        <h:outputText value="#{candidate.source}"/>
+                    </p:column>
+                    <ui:repeat value="#{candidate.primaryAcs}" var="ac">
+                        <h:outputText value="#{ac}"/>
+                        <br/>
+                    </ui:repeat>
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="Secondary ACs"/></f:facet>
+                        <ui:repeat value="#{candidate.secondaryAcs}" var="ac">
+                            <h:outputText value="#{ac}"/>
+                            <br/>
+                        </ui:repeat>
+                    </p:column>
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="Organism"/></f:facet>
+                        <h:outputText value="#{candidate.organism}"/>
+                    </p:column>
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="IntAct AC"/></f:facet>
+                        <h:outputText value="#{candidate.interactor.ac}" rendered="#{candidate.interactor != null}"/>
+                    </p:column>
+                    <p:column>
+                        <f:facet name="header"><h:outputText value="IntAct label"/></f:facet>
+                        <h:outputText value="#{candidate.interactor.shortName}" rendered="#{candidate.interactor != null}"/>
                     </p:column>
                     <p:column>
                         <f:facet name="header"><h:outputText value="Query"/></f:facet>
@@ -99,5 +199,6 @@
 
         </p:outputPanel>
     </p:dialog>
+
 
 </ui:composition>

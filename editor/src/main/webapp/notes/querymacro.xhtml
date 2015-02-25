@@ -12,7 +12,7 @@
                 template="/main_template.xhtml">
 
     <ui:define name="metadata">
-         <f:metadata>
+        <f:metadata>
             <f:viewParam name="macroName" value="#{macroDisplayController.macroName}"/>
             <f:event type="preRenderView" listener="#{macroDisplayController.load}"/>
         </f:metadata>
@@ -22,14 +22,14 @@
 
         <h:link outcome="/notes/mynotes" value="&lt;&lt; Back to My Notes" />
 
-            <br/><br/>
+        <br/><br/>
 
-            Total: <b>#{macroDisplayController.queryMacro.results.rowCount}</b>
+        Total: <b>#{macroDisplayController.queryMacro.results.rowCount}</b>
 
-             <ui:include src="/shared/intactObjects_table.xhtml">
-                 <ui:param name="intactObjects" value="#{macroDisplayController.queryMacro.results}"/>
-             </ui:include>
+        <ui:include src="/shared/jamiObjects_table.xhtml">
+            <ui:param name="jamiObjects" value="#{macroDisplayController.queryMacro.results}"/>
+        </ui:include>
 
-        </ui:define>
+    </ui:define>
 
-    </ui:composition>
+</ui:composition>

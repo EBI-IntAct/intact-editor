@@ -16,37 +16,43 @@
                  paginatorAlwaysVisible="false"
                  paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
                  rowsPerPageTemplate="10,25,50"
-                 rowStyleClass="#{publicationController.calculateStatusStyle(publication)}">
-        <p:column headerText="Pub. ID " sortBy="#{publication.shortLabel}">
+                 rowStyleClass="#{publication.rowStyle}">
+        <p:column headerText="Pub. ID " sortBy="#{publication.pubmedId}">
             <ot:separateConversationContext>
-                <h:link outcome="/curate/publication" value="#{publication.shortLabel}" includeViewParams="true">
+                <h:link outcome="/curate/publication" value="#{publication.pubmedId}" includeViewParams="true">
                     <f:param name="ac" value="#{publication.ac}"/>
                 </h:link>
             </ot:separateConversationContext>
         </p:column>
         <p:column>
-            <ui:include src="/curate/common_column_notifications.xhtml">
-                <ui:param name="annotatedObjectController" value="#{publicationController}"/>
-                <ui:param name="ao" value="#{publication}"/>
-            </ui:include>
+            <h:panelGroup rendered="#{publication.caution != null}">
+                <h:graphicImage alt="caution" library="images" name="warn.gif"
+                                title="#{publication.caution}"/>
+            </h:panelGroup>
         </p:column>
-        <p:column headerText="Title" sortBy="#{publication.fullName}" style="width: 50%;">
-            <h:outputText value="#{publication.fullName}"/>
+        <p:column headerText="First author">
+            <h:outputText value="#{publication.firstAuthor}"/>
+        </p:column>
+        <p:column headerText="Publication year">
+            <h:outputText value="#{publication.year}"/>
+        </p:column>
+        <p:column headerText="Title" sortBy="#{publication.title}" style="width: 50%;">
+            <h:outputText value="#{publication.title}"/>
         </p:column>
         <p:column headerText="# Exps.">
-            <h:outputText value="#{publicationController.countExperiments(publication)}"/>
+            <h:outputText value="#{publication.experimentCount}"/>
         </p:column>
         <p:column headerText="# Inter.">
-            <h:outputText value="#{publicationController.countInteractions(publication)}"/>
+            <h:outputText value="#{publication.interactionCount}"/>
         </p:column>
-        <p:column headerText="Owner" sortBy="#{publication.currentOwner}">
-            <h:outputText value="#{publication.currentOwner.login}" rendered="#{publication.currentOwner != null}"/>
+        <p:column headerText="Owner" sortBy="#{publication.owner}">
+            <h:outputText value="#{publication.owner}"/>
         </p:column>
-        <p:column headerText="Reviewer" sortBy="#{publication.currentReviewer}">
-            <h:outputText value="#{publication.currentReviewer.login}" rendered="#{publication.currentReviewer != null}"/>
+        <p:column headerText="Reviewer" sortBy="#{publication.reviewer}">
+            <h:outputText value="#{publication.reviewer}"/>
         </p:column>
         <p:column headerText="Status" sortBy="#{publication.status}">
-            <h:outputText value="#{publication.status.shortLabel}" rendered="#{publication.status != null}"/>
+            <h:outputText value="#{publication.status}"/>
         </p:column>
     </p:dataTable>
 

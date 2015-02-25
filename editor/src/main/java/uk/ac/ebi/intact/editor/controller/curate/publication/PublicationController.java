@@ -17,10 +17,10 @@ package uk.ac.ebi.intact.editor.controller.curate.publication;
 
 import edu.ucla.mbi.imex.central.ws.v20.IcentralFault;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
-import org.hibernate.Hibernate;
 import org.joda.time.DateTime;
 import org.primefaces.context.RequestContext;
 import org.primefaces.event.TabChangeEvent;
@@ -28,43 +28,48 @@ import org.primefaces.model.LazyDataModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.cdb.webservice.Authors;
-import uk.ac.ebi.cdb.webservice.Result;
-import uk.ac.ebi.intact.bridges.citexplore.CitexploreClient;
-import uk.ac.ebi.intact.bridges.imexcentral.DefaultImexCentralClient;
-import uk.ac.ebi.intact.bridges.imexcentral.ImexCentralException;
-import uk.ac.ebi.intact.core.config.SequenceCreationException;
-import uk.ac.ebi.intact.core.config.SequenceManager;
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.core.lifecycle.LifecycleManager;
-import uk.ac.ebi.intact.core.persister.IntactCore;
+import psidev.psi.mi.jami.bridges.europubmedcentral.EuroPubmedCentralFetcher;
+import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
+import psidev.psi.mi.jami.bridges.imex.ImexCentralClient;
+import psidev.psi.mi.jami.enricher.exception.EnricherException;
+import psidev.psi.mi.jami.model.*;
+import psidev.psi.mi.jami.utils.AnnotationUtils;
+import psidev.psi.mi.jami.utils.XrefUtils;
 import uk.ac.ebi.intact.dataexchange.imex.idassigner.ImexCentralManager;
 import uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.PublicationImexUpdaterException;
 import uk.ac.ebi.intact.editor.controller.UserSessionController;
 import uk.ac.ebi.intact.editor.controller.curate.AnnotatedObjectController;
-import uk.ac.ebi.intact.editor.controller.curate.ChangesController;
-import uk.ac.ebi.intact.editor.controller.curate.PersistenceController;
-import uk.ac.ebi.intact.editor.controller.curate.experiment.ExperimentController;
-import uk.ac.ebi.intact.editor.util.CurateUtils;
+import uk.ac.ebi.intact.editor.controller.curate.UnsavedChange;
+import uk.ac.ebi.intact.editor.controller.curate.cloner.EditorCloner;
+import uk.ac.ebi.intact.editor.services.curate.publication.DatasetPopulator;
+import uk.ac.ebi.intact.editor.services.curate.publication.PublicationEditorService;
+import uk.ac.ebi.intact.editor.services.summary.ExperimentSummary;
+import uk.ac.ebi.intact.editor.services.summary.ExperimentSummaryService;
+import uk.ac.ebi.intact.editor.services.summary.InteractionSummary;
+import uk.ac.ebi.intact.editor.services.summary.InteractionSummaryService;
 import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.lifecycle.IllegalTransitionException;
+import uk.ac.ebi.intact.jami.lifecycle.LifeCycleManager;
 import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
-import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleEvent;
-import uk.ac.ebi.intact.model.*;
-import uk.ac.ebi.intact.model.user.Preference;
-import uk.ac.ebi.intact.model.util.AnnotatedObjectUtils;
-import uk.ac.ebi.intact.model.util.ExperimentUtils;
-import uk.ac.ebi.intact.model.util.PublicationUtils;
+import uk.ac.ebi.intact.jami.model.extension.*;
+import uk.ac.ebi.intact.jami.model.lifecycle.*;
+import uk.ac.ebi.intact.jami.model.user.Preference;
+import uk.ac.ebi.intact.jami.sequence.SequenceManager;
+import uk.ac.ebi.intact.jami.service.PublicationService;
+import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
+import uk.ac.ebi.intact.jami.utils.IntactUtils;
+import uk.ac.ebi.intact.jami.utils.ReleasableUtils;
 
+import javax.annotation.Resource;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
 import javax.faces.event.ComponentSystemEvent;
 import javax.faces.event.ValueChangeEvent;
 import javax.faces.model.SelectItem;
-import javax.persistence.Query;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -83,8 +88,10 @@ public class PublicationController extends AnnotatedObjectController {
     public static final String SUBMITTED = "MI:0878";
     public static final String CURATION_REQUEST = "MI:0873";
     private static final String CURATION_DEPTH = "MI:0955";
+    public static final String DATASET = "dataset";
+    public static final String DATASET_MI_REF = "MI:0875";
 
-    private Publication publication;
+    private IntactPublication publication;
     private String ac;
 
     private String identifier;
@@ -95,179 +102,164 @@ public class PublicationController extends AnnotatedObjectController {
 
     private String datasetToAdd;
     private String[] datasetsToRemove;
-    private List<SelectItem> datasetsSelectItems;
 
     private String reasonForReadyForChecking;
-    private String reasonForRejection;
     private String reasonForOnHoldFromDialog;
 
     private boolean isCitexploreActive;
 
     private boolean isLifeCycleDisabled;
 
-    private LazyDataModel<Interaction> interactionDataModel;
+    private LazyDataModel<InteractionSummary> interactionDataModel;
 
     @Autowired
     private UserSessionController userSessionController;
 
-    @Autowired
-    private LifecycleManager lifecycleManager;
+    @Resource(name = "publicationService")
+    private transient PublicationService publicationService;
 
-    @Autowired
-    private ImexCentralManager imexCentralManager;
+    @Resource(name = "publicationEditorService")
+    private transient PublicationEditorService publicationEditorService;
+
+    @Resource(name = "experimentSummaryService")
+    private transient ExperimentSummaryService experimentSummaryService;
+
+    @Resource(name = "interactionSummaryService")
+    private transient InteractionSummaryService interactionSummaryService;
+
+    @Resource(name = "imexCentralManager")
+    private transient ImexCentralManager imexCentralManager;
+
+    @Resource(name = "datasetPopulator")
+    private transient DatasetPopulator datasetPopulator;
+
+    @Resource(name = "jamiLifeCycleManager")
+    private transient LifeCycleManager lifecycleManager;
 
     private String curationDepth;
 
     private String newDatasetDescriptionToCreate;
     private String newDatasetNameToCreate;
 
+    private boolean isExperimentTabDisabled = false;
+    private boolean isInteractionTabDisabled = true;
+
+    private String journal;
+    private String contactEmail;
+    private Short year;
+    private String authors;
+    private String onHold;
+    private String accepted;
+    private String toBeReviewed = null;
+    private String imexId=null;
+
+    private List<ExperimentSummary> experiments = Collections.EMPTY_LIST;
+
+    private  List<SelectItem> datasetsSelectItems;
+
     public PublicationController() {
+        experiments = new ArrayList<ExperimentSummary>();
     }
 
     @Override
-    public AnnotatedObject getAnnotatedObject() {
+    protected void loadCautionMessages() {
+        if (this.publication != null){
+
+            Annotation caution = AnnotationUtils.collectFirstAnnotationWithTopic(this.publication.getAnnotations(), Annotation.CAUTION_MI, Annotation.CAUTION);
+            setCautionMessage(caution != null ? caution.getValue() : null);
+            Annotation internal = AnnotationUtils.collectFirstAnnotationWithTopic(this.publication.getAnnotations(), null, "remark-internal");
+            setInternalRemark(internal != null ? internal.getValue() : null);
+            this.toBeReviewed = this.publication.getToBeReviewedComment();
+            this.accepted = this.publication.getAcceptedComment();
+            this.onHold = this.publication.getOnHoldComment();
+            this.imexId = this.publication.getImexId();
+            this.journal = this.publication.getJournal();
+            this.identifier = this.publication.getPubmedId();
+            this.curationDepth = this.publication.getCurationDepth().toString();
+            this.authors = !this.publication.getAuthors().isEmpty() ? StringUtils.join(this.publication.getAuthors(), ", ") : null;
+            Annotation contactEmail = AnnotationUtils.collectFirstAnnotationWithTopic(this.publication.getAnnotations(), Annotation.CONTACT_EMAIL_MI,
+                    Annotation.CONTACT_EMAIL);
+            this.contactEmail = contactEmail != null ? contactEmail.getValue() : null;
+            if (publication.getPublicationDate() == null){
+                this.year = null;
+            }
+            else{
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(publication.getPublicationDate());
+                int year = cal.get(Calendar.YEAR);
+                this.year = (short)year;
+            }
+        }
+    }
+
+    @Override
+    public IntactPrimaryObject getAnnotatedObject() {
         return getPublication();
     }
 
     @Override
-    public void setAnnotatedObject(AnnotatedObject annotatedObject) {
-        setPublication((Publication) annotatedObject);
+    public void setAnnotatedObject(IntactPrimaryObject annotatedObject) {
+        setPublication((IntactPublication)annotatedObject);
     }
 
-    @Override
-    public IntactPrimaryObject getJamiObject() {
-        return null;
-    }
-
-    @Override
-    public void setJamiObject(IntactPrimaryObject annotatedObject) {
-        // nothing to do
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void loadData(ComponentSystemEvent event) {
         if (!FacesContext.getCurrentInstance().isPostback()) {
-
-            datasetsSelectItems = new ArrayList<SelectItem>();
-
             loadByAc();
 
-            refreshTabsAndFocusXref();
+            refreshTabs();
         }
 
         generalLoadChecks();
     }
 
-    /**
-     * This method is for backward compatibility only. We exclude all publications that were created for complex curation
-     */
-    protected void resetToNullIfComplexPublication() {
-        if (publication != null){
-            if (publication.getShortLabel() != null && (
-                    "14681455".equals(publication.getShortLabel()) ||
-                            "unassigned638".equals(publication.getShortLabel()) ||
-                            "24288376".equals(publication.getShortLabel()) ||
-                            "24214965".equals(publication.getShortLabel())
-            )){
-                this.publication = null;
-            }
+    @Override
+    protected void generalLoadChecks() {
+        super.generalLoadChecks();
+        generalPublicationLoadChecks();
+
+        if (!getDatasetPopulator().isInitialised()){
+            getDatasetPopulator().loadData();
         }
     }
 
     private void loadByAc() {
-
         if (ac != null) {
             if (publication == null || !ac.equals(publication.getAc())) {
-                publication = loadByAc(getDaoFactory().getPublicationDao(), ac);
-
-                if (publication == null) {
-                    publication = getDaoFactory().getPublicationDao().getByPubmedId(ac);
-
-                    if (publication != null) {
-                        ac = publication.getAc();
-                        // initialise annotations
-                        Hibernate.initialize(publication.getAnnotations());
-                        // initialise lifecycle events
-                        Hibernate.initialize(publication.getLifecycleEvents());
-                        Hibernate.initialize(publication.getExperiments());
-                        Hibernate.initialize(publication.getXrefs());
-                    } else {
-                        super.addErrorMessage("No publication with this AC", ac);
-                    }
-                }
-                else{
-                    // initialise annotations
-                    Hibernate.initialize(publication.getAnnotations());
-                    // initialise lifecycle events
-                    Hibernate.initialize(publication.getLifecycleEvents());
-                    Hibernate.initialize(publication.getExperiments());
-                    Hibernate.initialize(publication.getXrefs());
-
-                    resetToNullIfComplexPublication();
-                }
+                setPublication(getPublicationEditorService().loadPublicationByAcOrPubmedId(ac));
             }
-
-            if (publication != null && (!Hibernate.isInitialized(publication.getAnnotations())
-                    || !Hibernate.isInitialized(publication.getLifecycleEvents())
-                    || !Hibernate.isInitialized(publication.getExperiments())
-                    || !Hibernate.isInitialized(publication.getXrefs()))) {
-                publication = getDaoFactory().getPublicationDao().getByAc( ac );
-                Hibernate.initialize(publication.getAnnotations());
-                Hibernate.initialize(publication.getLifecycleEvents());
-                Hibernate.initialize(publication.getExperiments());
-                Hibernate.initialize(publication.getXrefs());
-            }
-
-            refreshDataModels();
-            if (publication != null) {
-                loadFormFields();
-            }
-
-            //getCuratorContextController().removeFromUnsavedByAc(ac);
 
         } else if (publication != null) {
             ac = publication.getAc();
-            if (publication != null && (!Hibernate.isInitialized(publication.getAnnotations())
-                    || !Hibernate.isInitialized(publication.getLifecycleEvents())
-                    || !Hibernate.isInitialized(publication.getExperiments())
-                    || !Hibernate.isInitialized(publication.getXrefs()))) {
-                publication = getDaoFactory().getPublicationDao().getByAc( ac );
-                Hibernate.initialize(publication.getAnnotations());
-                Hibernate.initialize(publication.getLifecycleEvents());
-                Hibernate.initialize(publication.getExperiments());
-                Hibernate.initialize(publication.getXrefs());
-            }
-            loadFormFields();
+        }
+
+        if (publication == null) {
+            addErrorMessage("No Publication with this AC", ac);
+            return;
         }
     }
 
-    private void refreshDataModels() {
-        interactionDataModel = LazyDataModelFactory.createLazyDataModel(getCoreEntityManager(),
-                "select i from InteractionImpl i join fetch i.experiments as exp " +
-                        "where exp.publication.ac = '" + ac + "' order by exp.shortLabel asc",
-                "select count(i) from InteractionImpl i join i.experiments as exp " +
-                        "where exp.publication.ac = '" + ac + "'");
+    public void refreshDataModels() {
+        interactionDataModel = getInteractionSummaryService().refreshDataModels(this.publication, getInteractionSummaryService());
     }
 
     private void loadFormFields() {
         // reset previous dataset actions in the form
         this.datasetsToRemove = null;
         this.datasetToAdd = null;
-        datasetsSelectItems = new ArrayList<SelectItem>();
+        this.datasetsSelectItems = new ArrayList<SelectItem>();
 
-        DatasetPopulator populator = getDatasetPopulator();
-
-        for (Annotation annotation : publication.getAnnotations()) {
-            if (annotation.getCvTopic() != null && CvTopic.DATASET_MI_REF.equals(annotation.getCvTopic().getIdentifier())) {
-                String datasetText = annotation.getAnnotationText();
-
-                SelectItem datasetSelectItem = populator.createSelectItem(datasetText);
-                datasetsSelectItems.add(datasetSelectItem);
+        Collection<Annotation> datasets = AnnotationUtils.collectAllAnnotationsHavingTopic(this.publication.getAnnotations(), DATASET_MI_REF, DATASET);
+        for (Annotation annot : datasets){
+            if (annot.getValue() != null){
+                SelectItem item = getDatasetPopulator().createSelectItem(annot.getValue());
+                if (item != null){
+                    this.datasetsSelectItems.add(item);
+                }
             }
         }
 
         // load curationDepth
-        this.curationDepth = getCurationDepthAnnotation();
+        this.curationDepth = this.publication.getCurationDepth().toString();
     }
 
     public boolean isCitexploreOnline() {
@@ -292,7 +284,6 @@ public class PublicationController extends AnnotatedObjectController {
         return true;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String newAutocomplete() {
         identifier = identifierToImport;
 
@@ -304,7 +295,7 @@ public class PublicationController extends AnnotatedObjectController {
         }
 
         // check if already exists
-        Publication existingPublication = getDaoFactory().getPublicationDao().getByPubmedId(identifier);
+        IntactPublication existingPublication = getPublicationEditorService().loadPublicationByAcOrPubmedId(identifier);
 
         if (existingPublication != null) {
             setPublication(existingPublication);
@@ -315,7 +306,7 @@ public class PublicationController extends AnnotatedObjectController {
             // check if it already exists in IMEx central
             try {
 
-                if (imexCentralManager.isPublicationAlreadyRegisteredInImexCentral(identifier)) {
+                if (getImexCentralManager().isPublicationAlreadyRegisteredInImexCentral(identifier, Xref.PUBMED)) {
                     RequestContext requestContext = RequestContext.getCurrentInstance();
                     requestContext.execute("newPublicationDlg.hide()");
                     requestContext.execute("imexCentralActionDlg.show()");
@@ -327,7 +318,7 @@ public class PublicationController extends AnnotatedObjectController {
                 }
             }
             // cannot check IMEx central, add warning and create publication
-            catch (ImexCentralException e) {
+            catch (BridgeFailedException e) {
                 log.error(e.getMessage(), e);
                 addWarningMessage("Impossible to check with IMExcentral if " + identifier + " is already curated", e.getMessage());
                 createNewPublication(null);
@@ -343,7 +334,6 @@ public class PublicationController extends AnnotatedObjectController {
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void createNewPublication(ActionEvent evt) {
 
         if (identifier == null) {
@@ -358,7 +348,6 @@ public class PublicationController extends AnnotatedObjectController {
         identifierToImport = null;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void createNewEmptyPublication(ActionEvent evt) {
 
         if (identifier == null) {
@@ -372,26 +361,24 @@ public class PublicationController extends AnnotatedObjectController {
         identifierToImport = null;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void doFormAutocomplete(ActionEvent evt) {
-        if (publication.getShortLabel() != null) {
-            autocomplete(publication, publication.getShortLabel());
+        if (publication.getPubmedId() != null) {
+            autocomplete(publication, publication.getPubmedId());
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void autocomplete(Publication publication, String id) {
-        CitexploreClient citexploreClient = null;
+    public void autocomplete(IntactPublication publication, String id) {
+        EuroPubmedCentralFetcher citexploreClient = null;
 
         try {
-            citexploreClient = new CitexploreClient();
+            citexploreClient = new EuroPubmedCentralFetcher();
         } catch (Exception e) {
             addErrorMessage("Cannot auto-complete", "Citexplore service is down at the moment");
             return;
         }
 
         try {
-            final Result citation = citexploreClient.getCitationById(id);
+            final Publication citation = citexploreClient.fetchByIdentifier(id, Xref.PUBMED);
 
             // new publication. No autocompletion available and this publication can be created under unassigned
             if (citation == null && publication.getAc() == null) {
@@ -405,41 +392,12 @@ public class PublicationController extends AnnotatedObjectController {
 
             setPrimaryReference(id);
 
-            publication.setFullName(citation.getTitle());
+            publication.setTitle(citation.getTitle());
+            publication.setJournal(citation.getJournal());
+            publication.setPublicationDate(citation.getPublicationDate());
+            publication.getAuthors().addAll(citation.getAuthors());
 
-            StringBuilder journalBuf = new StringBuilder(128);
-            final String abbreviation = citation.getJournalInfo().getJournal().getISOAbbreviation();
-            final String issn = citation.getJournalInfo().getJournal().getISSN();
-            journalBuf.append(abbreviation);
-            if (issn != null) {
-                journalBuf.append(" (").append(issn).append(")");
-            }
-            setJournal(journalBuf.toString());
-
-            setYear(citation.getJournalInfo().getYearOfPublication());
-
-            StringBuilder sbAuthors = new StringBuilder(64);
-
-            if (citation.getAuthorList() != null) {
-                Iterator<Authors> authorIterator = citation.getAuthorList().getAuthor().iterator();
-                while (authorIterator.hasNext()) {
-                    Authors author = authorIterator.next();
-                    sbAuthors.append(author.getLastName()).append(" ");
-
-                    if (author.getInitials() != null) {
-                        for (int i = 0; i < author.getInitials().length(); i++) {
-                            char initial = author.getInitials().charAt(i);
-                            sbAuthors.append(initial).append(".");
-                        }
-                    }
-
-                    if (authorIterator.hasNext()) sbAuthors.append(", ");
-                }
-
-                setAuthors(sbAuthors.toString());
-            }
-
-            getChangesController().markAsUnsaved(publication);
+            setUnsavedChanges(true);
 
             addInfoMessage("Auto-complete successful", "Fetched details for: " + id);
 
@@ -449,19 +407,18 @@ public class PublicationController extends AnnotatedObjectController {
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String newEmptyUnassigned() {
-        SequenceManager sequenceManager = (SequenceManager) getSpringContext().getBean("sequenceManager");
+        SequenceManager sequenceManager = (SequenceManager) getSpringContext().getBean("jamiSequenceManager");
         try {
             sequenceManager.createSequenceIfNotExists("unassigned_seq");
-        } catch (SequenceCreationException e) {
+            String nextIntegerAsString = String.valueOf(sequenceManager.getNextValueForSequence(IntactUtils.UNASSIGNED_SEQ));
+            identifier = "unassigned" + nextIntegerAsString;
+        } catch (Exception e) {
             handleException(e);
         }
 
-        identifier = PublicationUtils.nextUnassignedId(getIntactContext());
-
         // check if already exists, so we skip this unassigned
-        Publication existingPublication = getDaoFactory().getPublicationDao().getByPubmedId(identifier);
+        IntactPublication existingPublication = getPublicationEditorService().loadPublicationByAcOrPubmedId(identifier);
 
         if (existingPublication != null) {
             setPublication(existingPublication);
@@ -471,7 +428,7 @@ public class PublicationController extends AnnotatedObjectController {
             // check if it already exists in IMEx central
             try {
 
-                if (imexCentralManager.isPublicationAlreadyRegisteredInImexCentral(identifier)) {
+                if (getImexCentralManager().isPublicationAlreadyRegisteredInImexCentral(identifier, Xref.PUBMED)) {
                     RequestContext requestContext = RequestContext.getCurrentInstance();
                     requestContext.execute("newPublicationDlg.hide()");
                     requestContext.execute("imexCentralUnassignedActionDlg.show()");
@@ -486,7 +443,7 @@ public class PublicationController extends AnnotatedObjectController {
                 }
             }
             // cannot check IMEx central, add warning and create publication
-            catch (ImexCentralException e) {
+            catch (BridgeFailedException e) {
                 addWarningMessage("Impossible to check with IMExcentral if " + identifier + " is already curated", e.getMessage());
                 newEmpty();
 
@@ -506,10 +463,11 @@ public class PublicationController extends AnnotatedObjectController {
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void newEmpty() {
 
-        Publication publication = new Publication(userSessionController.getUserInstitution(), identifier);
+        IntactPublication publication = new IntactPublication(identifier);
+        publication.setSource(userSessionController.getUserInstitution());
+
         setPublication(publication);
 
         // add the primary reference xref
@@ -527,31 +485,44 @@ public class PublicationController extends AnnotatedObjectController {
         }
 
         setCurationDepth(defaultCurationDepth);
-
-        lifecycleManager.getStartStatus().create(publication, "Created in Editor");
-
-        if (assignToMe) {
-            lifecycleManager.getNewStatus().claimOwnership(publication);
-            lifecycleManager.getAssignedStatus().startCuration(publication);
+        if (curationDepth != null && curationDepth.equals("IMEx")){
+            publication.setCurationDepth(CurationDepth.IMEx);
+        }
+        else if (curationDepth != null && curationDepth.equals("MIMIx")){
+            publication.setCurationDepth(CurationDepth.MIMIx);
+        }
+        else if (curationDepth != null && curationDepth.equals("rapid curation")){
+            publication.setCurationDepth(CurationDepth.rapid_curation);
         }
 
-        getChangesController().markAsUnsaved(publication);
+        try{
+            getLifecycleManager().getStartStatus().create(publication, "Created in Editor", userSessionController.getCurrentUser());
+
+            if (assignToMe) {
+                getLifecycleManager().getNewStatus().claimOwnership(publication, userSessionController.getCurrentUser());
+                getLifecycleManager().getAssignedStatus().startCuration(publication, userSessionController.getCurrentUser());
+            }
+
+            setPublication(publication);
+            setUnsavedChanges(true);
+        }
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot create publication: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void openByPmid(ActionEvent evt) {
         identifier = identifierToOpen;
 
         if (identifier == null || identifier.trim().length() == 0) {
             addErrorMessage("PMID is empty", "No PMID was supplied");
         } else {
-            Publication publicationToOpen = getDaoFactory().getPublicationDao().getByPubmedId(identifier);
+            IntactPublication publicationToOpen = getPublicationEditorService().loadPublicationByAcOrPubmedId(identifier);
 
             if (publicationToOpen == null) {
                 addErrorMessage("PMID not found", "There is no publication with PMID '" + identifier + "'");
             } else {
-                publication = publicationToOpen;
-                ac = publication.getAc();
+                setPublication(publicationToOpen);
             }
 
             identifierToOpen = null;
@@ -559,58 +530,79 @@ public class PublicationController extends AnnotatedObjectController {
 
     }
 
-    public void doClose(ActionEvent evt) {
-        publication = null;
-        ac = null;
-    }
-
     public boolean isNewPublication() {
-        return publication.getStatus().getIdentifier().equals(CvPublicationStatusType.NEW.identifier());
+        return publication.getStatus() == LifeCycleStatus.NEW;
     }
 
     public boolean isAssigned() {
-        return publication.getStatus().getIdentifier().equals(CvPublicationStatusType.ASSIGNED.identifier());
+        return publication.getStatus() == LifeCycleStatus.ASSIGNED;
     }
 
     public boolean isCurationInProgress() {
-        return publication.getStatus().getIdentifier().equals(CvPublicationStatusType.CURATION_IN_PROGRESS.identifier());
+        return publication.getStatus() == LifeCycleStatus.CURATION_IN_PROGRESS;
     }
 
     public boolean isReadyForChecking() {
-        return publication.getStatus().getIdentifier().equals(CvPublicationStatusType.READY_FOR_CHECKING.identifier());
+        return publication.getStatus() == LifeCycleStatus.READY_FOR_CHECKING;
     }
 
     public boolean isReadyForRelease() {
-        return publication.getStatus().getIdentifier().equals(CvPublicationStatusType.READY_FOR_RELEASE.identifier());
+        return publication.getStatus() == LifeCycleStatus.READY_FOR_RELEASE;
     }
 
     public boolean isAcceptedOnHold() {
-        return publication.getStatus().getIdentifier().equals(CvPublicationStatusType.ACCEPTED_ON_HOLD.identifier());
+        return publication.getStatus() == LifeCycleStatus.ACCEPTED_ON_HOLD;
     }
 
     public boolean isReleased() {
-        return publication.getStatus().getIdentifier().equals(CvPublicationStatusType.RELEASED.identifier());
+        return publication.getStatus() == LifeCycleStatus.RELEASED;
     }
 
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
     public void claimOwnership(ActionEvent evt) {
-        lifecycleManager.getGlobalStatus().changeOwnership(publication, getCurrentUser(), null);
+        try{
+            getEditorService().claimOwnership(publication, getCurrentUser(), isAssigned());
 
-        // automatically set as curation in progress if no one was assigned before
-        if (isAssigned()) {
-            markAsCurationInProgress(evt);
+            // automatically set as curation in progress if no one was assigned before
+            if (isAssigned()) {
+                addInfoMessage("Curation started", "Curation is now in progress");
+
+                // try to register/update record in IMEx central if they don't have IMEx. IMEx records are updated automatically with a cronjob
+                if (publication.getAc() != null && getImexId()==null){
+                    try {
+                        getImexCentralManager().registerAndUpdatePublication(publication.getAc());
+                    } catch (EnricherException e) {
+                        addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+                    }
+                }
+            }
+
+            addInfoMessage("Claimed publication ownership", "You are now the owner of this publication");
         }
-
-        addInfoMessage("Claimed publication ownership", "You are now the owner of this publication");
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot claim ownership of publication: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        }
     }
 
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
     public void markAsAssignedToMe(ActionEvent evt) {
-        lifecycleManager.getNewStatus().assignToCurator(publication, getCurrentUser());
+        try{
+            getEditorService().markAsAssignedToMe(publication, getCurrentUser());
 
-        addInfoMessage("Ownership claimed", "The publication has been assigned to you");
+            addInfoMessage("Ownership claimed", "The publication has been assigned to you");
 
-        markAsCurationInProgress(evt);
+            addInfoMessage("Curation started", "Curation is now in progress");
+
+            // try to register/update record in IMEx central if they don't have IMEx. IMEx records are updated automatically with a cronjob
+            if (publication.getAc() != null && getImexId()==null){
+                try {
+                    getImexCentralManager().registerAndUpdatePublication(publication.getAc());
+                } catch (EnricherException e) {
+                    addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+                }
+            }
+        }
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot assign publication: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        }
     }
 
     public void markAsCurationInProgress(ActionEvent evt) {
@@ -618,18 +610,22 @@ public class PublicationController extends AnnotatedObjectController {
             addErrorMessage("Cannot mark as curation in progress", "You are not the owner of this publication");
             return;
         }
+        try{
+            getEditorService().markAsCurationInProgress(publication, getCurrentUser());
 
-        lifecycleManager.getAssignedStatus().startCuration(publication);
+            addInfoMessage("Curation started", "Curation is now in progress");
 
-        addInfoMessage("Curation started", "Curation is now in progress");
-
-        // try to register/update record in IMEx central if they don't have IMEx. IMEx records are updated automatically with a cronjob
-        if (publication.getAc() != null && getImexId()==null){
-            try {
-                imexCentralManager.registerAndUpdatePublication(publication.getAc());
-            } catch (ImexCentralException e) {
-                addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+            // try to register/update record in IMEx central if they don't have IMEx. IMEx records are updated automatically with a cronjob
+            if (publication.getAc() != null && getImexId()==null){
+                try {
+                    getImexCentralManager().registerAndUpdatePublication(publication.getAc());
+                } catch (EnricherException e) {
+                    addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+                }
             }
+        }
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot mark as curation in progress: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
@@ -639,15 +635,14 @@ public class PublicationController extends AnnotatedObjectController {
             return;
         }
 
-
         if (isBeenRejectedBefore()) {
             List<String> correctionComments = new ArrayList<String>();
 
-            for (Experiment exp : IntactCore.ensureInitializedExperiments(publication)) {
-                Annotation correctionCommentAnnot = AnnotatedObjectUtils.findAnnotationByTopicMiOrLabel(exp, CvTopic.CORRECTION_COMMENT);
+            for (Experiment exp : publication.getExperiments()) {
+                Annotation correctionCommentAnnot = AnnotationUtils.collectFirstAnnotationWithTopic(exp.getAnnotations(), null, Releasable.CORRECTION_COMMENT);
 
                 if (correctionCommentAnnot != null) {
-                    correctionComments.add(correctionCommentAnnot.getAnnotationText());
+                    correctionComments.add(correctionCommentAnnot.getValue());
                 }
 
                 reasonForReadyForChecking = StringUtils.join(correctionComments, "; ");
@@ -655,123 +650,150 @@ public class PublicationController extends AnnotatedObjectController {
 
         }
 
-        // TODO run a proper sanity check
-        boolean sanityCheckPassed = true;
+        try{
+            getEditorService().markAsReadyForChecking(publication, getCurrentUser(), reasonForReadyForChecking);
 
-        lifecycleManager.getCurationInProgressStatus().readyForChecking(publication, reasonForReadyForChecking, sanityCheckPassed);
+            reasonForReadyForChecking = null;
 
-        reasonForReadyForChecking = null;
-
-        addInfoMessage("Publication ready for checking", "Assigned to reviewer: " + publication.getCurrentReviewer().getLogin());
-        // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
-        if (publication.getAc() != null && getImexId() == null){
-            try {
-                imexCentralManager.registerAndUpdatePublication(publication.getAc());
-            } catch (ImexCentralException e) {
-                addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+            addInfoMessage("Publication ready for checking", "Assigned to reviewer: " + publication.getCurrentReviewer().getLogin());
+            // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
+            if (publication.getAc() != null && getImexId() == null){
+                try {
+                    getImexCentralManager().registerAndUpdatePublication(publication.getAc());
+                } catch (EnricherException e) {
+                    addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+                }
             }
+        }
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot mark as ready for checking: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
     public void revertReadyForChecking(ActionEvent evt) {
-        LifecycleEvent event = PublicationUtils.getLastEventOfType(publication, CvLifecycleEventType.READY_FOR_CHECKING.identifier());
-        publication.removeLifecycleEvent(event);
-
-        publication.setStatus(getDaoFactory().getCvObjectDao(CvPublicationStatus.class).getByIdentifier(CvPublicationStatusType.CURATION_IN_PROGRESS.identifier()));
-        // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
-        if (publication.getAc() != null && getImexId() == null){
-            try {
-                imexCentralManager.registerAndUpdatePublication(publication.getAc());
-            } catch (ImexCentralException e) {
-                addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+        try{
+            getEditorService().revertReadyForChecking(this.publication, getCurrentUser());
+            // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
+            if (publication.getAc() != null && getImexId() == null){
+                try {
+                    getImexCentralManager().registerAndUpdatePublication(publication.getAc());
+                } catch (EnricherException e) {
+                    addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+                }
             }
+        }
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot revert ready for checking: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
     public void revertAccepted(ActionEvent evt) {
-        LifecycleEvent readyForReleaseEvt = PublicationUtils.getLastEventOfType(publication, CvLifecycleEventType.READY_FOR_RELEASE.identifier());
-        LifecycleEvent acceptedEvt = PublicationUtils.getLastEventOfType(publication, CvLifecycleEventType.ACCEPTED.identifier());
+        try{
+            getEditorService().revertAccepted(this.publication, getCurrentUser(), isReadyForRelease());
 
-        if (readyForReleaseEvt != null) {
-            publication.removeLifecycleEvent(readyForReleaseEvt);
-        }
-
-        if (acceptedEvt != null) {
-            publication.removeLifecycleEvent(acceptedEvt);
-        }
-
-        publication.setStatus(getDaoFactory().getCvObjectDao(CvPublicationStatus.class).getByIdentifier(CvPublicationStatusType.READY_FOR_CHECKING.identifier()));
-        // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
-        if (publication.getAc() != null && getImexId() == null){
-            try {
-                imexCentralManager.registerAndUpdatePublication(publication.getAc());
-            } catch (ImexCentralException e) {
-                addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+            // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
+            if (publication.getAc() != null && getImexId() == null){
+                try {
+                    getImexCentralManager().registerAndUpdatePublication(publication.getAc());
+                } catch (EnricherException e) {
+                    addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+                }
             }
+        }
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot revert accepted: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
     public void putOnHold(ActionEvent evt) {
-        setOnHold(reasonForOnHoldFromDialog);
+        try{
+            getEditorService().putOnHold(publication, getCurrentUser(), reasonForOnHoldFromDialog, isReadyForChecking(), isReleased());
 
-        if (CvPublicationStatusType.READY_FOR_RELEASE.identifier().equals(publication.getStatus().getIdentifier())) {
-            lifecycleManager.getReadyForReleaseStatus().putOnHold(publication, reasonForOnHoldFromDialog);
-            addInfoMessage("On-hold added to publication", "Publication won't be released until the 'on hold' is removed");
-        } else if (CvPublicationStatusType.RELEASED.identifier().equals(publication.getStatus().getIdentifier())) {
-            lifecycleManager.getReleasedStatus().putOnHold(publication, reasonForOnHoldFromDialog);
-            addInfoMessage("On-hold added to released publication", "Data will be publicly visible until the next release");
-        }
-
-        reasonForOnHoldFromDialog = null;
-        // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
-        if (publication.getAc() != null && getImexId() == null){
-            try {
-                imexCentralManager.registerAndUpdatePublication(publication.getAc());
-            } catch (ImexCentralException e) {
-                addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+            if (isReadyForRelease()) {
+                addInfoMessage("On-hold added to publication", "Publication won't be released until the 'on hold' is removed");
+            } else if (isReleased()) {
+                addInfoMessage("On-hold added to released publication", "Data will be publicly visible until the next release");
             }
+
+            reasonForOnHoldFromDialog = null;
+            // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
+            if (publication.getAc() != null && getImexId() == null){
+                try {
+                    getImexCentralManager().registerAndUpdatePublication(publication.getAc());
+                } catch (EnricherException e) {
+                    addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+                }
+            }
+        }
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot put on hold: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
     public void readyForReleaseFromOnHold(ActionEvent evt) {
-        removeAnnotation(CvTopic.ON_HOLD);
+        setOnHold(null);
 
-        lifecycleManager.getAcceptedOnHoldStatus().onHoldRemoved(publication, null);
-        // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
-        if (publication.getAc() != null && getImexId() == null){
-            try {
-                imexCentralManager.registerAndUpdatePublication(publication.getAc());
-            } catch (ImexCentralException e) {
-                addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+        try{
+            getEditorService().readyForReleaseFromOnHold(publication, getCurrentUser());
+            // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
+            if (publication.getAc() != null && getImexId() == null){
+                try {
+                    getImexCentralManager().registerAndUpdatePublication(publication.getAc());
+                } catch (EnricherException e) {
+                    addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+                }
             }
+        }
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot mark as ready for release: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public boolean isAllExperimentsAccepted() {
-        final Collection<Experiment> experiments = IntactCore.ensureInitializedExperiments(publication);
-
-        return ExperimentUtils.areAllAccepted(experiments);
+        final Collection<Experiment> experiments = publication.getExperiments();
+        return isAllExperimentsAccepted(experiments);
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public boolean isAllExperimentsAccepted(Collection<Experiment> experiments) {
+        if (experiments.isEmpty()){
+            return false;
+        }
+        for (Experiment exp : experiments){
+            if (AnnotationUtils.collectFirstAnnotationWithTopic(exp.getAnnotations(), null, Releasable.ACCEPTED) == null){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean hasExperimentToBeReviewed(Collection<Experiment> experiments) {
+        if (experiments.isEmpty()){
+            return false;
+        }
+        for (Experiment exp : experiments){
+            if (AnnotationUtils.collectFirstAnnotationWithTopic(exp.getAnnotations(), null, Releasable.TO_BE_REVIEWED) != null){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean isBackToCurationButtonRendered() {
-        return isButtonRendered(CvLifecycleEventType.READY_FOR_CHECKING);
+        return isButtonRendered(LifeCycleEventType.READY_FOR_CHECKING);
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public boolean isBackToCheckingButtonRendered() {
-        boolean render = isButtonRendered(CvLifecycleEventType.READY_FOR_RELEASE);
+        boolean render = isButtonRendered(LifeCycleEventType.READY_FOR_RELEASE);
 
         if (!render) {
-            render = isButtonRendered(CvLifecycleEventType.ACCEPTED);
+            render = isButtonRendered(LifeCycleEventType.ACCEPTED);
         }
 
         return render;
     }
 
-    private boolean isButtonRendered(CvLifecycleEventType eventType) {
-        LifecycleEvent event = PublicationUtils.getLastEventOfType(publication, eventType.identifier());
+    private boolean isButtonRendered(LifeCycleEventType eventType) {
+        LifeCycleEvent event = ReleasableUtils.getLastEventOfType(publication, eventType);
 
         if (event == null) {
             return false;
@@ -782,11 +804,6 @@ public class PublicationController extends AnnotatedObjectController {
         return new DateTime().isBefore(eventTime.plusMinutes(getEditorConfig().getRevertDecisionTime()));
     }
 
-    public void doSaveAndClose(ActionEvent evt) {
-        doSave(evt);
-        doClose(evt);
-    }
-
     @Override
     public void doSave(boolean refreshCurrentView) {
         boolean registerPublication = (publication != null && publication.getAc() == null);
@@ -794,23 +811,37 @@ public class PublicationController extends AnnotatedObjectController {
         // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
         if (registerPublication && getImexId() == null){
             try{
-                imexCentralManager.registerAndUpdatePublication(publication.getAc());
+                getImexCentralManager().registerAndUpdatePublication(publication.getAc());
             }
             // cannot check IMEx central, add warning and create publication
-            catch (ImexCentralException e) {
+            catch (EnricherException e) {
                 addWarningMessage("Impossible to register " + identifier + " in IMEx central", e.getMessage());
             }
         }
     }
 
     @Override
+    protected void initialiseDefaultProperties(IntactPrimaryObject annotatedObject) {
+        IntactPublication publication = (IntactPublication)annotatedObject;
+        if (!getPublicationEditorService().isPublicationFullyLoaded(publication)){
+            this.publication = getPublicationEditorService().reloadFullyInitialisedPublication(publication);
+        }
+
+        refreshDataModels();
+        loadFormFields();
+        refreshExperiments();
+
+        setDescription("Publication: "+(publication.getPubmedId() != null ? publication.getPubmedId() : publication.getShortLabel()));
+    }
+
+    @Override
     public String doDelete() {
         if (publication.getAc() != null){
             try{
-                imexCentralManager.discardPublication(publication.getAc());
+                getImexCentralManager().discardPublication(publication.getAc());
             }
             // cannot check IMEx central, add warning and create publication
-            catch (ImexCentralException e) {
+            catch (BridgeFailedException e) {
                 addWarningMessage("Impossible to discard " + identifier + " in IMEx central. Please do it manually.", e.getMessage());
             }
         }
@@ -818,18 +849,37 @@ public class PublicationController extends AnnotatedObjectController {
         return super.doDelete();
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    @Override
+    protected void addNewXref(AbstractIntactXref newRef) {
+        if (XrefUtils.isXrefAnIdentifier(newRef) || XrefUtils.doesXrefHaveQualifier(newRef, null, "intact-secondary")
+                || XrefUtils.doesXrefHaveQualifier(newRef, Xref.PRIMARY_MI, Xref.PRIMARY)){
+            this.publication.getIdentifiers().add(newRef);
+            this.identifier = this.publication.getPubmedId();
+        }
+        else{
+            this.publication.getXrefs().add(newRef);
+            this.imexId = this.publication.getImexId();
+        }
+    }
+
+    @Override
+    protected PublicationXref newXref(CvTerm db, String id, String secondaryId, String version, CvTerm qualifier) {
+        PublicationXref ref = new PublicationXref(db, id, version, qualifier);
+        ref.setSecondaryId(secondaryId);
+        return ref;
+    }
+
+    @Override
+    public PublicationXref newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+        return new PublicationXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, dbMI != null ? dbMI : db),
+                id, secondaryId, getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
+    }
+
     public void addDataset(ActionEvent evt) {
         if (datasetToAdd != null) {
-            datasetsSelectItems.add(getDatasetPopulator().createSelectItem(datasetToAdd));
-
-            addAnnotation(CvTopic.DATASET_MI_REF, datasetToAdd);
+            addAnnotation(DATASET, DATASET_MI_REF, datasetToAdd, publication.getAnnotations());
 
             Collection<Experiment> experiments = publication.getExperiments();
-
-            if (!IntactCore.isInitialized(publication.getExperiments())) {
-                experiments = getDaoFactory().getExperimentDao().getByPubId(publication.getShortLabel());
-            }
 
             if (!experiments.isEmpty()) {
                 Collection<String> parentAcs = new ArrayList<String>();
@@ -837,10 +887,16 @@ public class PublicationController extends AnnotatedObjectController {
                     parentAcs.add(publication.getAc());
                 }
                 for (Experiment experiment : experiments) {
-                    newAnnotatedObjectHelper(experiment).addAnnotation(CvTopic.DATASET_MI_REF, datasetToAdd);
-
-                    getChangesController().markAsUnsaved(experiment, parentAcs);
+                    experiment.getAnnotations().add(new ExperimentAnnotation(IntactUtils.createMITopic(DATASET, DATASET_MI_REF), datasetToAdd));
+                    getChangesController().markAsUnsaved((IntactExperiment)experiment, getEditorService().getIntactDao().getSynchronizerContext().getExperimentSynchronizer(),
+                            "Experiment: "+((IntactExperiment)experiment).getShortLabel(), parentAcs);
                 }
+            }
+
+            // register new dataset in list of existing datasets
+            SelectItem item = getDatasetPopulator().createSelectItem(datasetToAdd);
+            if (item != null){
+                this.datasetsSelectItems.add(item);
             }
 
             // reset the dataset to add as it has already been added
@@ -849,7 +905,6 @@ public class PublicationController extends AnnotatedObjectController {
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void createAndAddNewDataset(ActionEvent evt) {
         if (newDatasetDescriptionToCreate == null) {
             addErrorMessage("A short sentence describing the dataset is required", "dataset description required");
@@ -860,26 +915,14 @@ public class PublicationController extends AnnotatedObjectController {
         if (newDatasetDescriptionToCreate != null && newDatasetNameToCreate != null) {
 
             String newDataset = newDatasetNameToCreate + " - " + newDatasetDescriptionToCreate;
-            DatasetPopulator populator = getDatasetPopulator();
 
-            String sql = "select distinct a.annotationText from Annotation a where a.cvTopic.identifier = :dataset and lower(a.annotationText) like :name";
-            Query query = getDaoFactory().getEntityManager().createQuery(sql);
-            query.setParameter("dataset", CvTopic.DATASET_MI_REF);
-            query.setParameter("name", newDatasetNameToCreate.toLowerCase() + " -%");
-
-            if (!query.getResultList().isEmpty()) {
+            if (getPublicationEditorService().doesDatasetAlreadyExist(newDatasetNameToCreate)) {
                 addErrorMessage("A dataset with this name already exists. Cannot create two datasets with same name", "dataset name already exists");
             } else {
-                // add the new dataset to the publication and list of datasets possible to remove from this publication
-                datasetsSelectItems.add(populator.createSelectItem(newDataset));
 
-                addAnnotation(CvTopic.DATASET_MI_REF, newDataset);
+                addAnnotation(DATASET, DATASET_MI_REF, newDataset, publication.getAnnotations());
 
                 Collection<Experiment> experiments = publication.getExperiments();
-
-                if (!IntactCore.isInitialized(publication.getExperiments())) {
-                    experiments = getDaoFactory().getExperimentDao().getByPubId(publication.getShortLabel());
-                }
 
                 if (!experiments.isEmpty()) {
                     Collection<String> parentAcs = new ArrayList<String>();
@@ -887,44 +930,37 @@ public class PublicationController extends AnnotatedObjectController {
                         parentAcs.add(publication.getAc());
                     }
                     for (Experiment experiment : experiments) {
-                        newAnnotatedObjectHelper(experiment).addAnnotation(CvTopic.DATASET_MI_REF, newDataset);
-
-                        getChangesController().markAsUnsaved(experiment, parentAcs);
+                        experiment.getAnnotations().add(new ExperimentAnnotation(IntactUtils.createMITopic(DATASET, DATASET_MI_REF), newDataset));
+                        getChangesController().markAsUnsaved((IntactExperiment)experiment, getEditorService().getIntactDao().getSynchronizerContext().getExperimentSynchronizer(),
+                                "Experiment: "+((IntactExperiment)experiment).getShortLabel(), parentAcs);
                     }
+                }
+
+                // register new dataset in list of existing datasets
+                SelectItem item = getDatasetPopulator().createSelectItem(newDataset);
+                if (item != null){
+                    this.datasetsSelectItems.add(item);
                 }
 
                 // reset the dataset to add as it has already been added
                 newDatasetDescriptionToCreate = null;
                 newDatasetNameToCreate = null;
 
-                // save publication and refresh datasetPopulator
-                getCorePersister().saveOrUpdate(publication);
+                getDatasetPopulator().loadData();
 
-                populator.refresh(null);
+                // save publication and refresh datasetPopulator
+                doSave();
             }
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void removeDatasets(ActionEvent evt) {
         if (datasetsToRemove != null) {
             for (String datasetToRemove : datasetsToRemove) {
-                Iterator<SelectItem> iterator = datasetsSelectItems.iterator();
 
-                while (iterator.hasNext()) {
-                    SelectItem selectItem = iterator.next();
-                    if (datasetToRemove.equals(selectItem.getValue())) {
-                        iterator.remove();
-                    }
-                }
-
-                removeAnnotation(CvTopic.DATASET_MI_REF, datasetToRemove);
+                removeAnnotation(DATASET, DATASET_MI_REF, datasetToRemove, publication.getAnnotations());
 
                 Collection<Experiment> experiments = publication.getExperiments();
-
-                if (!IntactCore.isInitialized(publication.getExperiments())) {
-                    experiments = getDaoFactory().getExperimentDao().getByPubId(publication.getShortLabel());
-                }
 
                 if (!experiments.isEmpty()) {
                     Collection<String> parentAcs = new ArrayList<String>();
@@ -932,74 +968,64 @@ public class PublicationController extends AnnotatedObjectController {
                         parentAcs.add(publication.getAc());
                     }
                     for (Experiment experiment : experiments) {
-                        newAnnotatedObjectHelper(experiment).removeAnnotation(CvTopic.DATASET_MI_REF, datasetToRemove);
-
-                        getChangesController().markAsUnsaved(experiment, parentAcs);
+                        experiment.getAnnotations().remove(new ExperimentAnnotation(IntactUtils.createMITopic(DATASET, DATASET_MI_REF), datasetToRemove));
+                        getChangesController().markAsUnsaved((IntactExperiment) experiment, getEditorService().getIntactDao().getSynchronizerContext().getExperimentSynchronizer(),
+                                "Experiment: " + ((IntactExperiment) experiment).getShortLabel(), parentAcs);
                     }
                 }
             }
             setUnsavedChanges(true);
+            getDatasetPopulator().loadData();
         }
     }
 
     public boolean isUnassigned() {
-        return publication.getShortLabel() != null && publication.getShortLabel().startsWith("unassigned");
+        return publication.getPubmedId() != null && publication.getPubmedId().startsWith("unassigned");
     }
-
-    private String createExperimentShortLabel() {
-        return getFirstAuthor() + "-" + getYear();
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int countExperiments(Publication pub) {
-        if (Hibernate.isInitialized(pub.getExperiments())) {
-            return pub.getExperiments().size();
-        } else if (pub.getAc() != null) {
-            return getDaoFactory().getPublicationDao().countExperimentsForPublicationAc(pub.getAc());
-        }
-
-        return -1;
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int countInteractions(Publication pub) {
-        if (pub.getAc() != null) {
-            return getDaoFactory().getPublicationDao().countInteractionsForPublicationAc(pub.getAc());
-        }
-
-        return -1;
-    }
-
-    public boolean getParticipantsAvailable(Publication publication) {
-        if (countInteractions(publication) == 0) {
-            return false;
-        } else {
-            int count = 0;
-            for (Experiment experiment : publication.getExperiments()) {
-                for (Interaction interaction : experiment.getInteractions()) {
-                    count = interaction.getComponents().size();
-                    if (count > 0) {
-                        continue;
-                    }
-                }
-            }
-            return (count > 0);
-        }
-    }
-
 
     public String getAc() {
-        if (ac == null && publication != null) {
-            return publication.getAc();
-        }
         return ac;
+    }
+
+    @Override
+    public int getXrefsSize() {
+        if (publication == null){
+            return 0;
+        }
+        else {
+            return publication.getDbXrefs().size();
+        }
+    }
+
+    @Override
+    public int getAliasesSize() {
+        return 0;
+    }
+
+    @Override
+    public int getAnnotationsSize() {
+        if (publication == null){
+            return 0;
+        }
+        else {
+            return publication.getAnnotations().size();
+        }
+    }
+
+    public int getInteractionsSize() {
+        if (publication == null){
+            return 0;
+        }
+        else {
+            return interactionDataModel.getRowCount();
+        }
     }
 
     public void setAc(String ac) {
         this.ac = ac;
     }
 
-    public Publication getPublication() {
+    public IntactPublication getPublication() {
         return publication;
     }
 
@@ -1009,153 +1035,146 @@ public class PublicationController extends AnnotatedObjectController {
     }
 
     @Override
-    public void refreshTabs() {
-        super.refreshTabs();
-        this.isLifeCycleDisabled = true;
+    public void onTabChanged(TabChangeEvent e) {
+
+        // the xref tab is active
+        super.onTabChanged(e);
+
+        // all the tabs selectOneMenu are disabled, we can process the tabs specific to experiment
+        if (isAliasDisabled() && isXrefDisabled() && isAnnotationTopicDisabled()){
+            if (e.getTab().getId().equals("experimentTab")){
+                isExperimentTabDisabled = false;
+                isInteractionTabDisabled = true;
+                isLifeCycleDisabled = true;
+            }
+            else if (e.getTab().getId().equals("interactionTab")){
+                isExperimentTabDisabled = true;
+                isInteractionTabDisabled = false;
+                isLifeCycleDisabled = true;
+            }
+            else if (e.getTab().getId().equals("lifeCycleTab")){
+                isExperimentTabDisabled = true;
+                isInteractionTabDisabled = true;
+                isLifeCycleDisabled = false;
+            }
+            else {
+                isExperimentTabDisabled = true;
+                isInteractionTabDisabled = true;
+                isLifeCycleDisabled = true;
+            }
+        }
+        else {
+            isExperimentTabDisabled = true;
+            isInteractionTabDisabled = true;
+            isLifeCycleDisabled = true;
+        }
     }
 
-    public void setPublication(Publication publication) {
+    public void setPublication(IntactPublication publication) {
         this.publication = publication;
 
         if (publication != null) {
             this.ac = publication.getAc();
+
+            initialiseDefaultProperties(this.publication);
+        }
+        else{
+            this.ac = null;
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getJournal() {
-        final String annot = findAnnotationText(CvTopic.JOURNAL_MI_REF);
-        return annot;
+        return journal;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void setJournal(String journal) {
-        updateAnnotation(CvTopic.JOURNAL_MI_REF, journal);
+        this.journal = journal;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public void onJournalChanged(ValueChangeEvent evt) {
+        setUnsavedChanges(true);
+        String newValue = (String) evt.getNewValue();
+        this.publication.setJournal(newValue);
+        this.journal = newValue;
+    }
+
     public String getContactEmail() {
-        return findAnnotationText(CvTopic.CONTACT_EMAIL_MI_REF);
+        return contactEmail;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void setContactEmail(String contactEmail) {
-        updateAnnotation(CvTopic.CONTACT_EMAIL_MI_REF, contactEmail);
+        this.contactEmail = contactEmail;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getSubmitted() {
-        return findAnnotationText(SUBMITTED);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void setSubmitted(String submitted) {
-        updateAnnotation(SUBMITTED, submitted);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getCurationRequest() {
-        return findAnnotationText(CURATION_REQUEST);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void setCurationRequest(String requestedCuration) {
-        updateAnnotation(CURATION_REQUEST, requestedCuration);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public Short getYear() {
-        String strYear = findAnnotationText(CvTopic.PUBLICATION_YEAR_MI_REF);
-
-        if (strYear != null) {
-            return Short.valueOf(strYear);
-        }
-
-        return null;
+        return year;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void setYear(Short year) {
-        updateAnnotation(CvTopic.PUBLICATION_YEAR_MI_REF, year);
+        this.year = year;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getIdentifier() {
-        if (publication != null) {
-            String id = getPrimaryReference();
-
-            if (id != null) {
-                identifier = id;
-            }
-        }
-
         return identifier;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
+    }
 
-        if (identifier != null && getAnnotatedObject() != null) {
-            setPrimaryReference(identifier);
+    public void setPrimaryReference(String id) {
+        publication.setPubmedId(id);
+    }
 
-            Collection<Experiment> experiments = publication.getExperiments();
+    public String getAuthors() {
+        return authors;
+    }
 
-            if (!IntactCore.isInitialized(publication.getExperiments())) {
-                experiments = getDaoFactory().getExperimentDao().getByPubId(publication.getShortLabel());
+    public void setAuthors(String authors) {
+        this.authors = authors;
+    }
+
+    public void onAuthorsChanged(ValueChangeEvent evt) {
+        String newValue = (String) evt.getNewValue();
+        if (newValue != null && newValue.length() > 0){
+            publication.getAuthors().clear();
+            if (newValue.contains(", ")){
+                publication.getAuthors().addAll(Arrays.asList(newValue.split(", ")));
             }
-            if (!experiments.isEmpty()) {
-                Collection<String> parentAcs = new ArrayList<String>();
-                if (publication.getAc() != null) {
-                    parentAcs.add(publication.getAc());
-                }
-                for (Experiment experiment : experiments) {
-                    newAnnotatedObjectHelper(experiment).setXref(CvDatabase.PUBMED_MI_REF, CvXrefQualifier.PRIMARY_REFERENCE_MI_REF, identifier, null);
-
-                    getChangesController().markAsUnsaved(experiment, parentAcs);
-                }
+            else{
+                publication.getAuthors().add(newValue);
             }
+            this.authors = newValue;
+            setUnsavedChanges(true);
+        }
+        else{
+            this.authors = null;
+            this.publication.getAuthors().clear();
+            setUnsavedChanges(true);
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getPrimaryReference() {
-        return findXrefPrimaryId(CvDatabase.PUBMED_MI_REF, CvXrefQualifier.PRIMARY_REFERENCE_MI_REF);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void setPrimaryReference(String id) {
-        updateXref(CvDatabase.PUBMED_MI_REF, CvXrefQualifier.PRIMARY_REFERENCE_MI_REF, id);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getAuthors() {
-        return findAnnotationText(CvTopic.AUTHOR_LIST_MI_REF);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void setAuthors(String authors) {
-        updateAnnotation(CvTopic.AUTHOR_LIST_MI_REF, authors);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getOnHold() {
-        return findAnnotationText(CvTopic.ON_HOLD);
+        return this.onHold;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void setOnHold(String reason) {
-        updateAnnotation(CvTopic.ON_HOLD, reason);
+        this.onHold = reason;
     }
 
-    @Transactional(value= "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void setExperimentAnnotation(String topic, String text) {
+    public void onHoldChanged(ValueChangeEvent evt) {
+        setUnsavedChanges(true);
+        String newValue = (String) evt.getNewValue();
+
+        this.publication.onHold(newValue);
+        this.onHold = newValue;
+
+        setExperimentAnnotation(Releasable.ON_HOLD, null, newValue);
+    }
+
+    public void setExperimentAnnotation(String topic, String topicMI, String text) {
 
         Collection<Experiment> experiments = publication.getExperiments();
-
-        if (!IntactCore.isInitialized(publication.getExperiments())) {
-            experiments = getDaoFactory().getExperimentDao().getByPubId(publication.getShortLabel());
-        }
 
         if (!experiments.isEmpty()) {
             Collection<String> parentAcs = new ArrayList<String>();
@@ -1163,210 +1182,250 @@ public class PublicationController extends AnnotatedObjectController {
                 parentAcs.add(publication.getAc());
             }
             for (Experiment experiment : experiments) {
-                newAnnotatedObjectHelper(experiment).setAnnotation(topic, text);
-
-                getChangesController().markAsUnsaved(experiment, parentAcs);
+                experiment.getAnnotations().add(new ExperimentAnnotation(IntactUtils.createMITopic(topic, topicMI), text));
+                getChangesController().markAsUnsaved((IntactExperiment) experiment, getEditorService().getIntactDao().getSynchronizerContext().getExperimentSynchronizer(),
+                        "Experiment: " + ((IntactExperiment) experiment).getShortLabel(), parentAcs);
             }
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void onHoldChanged(ValueChangeEvent evt) {
-        setUnsavedChanges(true);
-
-        setExperimentAnnotation(CvTopic.ON_HOLD, (String) evt.getNewValue());
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void curationDepthChanged() {
         setUnsavedChanges(true);
 
         setCurationDepthAnnot(curationDepth);
-        setExperimentAnnotation(CURATION_DEPTH, curationDepth);
+        setExperimentAnnotation(Annotation.CURATION_DEPTH, Annotation.CURATION_DEPTH_MI, curationDepth);
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void contactEmailChanged(ValueChangeEvent evt) {
         setUnsavedChanges(true);
+        String newValue = (String) evt.getNewValue();
 
-        setExperimentAnnotation(CvTopic.CONTACT_EMAIL_MI_REF, (String) evt.getNewValue());
+        if (newValue != null && newValue.length() > 0){
+            updateAnnotation(Annotation.CONTACT_EMAIL, Annotation.CONTACT_EMAIL_MI, newValue, publication.getAnnotations());
+            setExperimentAnnotation(Annotation.CONTACT_EMAIL, Annotation.CONTACT_EMAIL_MI, newValue);
+        }
+        else{
+            removeAnnotation(Annotation.CONTACT_EMAIL, Annotation.CONTACT_EMAIL_MI, publication.getAnnotations());
+        }
+        this.contactEmail = newValue;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void publicationYearChanged(ValueChangeEvent evt) {
         setUnsavedChanges(true);
+        Short newValue = (Short)evt.getNewValue();
 
-        setExperimentAnnotation(CvTopic.PUBLICATION_YEAR_MI_REF, Short.toString((Short) evt.getNewValue()));
+        if (newValue != null && newValue > 0){
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy");
+            try{
+                this.publication.setPublicationDate(formatter.parse(Short.toString(this.year)));
+                this.year = newValue;
+            }
+            catch (ParseException e){
+                this.year = null;
+                addErrorMessage("The publication year is not a valid year "+newValue, e.getCause()+": "+e.getMessage());
+            }
+        }
+        else{
+            this.publication.setPublicationDate(null);
+            this.year = null;
+        }
+
+        setExperimentAnnotation(Annotation.PUBLICATION_YEAR, Annotation.PUBLICATION_YEAR_MI, Short.toString(newValue));
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void publicationTitleChanged(ValueChangeEvent evt) {
         setUnsavedChanges(true);
-
-        copyPublicationTitleToExperiments(null);
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void publicationIdentifierChanged(ValueChangeEvent evt) {
         setUnsavedChanges(true);
+        String newValue = (String)evt.getNewValue();
+        if (newValue != null && newValue.length() > 0){
+            setPrimaryReference(identifier);
 
-        setIdentifier((String) evt.getNewValue());
+            Collection<Experiment> experiments = publication.getExperiments();
+
+            if (!experiments.isEmpty()) {
+                Collection<String> parentAcs = new ArrayList<String>();
+                if (publication.getAc() != null) {
+                    parentAcs.add(publication.getAc());
+                }
+                for (Experiment experiment : experiments) {
+                    experiment.getXrefs().add(new ExperimentXref(IntactUtils.createMIDatabase(Xref.PUBMED, Xref.PUBMED_MI), identifier,
+                            IntactUtils.createMIQualifier(Xref.PRIMARY, Xref.PRIMARY_MI)));
+                    getChangesController().markAsUnsaved((IntactExperiment) experiment, getEditorService().getIntactDao().getSynchronizerContext().getExperimentSynchronizer(),
+                            "Experiment: " + ((IntactExperiment) experiment).getShortLabel(), parentAcs);
+                }
+            }
+            this.identifier = newValue;
+        }
+        else{
+            setPrimaryReference(null);
+            this.identifier = null;
+        }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getAcceptedMessage() {
-        return findAnnotationText(CvTopic.ACCEPTED);
+        return accepted;
+    }
+
+    public void onAcceptedChanged(ValueChangeEvent evt) {
+        setUnsavedChanges(true);
+
+        this.publication.onAccepted((String) evt.getNewValue());
+        setExperimentAnnotation(Releasable.ACCEPTED, null, (String) evt.getNewValue());
     }
 
     public String getCurationDepth() {
         return this.curationDepth;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getCurationDepthAnnotation() {
-        return findAnnotationText(CURATION_DEPTH);
-    }
-
     public String getShowCurationDepth() {
-        String depth = getCurationDepth();
-        if (depth == null) {
-            depth = "curation depth undefined";
+        if (publication.getCurationDepth() == CurationDepth.undefined) {
+            return "curation depth undefined";
         }
-        return depth;
+        return publication.getCurationDepth().toString();
     }
 
     public void setCurationDepth(String curationDepth) {
         this.curationDepth = curationDepth;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void setCurationDepthAnnot(String curationDepth) {
-        updateAnnotation(CURATION_DEPTH, curationDepth);
+        if (curationDepth == null){
+            this.publication.setCurationDepth(CurationDepth.undefined);
+        }
+        else{
+            this.publication.setCurationDepth(CurationDepth.valueOf(curationDepth));
+        }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public boolean isAccepted() {
         if (isAcceptedOrBeyond(publication)) return true;
-
-        Collection<Experiment> experiments = publication.getExperiments();
-
-        if (!IntactCore.isInitialized(publication.getExperiments())) {
-            experiments = getDaoFactory().getExperimentDao().getByPubId(publication.getShortLabel());
-        }
-
-        return ExperimentUtils.areAllAccepted(experiments);
+        return isAllExperimentsAccepted();
     }
 
-    public boolean isAcceptedOrBeyond(Publication pub) {
+    public boolean isAcceptedOrBeyond(IntactPublication pub) {
         if (pub == null || pub.getStatus() == null) {
             return false;
         }
 
-        return pub.getStatus().getIdentifier().equals(CvPublicationStatusType.ACCEPTED.identifier()) ||
-                pub.getStatus().getIdentifier().equals(CvPublicationStatusType.ACCEPTED_ON_HOLD.identifier()) ||
-                pub.getStatus().getIdentifier().equals(CvPublicationStatusType.READY_FOR_RELEASE.identifier()) ||
-                pub.getStatus().getIdentifier().equals(CvPublicationStatusType.RELEASED.identifier());
+        return pub.getStatus() == LifeCycleStatus.ACCEPTED ||
+                pub.getStatus() == LifeCycleStatus.ACCEPTED_ON_HOLD ||
+                pub.getStatus() == LifeCycleStatus.READY_FOR_RELEASE ||
+                pub.getStatus() == LifeCycleStatus.RELEASED;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public boolean isAccepted(Publication pub) {
-        if (isAcceptedOrBeyond(pub)) return true;
-
-        if (!Hibernate.isInitialized(pub.getExperiments())) {
-            pub = getDaoFactory().getPublicationDao().getByAc(pub.getAc());
-        }
-
-        if (pub.getExperiments().isEmpty()) {
-            return false;
-        }
-
-        return PublicationUtils.isAccepted(pub);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void setAcceptedMessage(String message) {
-        updateAnnotation(CvTopic.ACCEPTED, message);
+        this.accepted = message;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public boolean isToBeReviewed(Publication pub) {
-        if (!IntactCore.isInitialized(pub.getExperiments())) {
-            pub = getDaoFactory().getPublicationDao().getByAc(pub.getAc());
-        }
-
+    public boolean isToBeReviewed(IntactPublication pub) {
         if (pub.getExperiments().isEmpty()) {
             return false;
         }
 
-        return PublicationUtils.isToBeReviewed(pub);
+        return hasExperimentToBeReviewed(pub.getExperiments());
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getImexId() {
-        return findXrefPrimaryId(CvDatabase.IMEX_MI_REF, CvXrefQualifier.IMEX_PRIMARY_MI_REF);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void setImexId(String imexId) {
-        updateXref(CvDatabase.IMEX_MI_REF, CvXrefQualifier.IMEX_PRIMARY_MI_REF, imexId);
+        return imexId;
     }
 
     public String getPublicationTitle() {
-        return publication.getFullName();
+        return publication.getTitle();
     }
 
     public void setPublicationTitle(String publicationTitle) {
-        publication.setFullName(publicationTitle);
+        publication.setTitle(publicationTitle);
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String getFirstAuthor() {
-        final String authors = getAuthors();
-
-        if (authors != null) {
-            return authors.split(" ")[0];
+        if (!publication.getAuthors().isEmpty()) {
+            return publication.getAuthors().get(0);
         }
 
         return null;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void acceptPublication(ActionEvent evt) {
-        UserSessionController userSessionController = (UserSessionController) getSpringContext().getBean("userSessionController");
+    public boolean isPublicationOnHold(){
+        return this.publication != null && this.publication.isOnHold();
+    }
 
-        setAcceptedMessage("Accepted " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase());
+    public boolean isPublicationToBeReviewed(){
+        return this.publication != null && this.publication.isToBeReviewed();
+    }
 
-        addInfoMessage("Publication accepted", "");
-
-        //clear to-be-reviewed
-        removeAnnotation(CvTopic.TO_BE_REVIEWED);
-
-        // refresh experiments with possible changes in publication title, annotations and publication identifier
-        copyAnnotationsToExperiments(null);
-        copyPublicationTitleToExperiments(null);
-        copyPrimaryIdentifierToExperiments();
-
-        lifecycleManager.getReadyForCheckingStatus().accept(publication, null);
-
-        if (!PublicationUtils.isOnHold(publication)) {
-            lifecycleManager.getAcceptedStatus().readyForRelease(publication, "Accepted and not on-hold");
+    public void removeOnHold(ActionEvent evt){
+        publication.removeOnHold();
+        this.onHold = null;
+        Collection<String> parentAcs = new ArrayList<String>();
+        if (publication.getAc() != null) {
+            parentAcs.add(publication.getAc());
+        }
+        for (Experiment experiment : this.publication.getExperiments()) {
+            AnnotationUtils.removeAllAnnotationsWithTopic(experiment.getAnnotations(), null, Releasable.ON_HOLD);
+            getChangesController().markAsUnsaved((IntactExperiment)experiment, getEditorService().getIntactDao().getSynchronizerContext().getExperimentSynchronizer(),
+                    "Experiment: "+((IntactExperiment)experiment).getShortLabel(), parentAcs);
         }
     }
 
-    public LifecycleManager getLifecycleManager() {
-        return lifecycleManager;
+    public void removeToBeReviewed(ActionEvent evt){
+        publication.removeToBeReviewed();
+        this.toBeReviewed = null;
+        Collection<String> parentAcs = new ArrayList<String>();
+        if (publication.getAc() != null) {
+            parentAcs.add(publication.getAc());
+        }
+        for (Experiment experiment : this.publication.getExperiments()) {
+            AnnotationUtils.removeAllAnnotationsWithTopic(experiment.getAnnotations(), null, Releasable.TO_BE_REVIEWED);
+            getChangesController().markAsUnsaved((IntactExperiment)experiment, getEditorService().getIntactDao().getSynchronizerContext().getExperimentSynchronizer(),
+                    "Experiment: "+((IntactExperiment)experiment).getShortLabel(), parentAcs);
+        }
+    }
+
+    public void acceptPublication(ActionEvent evt) {
+        String accepted = "Accepted " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
+        setAcceptedMessage(accepted);
+
+        addInfoMessage("Publication accepted", "");
+
+        try{
+            getEditorService().accept(publication, userSessionController.getCurrentUser(), accepted);
+
+            // refresh experiments with possible changes in publication title, annotations and publication identifier
+            copyAnnotationsToExperiments(null);
+            copyPrimaryIdentifierToExperiments();
+        }
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot accept publication: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        }
+    }
+
+    public PublicationService getPublicationService() {
+        if (this.publicationService == null){
+            this.publicationService = ApplicationContextProvider.getBean("publicationService");
+        }
+        return publicationService;
+    }
+
+    public PublicationEditorService getPublicationEditorService() {
+        if (this.publicationEditorService == null){
+            this.publicationEditorService = ApplicationContextProvider.getBean("publicationEditorService");
+        }
+        return publicationEditorService;
     }
 
     public void assignNewImex(ActionEvent evt) {
         // save publication changes first
-        getCorePersister().saveOrUpdate(publication);
+        doSave();
 
         registerEditorListenerIfNotDoneYet();
 
         try {
 
-            if (Pattern.matches(ImexCentralManager.PUBMED_REGEXP.toString(), publication.getPublicationId())) {
-                imexCentralManager.assignImexAndUpdatePublication(publication.getAc());
+            if (Pattern.matches(ImexCentralManager.PUBMED_REGEXP.toString(), publication.getPubmedId())) {
+                getImexCentralManager().assignImexAndUpdatePublication(publication.getAc());
 
                 addInfoMessage("Successfully assigned new IMEx identifier to the publication " + publication.getShortLabel(), "");
             } else {
@@ -1375,43 +1434,50 @@ public class PublicationController extends AnnotatedObjectController {
 
         } catch (PublicationImexUpdaterException e) {
             addErrorMessage("Impossible to assign new IMEx id", e.getMessage());
-        } catch (ImexCentralException e) {
-            IcentralFault f = (IcentralFault) e.getCause();
+        } catch (EnricherException e) {
+            IcentralFault f = null;
+            if (e.getCause() instanceof IcentralFault){
+                f = (IcentralFault) e.getCause();
+            }
+            else if (e.getCause().getCause() instanceof IcentralFault) {
+                f = (IcentralFault) e.getCause().getCause();
+            }
 
-            processImexCentralException(publication.getShortLabel(), e, f);
+            processImexCentralException(publication.getPubmedId(), e, f);
         } catch (Exception e) {
             addErrorMessage("Impossible to assign new IMEx id", e.getMessage());
         }
 
+        setAc(this.publication.getAc());
+        setPublication(null);
         loadByAc();
-
         getChangesController().removeFromUnsaved(publication, collectParentAcsOfCurrentAnnotatedObject());
     }
 
-    private void processImexCentralException(String publication, ImexCentralException e, IcentralFault f) {
-        if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.USER_NOT_AUTHORIZED) {
+    private void processImexCentralException(String publication, Exception e, IcentralFault f) {
+        if (f.getFaultInfo().getFaultCode() == ImexCentralClient.USER_NOT_AUTHORIZED) {
             addErrorMessage("User not authorized", e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.OPERATION_NOT_VALID) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.OPERATION_NOT_VALID) {
             addErrorMessage("Operation not valid", e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.IDENTIFIER_MISSING) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.IDENTIFIER_MISSING) {
             addErrorMessage("Publication identifier is missing", e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.IDENTIFIER_UNKNOWN) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.IDENTIFIER_UNKNOWN) {
             addErrorMessage("Publication identifier is unknown (must be valid pubmed)", e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.NO_RECORD) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.NO_RECORD) {
             addErrorMessage("No IMEx record could be found for " + publication, e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.NO_RECORD_CREATED) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.NO_RECORD_CREATED) {
             addErrorMessage("The publication could not be registered in IMEx central. Must be a valid pubmed Id", e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.STATUS_UNKNOWN) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.STATUS_UNKNOWN) {
             addErrorMessage("The status of the publication is unknown is IMEx central", e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.NO_IMEX_ID) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.NO_IMEX_ID) {
             addErrorMessage("No IMEx identifier could be found for this publication", e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.UNKNOWN_USER) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.UNKNOWN_USER) {
             addErrorMessage("Unknown user in IMEx central", e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.UNKNOWN_GROUP) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.UNKNOWN_GROUP) {
             addErrorMessage("Unknown group in IMEx central", e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.OPERATION_NOT_SUPPORTED) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.OPERATION_NOT_SUPPORTED) {
             addErrorMessage("Operation not supported in IMEx central", e.getMessage());
-        } else if (f.getFaultInfo().getFaultCode() == DefaultImexCentralClient.INTERNAL_SERVER_ERROR) {
+        } else if (f.getFaultInfo().getFaultCode() == ImexCentralClient.INTERNAL_SERVER_ERROR) {
             addErrorMessage("Internal server error (IMEx central not responding)", e.getMessage());
         } else {
             addErrorMessage("Fatal error (IMEx central not responding)", e.getMessage());
@@ -1424,60 +1490,43 @@ public class PublicationController extends AnnotatedObjectController {
         }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void rejectPublication(ActionEvent evt) {
 
         List<String> rejectionComments = new ArrayList<String>();
 
-        for (Experiment exp : IntactCore.ensureInitializedExperiments(publication)) {
-            if (ExperimentUtils.isToBeReviewed(exp)) {
-                ExperimentController experimentController = (ExperimentController) getSpringContext().getBean("experimentController");
-                rejectionComments.add("[" + exp.getShortLabel() + ": " + getToBeReviewed(exp) + "]");
+        for (Experiment exp : publication.getExperiments()) {
+            Annotation toBeReviewed = AnnotationUtils.collectFirstAnnotationWithTopic(exp.getAnnotations(), null, Releasable.TO_BE_REVIEWED);
+            if (toBeReviewed != null) {
+                rejectionComments.add("[" + ((IntactExperiment)exp).getShortLabel() + ": " + toBeReviewed.getValue() + "]");
             }
         }
 
-        rejectPublication(reasonForRejection + (rejectionComments.isEmpty() ? "" : " - " + StringUtils.join(rejectionComments, ", ")));
+        rejectPublication(this.toBeReviewed + (rejectionComments.isEmpty() ? "" : " - " + StringUtils.join(rejectionComments, ", ")));
 
     }
 
-    private String getToBeReviewed(Experiment exp) {
-        final Collection<Annotation> annotations = IntactCore.ensureInitializedAnnotations(exp);
-
-        for (Annotation annot : annotations) {
-            if (annot != null && annot.getCvTopic() != null) {
-                if (CvTopic.TO_BE_REVIEWED.equals(annot.getCvTopic().getShortLabel())) {
-                    return annot.getAnnotationText();
-                }
-            }
-        }
-
-        return null;
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void rejectPublication(String reasonForRejection) {
-        UserSessionController userSessionController = (UserSessionController) getSpringContext().getBean("userSessionController");
         String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
 
         setToBeReviewed(date + ". " + reasonForRejection);
 
-        addInfoMessage("Publication rejected", "");
+        try{
+            getEditorService().reject(publication, getCurrentUser(), this.toBeReviewed);
+            addInfoMessage("Publication rejected", "");
 
-        // refresh experiments with possible changes in publication title, annotations and publication identifier
-        //copyAnnotationsToExperiments(null);
-        //copyPublicationTitleToExperiments(null);
-        copyPrimaryIdentifierToExperiments();
-
-        lifecycleManager.getReadyForCheckingStatus().reject(publication, reasonForRejection);
+            copyPrimaryIdentifierToExperiments();
+        }
+        catch (IllegalTransitionException e){
+            addErrorMessage("Cannot reject publication: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public boolean isRejected(Publication publication) {
-        return PublicationUtils.isRejected(publication);
+    public boolean isRejected(IntactPublication publication) {
+        return ReleasableUtils.isRejected(publication);
     }
 
-    public String getReasonForRejection(Publication publication) {
-        LifecycleEvent event = PublicationUtils.getLastEventOfType(publication, CvLifecycleEventType.REJECTED.identifier());
+    public String getReasonForRejection(IntactPublication publication) {
+        LifeCycleEvent event = ReleasableUtils.getLastEventOfType(publication, LifeCycleEventType.REJECTED);
 
         if (event != null) {
             return event.getNote();
@@ -1486,36 +1535,9 @@ public class PublicationController extends AnnotatedObjectController {
         return null;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String calculateStatusStyle(Publication publication) {
-        if (isAccepted(publication)) {
-            return "ia-accepted";
-        }
-
-        int timesRejected = 0;
-        int timesReadyForChecking = 0;
-
-        for (LifecycleEvent evt : IntactCore.ensureInitializedLifecycleEvents(publication)) {
-            if (CvLifecycleEventType.REJECTED.identifier().equals(evt.getEvent().getIdentifier())) {
-                timesRejected++;
-            } else if (CvLifecycleEventType.READY_FOR_CHECKING.identifier().equals(evt.getEvent().getIdentifier())) {
-                timesReadyForChecking++;
-            }
-        }
-
-        if (publication.getStatus().getIdentifier().equals(CvPublicationStatusType.CURATION_IN_PROGRESS.identifier()) && timesRejected > 0) {
-            return "ia-rejected";
-        } else if (publication.getStatus().getIdentifier().equals(CvPublicationStatusType.READY_FOR_CHECKING.identifier()) && timesReadyForChecking > 1) {
-            return "ia-corrected";
-        }
-
-        return "";
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public boolean isBeenRejectedBefore() {
-        for (LifecycleEvent evt : IntactCore.ensureInitializedLifecycleEvents(publication)) {
-            if (CvLifecycleEventType.REJECTED.identifier().equals(evt.getEvent().getIdentifier())) {
+        for (LifeCycleEvent evt : publication.getLifecycleEvents()) {
+            if (LifeCycleEventType.REJECTED == evt.getEvent()) {
                 return true;
             }
         }
@@ -1523,93 +1545,70 @@ public class PublicationController extends AnnotatedObjectController {
         return false;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void setToBeReviewed(String toBeReviewed) {
-        if (toBeReviewed == null) {
-            removeAnnotation(CvTopic.TO_BE_REVIEWED);
-        }
-
-        updateAnnotation(CvTopic.TO_BE_REVIEWED, toBeReviewed);
+        this.toBeReviewed = toBeReviewed;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public void onToBeReviewedChanged(ValueChangeEvent evt) {
+        setUnsavedChanges(true);
+        String newValue = (String) evt.getNewValue();
+        this.publication.onToBeReviewed(newValue);
+        this.toBeReviewed = newValue;
+    }
+
     public String getToBeReviewed() {
-        return findAnnotationText(CvTopic.TO_BE_REVIEWED);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void clearToBeReviewed(ActionEvent evt) {
-        removeAnnotation(CvTopic.TO_BE_REVIEWED);
-
-        Collection<Experiment> experiments = publication.getExperiments();
-
-        if (!IntactCore.isInitialized(publication.getExperiments())) {
-            experiments = getDaoFactory().getExperimentDao().getByPubId(publication.getShortLabel());
-        }
-        if (!experiments.isEmpty()) {
-            Collection<String> parentAcs = new ArrayList<String>();
-            if (publication.getAc() != null) {
-                parentAcs.add(publication.getAc());
-            }
-            for (Experiment experiment : experiments) {
-                newAnnotatedObjectHelper(experiment).removeAnnotation(CvTopic.TO_BE_REVIEWED);
-
-                getChangesController().markAsUnsaved(experiment, parentAcs);
-            }
-        }
+        return this.toBeReviewed;
     }
 
     public void copyAnnotationsToExperiments(ActionEvent evt) {
         for (Experiment exp : publication.getExperiments()) {
-            CurateUtils.copyPublicationAnnotationsToExperiment(exp);
+            for (Annotation annot : publication.getDbAnnotations()){
+                Annotation existingAnnot = AnnotationUtils.collectFirstAnnotationWithTopic(exp.getAnnotations(),
+                        annot.getTopic().getMIIdentifier(), annot.getTopic().getShortName());
+                if (existingAnnot != null){
+                    existingAnnot.setValue(annot.getValue());
+                }
+                else{
+                    exp.getAnnotations().add(new ExperimentAnnotation(annot.getTopic(), annot.getValue()));
+                }
+            }
             Collection<String> parent = new ArrayList<String>();
             if (publication.getAc() != null) {
                 parent.add(publication.getAc());
             }
-
-            getChangesController().markAsUnsaved(exp, parent);
+            getChangesController().markAsUnsaved((IntactExperiment) exp, getEditorService().getIntactDao().getSynchronizerContext().getExperimentSynchronizer(),
+                    "Experiment: " + ((IntactExperiment) exp).getShortLabel(), parent);
         }
 
         addInfoMessage("Annotations copied", publication.getExperiments().size() + " experiments were modified");
     }
 
-    public void copyPublicationTitleToExperiments(ActionEvent evt) {
-        for (Experiment exp : publication.getExperiments()) {
-            exp.setFullName(publication.getFullName());
-            Collection<String> parent = new ArrayList<String>();
-            if (publication.getAc() != null) {
-                parent.add(publication.getAc());
-            }
-
-            getChangesController().markAsUnsaved(exp, parent);
-        }
-
-        addInfoMessage("Publication title copied", publication.getExperiments().size() + " experiments were modified");
-    }
-
     public void copyPrimaryIdentifierToExperiments() {
         Collection<Experiment> experiments = publication.getExperiments();
 
-        if (publication.getShortLabel() != null) {
-            if (!IntactCore.isInitialized(publication.getExperiments())) {
-                experiments = getDaoFactory().getExperimentDao().getByPubId(publication.getShortLabel());
-            }
+        if (publication.getPubmedId() != null) {
             if (!experiments.isEmpty()) {
                 Collection<String> parentAcs = new ArrayList<String>();
                 if (publication.getAc() != null) {
                     parentAcs.add(publication.getAc());
                 }
                 for (Experiment experiment : experiments) {
-                    newAnnotatedObjectHelper(experiment).setXref(CvDatabase.PUBMED_MI_REF, CvXrefQualifier.PRIMARY_REFERENCE_MI_REF, this.publication.getShortLabel(), null);
-
-                    getChangesController().markAsUnsaved(experiment, parentAcs);
+                    Collection<Xref> primaryRefs = XrefUtils.collectAllXrefsHavingDatabaseAndQualifier(experiment.getXrefs(), Xref.PUBMED_MI,
+                            Xref.PUBMED, Xref.PRIMARY_MI, Xref.PRIMARY);
+                    Xref existingPrimary = primaryRefs.isEmpty() ? null : primaryRefs.iterator().next();
+                    if (existingPrimary instanceof AbstractIntactXref){
+                        ((AbstractIntactXref)existingPrimary).setId(publication.getPubmedId());
+                    }
+                    else{
+                        experiment.getXrefs().removeAll(primaryRefs);
+                        experiment.getXrefs().add(new ExperimentXref(IntactUtils.createMIDatabase(Xref.PUBMED, Xref.PUBMED_MI), publication.getPubmedId(),
+                                IntactUtils.createMIQualifier(Xref.PRIMARY, Xref.PRIMARY_MI)));
+                    }
+                    getChangesController().markAsUnsaved((IntactExperiment) experiment, getEditorService().getIntactDao().getSynchronizerContext().getExperimentSynchronizer(),
+                            "Experiment: " + ((IntactExperiment) experiment).getShortLabel(), parentAcs);
                 }
             }
         }
-    }
-
-    public List<SelectItem> getDatasetsSelectItems() {
-        return datasetsSelectItems;
     }
 
     public String getDatasetToAdd() {
@@ -1629,23 +1628,14 @@ public class PublicationController extends AnnotatedObjectController {
     }
 
     public DatasetPopulator getDatasetPopulator() {
-        return (DatasetPopulator) IntactContext.getCurrentInstance().getSpringContext().getBean("datasetPopulator");
+        if (this.datasetPopulator == null){
+            this.datasetPopulator = ApplicationContextProvider.getBean("datasetPopulator");
+        }
+        return datasetPopulator;
     }
 
-    public LazyDataModel<Interaction> getInteractionDataModel() {
+    public LazyDataModel<InteractionSummary> getInteractionDataModel() {
         return interactionDataModel;
-    }
-
-    public void setInteractionDataModel(LazyDataModel<Interaction> interactionDataModel) {
-        this.interactionDataModel = interactionDataModel;
-    }
-
-    public String getReasonForRejection() {
-        return reasonForRejection;
-    }
-
-    public void setReasonForRejection(String reasonForRejection) {
-        this.reasonForRejection = reasonForRejection;
     }
 
     public String getIdentifierToOpen() {
@@ -1665,26 +1655,18 @@ public class PublicationController extends AnnotatedObjectController {
     }
 
     @Override
-    protected void refreshUnsavedChangesBeforeRevert() {
-
-        getChangesController().revertPublication(publication);
+    protected AnnotatedObjectController getParentController() {
+        return null;
     }
 
     @Override
-    public String goToParent() {
-        return "/curate/curate?faces-redirect=true";
+    protected String getPageContext() {
+        return "publication";
     }
 
     @Override
     protected void postRevert() {
         loadFormFields();
-    }
-
-    @Override
-    public void doPostSave() {
-        loadFormFields();
-        refreshDataModels();
-        getDatasetPopulator().refresh(null);
     }
 
     public boolean isAssignToMe() {
@@ -1725,28 +1707,17 @@ public class PublicationController extends AnnotatedObjectController {
 
     public boolean isAssignableIMEx() {
         return getImexId() == null && curationDepth != null
-                && "imex curation".equalsIgnoreCase(curationDepth) && Pattern.matches(ImexCentralManager.PUBMED_REGEXP.toString(), publication.getPublicationId());
+                && "IMEx".equalsIgnoreCase(curationDepth) && Pattern.matches(ImexCentralManager.PUBMED_REGEXP.toString(), publication.getPubmedId());
     }
 
     @Override
-    public void modifyClone(AnnotatedObject clone) {
-        refreshTabs();
+    public IntactDbSynchronizer getDbSynchronizer() {
+        return getEditorService().getIntactDao().getSynchronizerContext().getPublicationSynchronizer();
     }
 
     @Override
-    public void onTabChanged(TabChangeEvent e) {
-
-        super.onTabChanged(e);
-
-        if (isAnnotationTopicDisabled() && isAliasDisabled() && isXrefDisabled()) {
-            if (e.getTab().getId().equals("lifeCycleTab")) {
-                isLifeCycleDisabled = false;
-            } else {
-                isLifeCycleDisabled = true;
-            }
-        } else {
-            isLifeCycleDisabled = true;
-        }
+    public String getObjectName() {
+        return publication != null ? publication.getPubmedId() : null;
     }
 
     public String getNewDatasetDescriptionToCreate() {
@@ -1766,68 +1737,244 @@ public class PublicationController extends AnnotatedObjectController {
     }
 
     @Override
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String clone() {
-
-        String value = super.clone(getAnnotatedObject(), newClonerInstance());
-
-        return value;
+    protected EditorCloner<Publication, IntactPublication> newClonerInstance() {
+        return null;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getCautionMessage() {
-        if (publication == null){
-            return null;
+    @Override
+    public Collection<String> collectParentAcsOfCurrentAnnotatedObject() {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public Class<? extends IntactPrimaryObject> getAnnotatedObjectClass() {
+        return IntactPublication.class;
+    }
+
+    @Override
+    public boolean isAliasNotEditable(Alias alias) {
+        return false;
+    }
+
+    @Override
+    public boolean isAnnotationNotEditable(psidev.psi.mi.jami.model.Annotation annot) {
+        if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.ON_HOLD)){
+            return true;
         }
-        if (!Hibernate.isInitialized(publication.getAnnotations())){
-            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getComponentDao().getByAc(publication.getAc()),
-                    CvTopic.CAUTION_MI_REF, getDaoFactory());
+        else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.TO_BE_REVIEWED)){
+            return true;
         }
-        return findAnnotationText(CvTopic.CAUTION_MI_REF);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getInternalRemarkMessage() {
-        if (publication == null){
-            return null;
+        else if (AnnotationUtils.doesAnnotationHaveTopic(annot, Annotation.CONTACT_EMAIL_MI, Annotation.CONTACT_EMAIL)){
+            return true;
         }
-        if (!Hibernate.isInitialized(publication.getAnnotations())){
-            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getComponentDao().getByAc(publication.getAc()),
-                    CvTopic.INTERNAL_REMARK, getDaoFactory());
-        }
-        return findAnnotationText(CvTopic.INTERNAL_REMARK);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectAnnotations() {
-        return super.collectAnnotations();
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectAliases() {
-        return super.collectAliases();
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectXrefs() {
-        return super.collectXrefs();
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List<LifecycleEvent> collectLifeCycleEvents() {
-        return new ArrayList<LifecycleEvent>(IntactCore.ensureInitializedLifecycleEvents(this.publication));
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int getExperimentSize() {
-        if (publication != null && Hibernate.isInitialized(publication.getExperiments())){
-            return publication.getExperiments().size();
-        }
-        else if (publication != null){
-            return getDaoFactory().getPublicationDao().countExperimentsForPublicationAc(publication.getAc());
+        else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.ACCEPTED)){
+            return true;
         }
         else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isXrefNotEditable(Xref ref) {
+        if (XrefUtils.isXrefFromDatabase(ref, Xref.PUBMED_MI, Xref.PUBMED)
+                && XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY)){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    public List<Annotation> collectAnnotations() {
+        List<Annotation> annotations = new ArrayList<Annotation>(publication.getAnnotations());
+        Collections.sort(annotations, new AuditableComparator());
+        // annotations are always initialised
+        return annotations;
+    }
+
+    @Override
+    public void newAlias(ActionEvent evt) {
+        // nothing to do
+    }
+
+    @Override
+    protected void addNewAlias(AbstractIntactAlias newAlias) {
+        // nothing to do
+    }
+
+    @Override
+    public <T extends AbstractIntactAlias> T newAlias(CvTerm aliasType, String name) {
+        return null;
+    }
+
+    @Override
+    public <T extends AbstractIntactAlias> T newAlias(String alias, String aliasMI, String name) {
+        return null;
+    }
+
+    @Override
+    public void removeAlias(Alias alias) {
+        // nothing to do
+    }
+
+    public List<Alias> collectAliases() {
+        return Collections.EMPTY_LIST;
+    }
+
+    public List<Xref> collectXrefs() {
+        List<Xref> xrefs = new ArrayList<Xref>(publication.getDbXrefs());
+        Collections.sort(xrefs, new AuditableComparator());
+        // annotations are always initialised
+        return xrefs;
+    }
+
+    public List<ExperimentSummary> collectExperiments(){
+        return experiments;
+    }
+
+    public void refreshExperiments() {
+        this.experiments = new ArrayList<ExperimentSummary>(publication.getExperiments().size());
+        for (Experiment exp : publication.getExperiments()){
+            ExperimentSummary summary = getExperimentSummaryService().createSummaryFrom((IntactExperiment)exp);
+            experiments.add(summary);
+        }
+    }
+
+    @Override
+    public void removeXref(Xref xref) {
+
+        if (!this.publication.getIdentifiers().remove(xref)){
+            this.publication.getXrefs().remove(xref);
+        }
+        this.identifier = this.publication.getPubmedId();
+        this.imexId = this.publication.getImexId();
+    }
+
+    @Override
+    protected void addNewAnnotation(AbstractIntactAnnotation newAnnot) {
+        this.publication.getAnnotations().add(newAnnot);
+    }
+
+    @Override
+    public PublicationAnnotation newAnnotation(CvTerm annotation, String text) {
+        return new PublicationAnnotation(annotation, text);
+    }
+
+    @Override
+    public PublicationAnnotation newAnnotation(String topic, String topicMI, String text) {
+        return new PublicationAnnotation(getCvService().findCvObject(IntactUtils.TOPIC_OBJCLASS, topicMI != null ? topicMI: topic), text);
+    }
+
+    @Override
+    public void removeAnnotation(psidev.psi.mi.jami.model.Annotation annotation) {
+        publication.getAnnotations().remove(annotation);
+    }
+
+    public List<LifeCycleEvent> collectLifeCycleEvents() {
+        return new ArrayList<LifeCycleEvent>(publication.getLifecycleEvents());
+    }
+
+    public int getExperimentsSize() {
+        if (publication == null){
             return 0;
+        }
+        else {
+            return publication.getExperiments().size();
+        }
+    }
+
+    public void reloadSingleExperiment(IntactExperiment exp){
+        Iterator<Experiment> evIterator = publication.getExperiments().iterator();
+        boolean add = true;
+        while (evIterator.hasNext()){
+            IntactExperiment intactEv = (IntactExperiment)evIterator.next();
+            if (intactEv.getAc() == null && exp == intactEv){
+                add = false;
+            }
+            else if (intactEv.getAc() != null && intactEv.getAc().equals(exp.getAc())){
+                evIterator.remove();
+            }
+        }
+        if (add){
+            publication.getExperiments().add(exp);
+        }
+        refreshExperiments();
+        refreshDataModels();
+    }
+
+    public void removeExperiment(IntactExperiment exp){
+        Iterator<Experiment> evIterator = publication.getExperiments().iterator();
+        while (evIterator.hasNext()){
+            IntactExperiment intactEv = (IntactExperiment)evIterator.next();
+            if (intactEv.getAc() == null && exp == intactEv){
+                evIterator.remove();
+            }
+            else if (intactEv.getAc() != null && intactEv.getAc().equals(exp.getAc())){
+                evIterator.remove();
+            }
+        }
+        refreshExperiments();
+        refreshDataModels();
+    }
+
+    public ImexCentralManager getImexCentralManager() {
+        if (this.imexCentralManager == null){
+            this.imexCentralManager = ApplicationContextProvider.getBean("imexCentralManager");
+        }
+        return imexCentralManager;
+    }
+
+    public LifeCycleManager getLifecycleManager() {
+        if (this.lifecycleManager == null){
+            this.lifecycleManager = ApplicationContextProvider.getBean("jamiLifeCycleManager");
+        }
+        return lifecycleManager;
+    }
+
+    public boolean isInteractionTabDisabled() {
+        return isInteractionTabDisabled;
+    }
+
+    public void setInteractionTabDisabled(boolean isInteractionTabDisabled) {
+        this.isInteractionTabDisabled = isInteractionTabDisabled;
+    }
+
+    public boolean isExperimentTabDisabled() {
+        return isExperimentTabDisabled;
+    }
+
+    public void setExperimentTabDisabled(boolean isExperimentTabDisabled) {
+        this.isExperimentTabDisabled = isExperimentTabDisabled;
+    }
+
+    public ExperimentSummaryService getExperimentSummaryService() {
+        if (this.experimentSummaryService == null){
+            this.experimentSummaryService = ApplicationContextProvider.getBean("experimentSummaryService");
+        }
+        return experimentSummaryService;
+    }
+
+    public InteractionSummaryService getInteractionSummaryService() {
+        if (this.interactionSummaryService == null){
+            this.interactionSummaryService = ApplicationContextProvider.getBean("interactionSummaryService");
+        }
+        return interactionSummaryService;
+    }
+
+    public List<SelectItem> getDatasetsSelectItems(){
+        return datasetsSelectItems;
+    }
+
+    @Override
+    protected void postProcessDeletedEvent(UnsavedChange unsaved) {
+        super.postProcessDeletedEvent(unsaved);
+        if (unsaved.getUnsavedObject() instanceof IntactExperiment){
+            removeExperiment((IntactExperiment)unsaved.getUnsavedObject());
+        }
+        else if (unsaved.getUnsavedObject() instanceof IntactInteractionEvidence){
+            refreshExperiments();
+            refreshDataModels();
         }
     }
 }

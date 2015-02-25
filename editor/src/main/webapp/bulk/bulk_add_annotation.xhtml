@@ -9,12 +9,6 @@
 
                 template="/bulk/bulk_template.xhtml">
 
-    <ui:define name="metadata">
-        <f:metadata>
-            <f:event type="preRenderView" listener="#{bulkAnnotationController.load}"/>
-        </f:metadata>
-    </ui:define>
-
     <ui:define name="topNavigation">
         <ui:include src="/shared/top_navigation_links.xhtml">
             <ui:param name="selected" value="bulk"/>
@@ -61,25 +55,28 @@
                             update=":editorForm:annotType,:editorForm:messagesComponent" process="@this"/>
 
                     <f:selectItem itemLabel="-- Select object type --" itemValue="#{null}"/>
-                    <f:selectItem itemLabel="Publication" itemValue="uk.ac.ebi.intact.model.Publication"/>
-                    <f:selectItem itemLabel="Experiment" itemValue="uk.ac.ebi.intact.model.Experiment"/>
-                    <f:selectItem itemLabel="Interaction" itemValue="uk.ac.ebi.intact.model.InteractionImpl"/>
-                    <f:selectItem itemLabel="Interactor" itemValue="uk.ac.ebi.intact.model.InteractorImpl"/>
-                    <f:selectItem itemLabel="Participant" itemValue="uk.ac.ebi.intact.model.Component"/>
-                    <f:selectItem itemLabel="Feature" itemValue="uk.ac.ebi.intact.model.Feature"/>
-                    <f:selectItem itemLabel="Organism" itemValue="uk.ac.ebi.intact.model.BioSource"/>
-                    <f:selectItem itemLabel="CV Object" itemValue="uk.ac.ebi.intact.model.CvObject"/>
+                    <f:selectItem itemLabel="Publication" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactPublication"/>
+                    <f:selectItem itemLabel="Experiment" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactExperiment"/>
+                    <f:selectItem itemLabel="Interaction" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactInteractionEvidence"/>
+                    <f:selectItem itemLabel="Complex" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactComplex"/>
+                    <f:selectItem itemLabel="Interactor" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactInteractor"/>
+                    <f:selectItem itemLabel="Participant of interaction evidence" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactParticipantEvidence"/>
+                    <f:selectItem itemLabel="Participant of complex" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactModelledParticipant"/>
+                    <f:selectItem itemLabel="Feature of interaction evidence" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactFeatureEvidence"/>
+                    <f:selectItem itemLabel="Feature of complex" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactModelledFeature"/>
+                    <f:selectItem itemLabel="CV Object" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactCvTerm"/>
+                    <f:selectItem itemLabel="Institution" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactSource"/>
                 </h:selectOneMenu>
 
 
                 <h:outputLabel for="annotType" value="Annotation type:"/>
-                <h:selectOneMenu id="annotType" value="#{bulkAnnotationController.annotation.cvTopic}"
+                <h:selectOneMenu id="annotType" value="#{bulkAnnotationController.topic}"
                                  required="true" requiredMessage="Topic is required">
                     <f:selectItems value="#{bulkAnnotationController.topicSelectItems}"/>
                 </h:selectOneMenu>
 
                 <h:outputLabel for="annotText" value="Annotated text:"/>
-                <p:inputText id="annotText" value="#{bulkAnnotationController.annotation.annotationText}"
+                <p:inputText id="annotText" value="#{bulkAnnotationController.value}"
                              size="60"/>
 
                 <h:outputLabel for="replaceBool" value="Replace if topic exists:"/>

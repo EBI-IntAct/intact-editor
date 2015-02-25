@@ -18,43 +18,43 @@ package uk.ac.ebi.intact.editor.controller.curate.interaction;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
-import org.hibernate.Hibernate;
 import org.primefaces.event.TabChangeEvent;
-import org.primefaces.model.DualListModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.core.persistence.dao.IntactObjectDao;
-import uk.ac.ebi.intact.core.persister.IntactCore;
-import uk.ac.ebi.intact.core.util.DebugUtil;
+import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
+import psidev.psi.mi.jami.model.*;
+import psidev.psi.mi.jami.utils.AnnotationUtils;
+import psidev.psi.mi.jami.utils.XrefUtils;
 import uk.ac.ebi.intact.editor.controller.UserSessionController;
+import uk.ac.ebi.intact.editor.controller.curate.AnnotatedObjectController;
 import uk.ac.ebi.intact.editor.controller.curate.ChangesController;
-import uk.ac.ebi.intact.editor.controller.curate.ParameterizableObjectController;
-import uk.ac.ebi.intact.editor.controller.curate.PersistenceController;
 import uk.ac.ebi.intact.editor.controller.curate.UnsavedChange;
-import uk.ac.ebi.intact.editor.controller.curate.cloner.InteractionIntactCloner;
-import uk.ac.ebi.intact.editor.controller.curate.cloner.ParticipantIntactCloner;
+import uk.ac.ebi.intact.editor.controller.curate.cloner.EditorCloner;
+import uk.ac.ebi.intact.editor.controller.curate.cloner.InteractionEvidenceCloner;
+import uk.ac.ebi.intact.editor.controller.curate.cloner.ParticipantEvidenceCloner;
 import uk.ac.ebi.intact.editor.controller.curate.experiment.ExperimentController;
 import uk.ac.ebi.intact.editor.controller.curate.publication.PublicationController;
-import uk.ac.ebi.intact.editor.controller.curate.util.IntactObjectComparator;
 import uk.ac.ebi.intact.editor.controller.curate.util.ParticipantWrapperExperimentalRoleComparator;
+import uk.ac.ebi.intact.editor.services.curate.interaction.InteractionEditorService;
+import uk.ac.ebi.intact.editor.services.curate.organism.BioSourceService;
+import uk.ac.ebi.intact.editor.services.summary.ExperimentSummary;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
-import uk.ac.ebi.intact.model.*;
-import uk.ac.ebi.intact.model.clone.IntactCloner;
-import uk.ac.ebi.intact.model.clone.IntactClonerException;
-import uk.ac.ebi.intact.model.util.AnnotatedObjectUtils;
-import uk.ac.ebi.intact.model.util.IllegalLabelFormatException;
-import uk.ac.ebi.intact.model.util.InteractionShortLabelGenerator;
+import uk.ac.ebi.intact.jami.model.extension.*;
+import uk.ac.ebi.intact.jami.synchronizer.FinderException;
+import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
+import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
+import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
+import uk.ac.ebi.intact.jami.utils.IntactUtils;
 
+import javax.annotation.Resource;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
-import javax.faces.event.AjaxBehaviorEvent;
 import javax.faces.event.ComponentSystemEvent;
+import javax.faces.event.ValueChangeEvent;
 import javax.faces.model.SelectItem;
-import javax.persistence.Query;
+import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -64,22 +64,20 @@ import java.util.*;
 @Controller
 @Scope( "conversation.access" )
 @ConversationName( "general" )
-public class InteractionController extends ParameterizableObjectController {
+public class InteractionController extends AnnotatedObjectController {
 
     private static final Log log = LogFactory.getLog( InteractionController.class );
 
     private static final String FIG_LEGEND = "MI:0599";
 
-    private Interaction interaction;
+    private IntactInteractionEvidence interaction;
     private String ac;
 
-    private DualListModel<String> experimentLists;
     private List<SelectItem> experimentSelectItems;
 
     private LinkedList<ParticipantWrapper> participantWrappers;
 
-    private Experiment experiment;
-    private List<Experiment> experimentsToUpdate;
+    private IntactExperiment experiment;
 
     private String experimentToCopyTo;
     private String experimentToMoveTo;
@@ -93,64 +91,75 @@ public class InteractionController extends ParameterizableObjectController {
     @Autowired
     private UserSessionController userSessionController;
 
+    @Autowired
+    private ChangesController changesController;
+
+    @Resource(name = "interactionEditorService")
+    private transient InteractionEditorService interactionEditorService;
+
     private boolean isParticipantDisabled;
     private boolean isParameterDisabled;
     private boolean isConfidenceDisabled;
-    private boolean isAdvancedDisabled;
+    private boolean isVariableParametersDisabled;
+
+    private String imexId;
+    private String figureLegend = null;
+
+    private CvTerm newConfidenceType;
+    private String newConfidenceValue;
+
+    private CvTerm newParameterType;
+    private Double newParameterFactor;
+    private CvTerm newParameterUnit;
+    private Integer newParameterBase;
+    private Integer newParameterExponent;
+    private Double newParameterUncertainty;
+
+    private List<ImportExperimentalCondition> conditionsToImport;
+
+    private Map<String, Experiment> experimentMap;
+    private Map<String, VariableParameterValue> parameterValuesMap;
+
+    @Resource(name = "bioSourceService")
+    private transient BioSourceService bioSourceService;
 
     public InteractionController() {
-        experimentsToUpdate = new ArrayList<Experiment>();
+        experimentMap = new HashMap<String, Experiment>();
+        parameterValuesMap = new HashMap<String, VariableParameterValue>();
     }
 
     @Override
-    public AnnotatedObject getAnnotatedObject() {
+    public IntactPrimaryObject getAnnotatedObject() {
         return getInteraction();
     }
 
     @Override
-    public void setAnnotatedObject(AnnotatedObject annotatedObject) {
-        setInteraction((Interaction)annotatedObject);
+    public void setAnnotatedObject(IntactPrimaryObject annotatedObject) {
+        setInteraction((IntactInteractionEvidence)annotatedObject);
     }
 
     @Override
-    public IntactPrimaryObject getJamiObject() {
-        return null;
+    protected AnnotatedObjectController getParentController() {
+        return experimentController;
     }
 
     @Override
-    public void setJamiObject(IntactPrimaryObject annotatedObject) {
-        // nothing to do
+    protected String getPageContext() {
+        return "interaction";
     }
 
     @Override
-    public String goToParent() {
-        return "/curate/experiment?faces-redirect=true&includeViewParams=true";
-    }
+    protected void loadCautionMessages() {
+        if (this.interaction != null){
 
-    public DualListModel<String> getExperimentLists() {
-        return experimentLists;
-    }
-
-    public void setExperimentLists( DualListModel<String> experimentLists ) {
-        this.experimentLists = experimentLists;
-    }
-
-    @Override
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String clone() {
-
-        String value = clone(getAnnotatedObject(), newClonerInstance());
-
-        refreshParticipants();
-        refreshExperimentLists();
-        refreshParentControllers();
-
-        return value;
-    }
-
-    @Override
-    public void refreshTabsAndFocusXref(){
-        refreshTabs();
+            Annotation caution = AnnotationUtils.collectFirstAnnotationWithTopic(this.interaction.getDbAnnotations(), psidev.psi.mi.jami.model.Annotation.CAUTION_MI, psidev.psi.mi.jami.model.Annotation.CAUTION);
+            setCautionMessage(caution != null ? caution.getValue() : null);
+            Annotation internal = AnnotationUtils.collectFirstAnnotationWithTopic(this.interaction.getDbAnnotations(), null, "remark-internal");
+            setInternalRemark(internal != null ? internal.getValue() : null);
+            this.imexId = this.interaction.getImexId();
+            Annotation legend = AnnotationUtils.collectFirstAnnotationWithTopic(this.interaction.getDbAnnotations(), Annotation.FIGURE_LEGEND_MI, Annotation.FIGURE_LEGEND);
+            this.figureLegend = legend != null ? legend.getValue() : null;
+        }
     }
 
     @Override
@@ -160,191 +169,123 @@ public class InteractionController extends ParameterizableObjectController {
         isParticipantDisabled = false;
         isParameterDisabled = true;
         isConfidenceDisabled = true;
-        isAdvancedDisabled = true;
+        isVariableParametersDisabled = true;
     }
 
-    //  @Transactional(readOnly = true)
-//  TODO:
-//  Check in future with other interactions that are onHold. At least commenting @Transactional
-//  we don't have the JPA Several DataSource Exception
-//  Issue 925.
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void loadData( ComponentSystemEvent event ) {
         if (!FacesContext.getCurrentInstance().isPostback()) {
 
             if ( ac != null ) {
-                if ( interaction == null || !ac.equals( interaction.getAc() ) || !Hibernate.isInitialized(interaction.getExperiments())) {
-                    interaction = loadByAc(getDaoFactory().getInteractionDao(), ac);
-                    if (interaction != null){
-                        Hibernate.initialize(interaction.getParameters());
-                        Hibernate.initialize(interaction.getConfidences());
-                        Hibernate.initialize(interaction.getAnnotations());
-                        Hibernate.initialize(interaction.getXrefs());
-                    }
+                if ( interaction == null || !ac.equals( interaction.getAc() ) ) {
+                    setInteraction(getInteractionEditorService().loadInteractionByAc(ac));
                 }
             } else {
-                ac = interaction.getAc();
+                if ( interaction != null ) ac = interaction.getAc();
             }
 
             if (interaction == null) {
                 addErrorMessage("No interaction with this AC", ac);
                 return;
             }
-            if (!Hibernate.isInitialized(interaction.getXrefs())
-                    || !Hibernate.isInitialized(interaction.getAnnotations())
-                    || !Hibernate.isInitialized(interaction.getParameters())
-                    || !Hibernate.isInitialized(interaction.getConfidences())){
-                interaction = loadByAc(getDaoFactory().getInteractionDao(), interaction.getAc());
-                Hibernate.initialize(interaction.getParameters());
-                Hibernate.initialize(interaction.getConfidences());
-                Hibernate.initialize(interaction.getAnnotations());
-                Hibernate.initialize(interaction.getXrefs());
-            }
 
-            setInteraction(interaction);
-
-            if ( interaction.getExperiments().isEmpty() ) {
-                addErrorMessage( "This interaction isn't attached to an experiment", "Please add one or delete it" );
-            } else {
-
-                // check if the publication or experiment are null in their controllers (this happens when the interaction
-                // page is loaded directly using a URL)
-                refreshParentControllers();
-            }
-
-            refreshExperimentLists();
-
-            if (interaction != null) {
-                if (!Hibernate.isInitialized(interaction.getComponents())) {
-                    interaction = getDaoFactory().getInteractionDao().getByAc( ac );
-                }
-                refreshParticipants();
-            }
-
-            refreshTabsAndFocusXref();
+            refreshParentControllers();
+            refreshTabs();
         }
 
         generalLoadChecks();
     }
 
     @Override
-    protected <T extends AnnotatedObject> T loadByAc(IntactObjectDao<T> dao, String ac) {
-        T ao = (T) getChangesController().findByAc(ac);
-
-        if (ao == null) {
-            Query query = getCoreEntityManager().createQuery("select f from InteractionImpl f where f.ac = :ac and f.category = :evidence");
-            query.setParameter("ac", ac);
-            query.setParameter("evidence", "interaction_evidence");
-            List<InteractionImpl> interactions = query.getResultList();
-            if (interactions.size() == 1){
-                ao = (T)interactions.iterator().next();
-            }
-        }
-
-        return ao;
+    protected void generalLoadChecks() {
+        super.generalLoadChecks();
+        generalPublicationLoadChecks();
     }
 
     private void refreshParentControllers() {
-        Publication currentPublication = null;
-        Experiment currentExperiment = null;
+        // different loaded experiment
+        if (experimentController.getExperiment() != interaction.getExperiment()){
+            // different participant to load
+            if (experimentController.getAc() == null ||
+                    (interaction.getExperiment() instanceof IntactExperiment
+                            && !experimentController.getAc().equals(((IntactExperiment)interaction.getExperiment()).getAc()))){
+                IntactExperiment intactExperiment = (IntactExperiment)interaction.getExperiment();
+                experimentController.setExperiment(intactExperiment);
 
-        // the interaction does not have any experiments
-        if (!interaction.getExperiments().isEmpty()){
-            currentExperiment = interaction.getExperiments().iterator().next();
-
-            currentPublication = currentExperiment.getPublication();
-        }
-
-        // need to refresh experiment controller and publication controller for all these cases :
-        // - first time we load an interaction, publication controller and experiment controller is null and need to be set
-        // - the interaction does not have any publication and/or experiment and we set experiment and publication to null
-        // - the interaction loaded is from a different experiment and/or publication than the previous interaction loaded. In this case, we refresh the parents
-        if ( publicationController.getPublication() == null) {
-            publicationController.setPublication( currentPublication );
-        }
-        else if (currentPublication == null){
-            publicationController.setPublication( null );
-        }
-        else if (publicationController.getPublication().getAc() != null && !publicationController.getPublication().getAc().equalsIgnoreCase(currentPublication.getAc())){
-            publicationController.setPublication( currentPublication );
-        }
-        else if (publicationController.getPublication().getAc() == null){
-            publicationController.setPublication( currentPublication );
-        }
-
-        if ( experimentController.getExperiment() == null ) {
-            experimentController.setExperiment( currentExperiment );
-        }
-        else if (currentExperiment == null){
-            experimentController.setExperiment( null );
-        }
-        else if (experimentController.getExperiment().getAc() != null && !experimentController.getExperiment().getAc().equalsIgnoreCase(currentExperiment.getAc())){
-            experimentController.setExperiment( currentExperiment );
-        }
-        // if an experiment has been cloned with interactions, we must be able to go in the interaction even if experiment has not been saved
-        // we must add the experiment to the publication
-        else if (experimentController.getExperiment().getAc() == null){
-            experimentController.setExperiment( currentExperiment );
+                if ( intactExperiment.getPublication() instanceof IntactPublication ) {
+                    IntactPublication publication = (IntactPublication)intactExperiment.getPublication();
+                    publicationController.setPublication( publication );
+                }
+                else{
+                    publicationController.setPublication(null);
+                }
+            }
+            // replace old experiment instance
+            else{
+                interaction.setExperiment(experimentController.getExperiment());
+                experimentController.reloadSingleInteractionEvidence(this.interaction);
+            }
         }
     }
 
     public void refreshExperimentLists() {
         this.experimentSelectItems = new ArrayList<SelectItem>();
+        this.experimentMap.clear();
 
         SelectItem selectItem = new SelectItem(null, "Select experiment");
         selectItem.setNoSelectionOption(true);
 
         experimentSelectItems.add(selectItem);
 
-        if ( interaction.getExperiments().size() > 1 ) {
-            addWarningMessage( "There are more than one experiment attached to this interaction",
-                    DebugUtil.acList(interaction.getExperiments()).toString());
-        }
-
-        if (!interaction.getExperiments().isEmpty()) {
-            experiment = interaction.getExperiments().iterator().next();
-
-            // reset the publication in case the experiment was in a different publication
-            if (experiment != null && experiment.getPublication() != null){
-                publicationController.setPublication(experiment.getPublication());
-            }
-        }
+        experiment = (IntactExperiment)interaction.getExperiment();
 
         if (publicationController.getPublication() != null) {
-            Publication pub = publicationController.getPublication();
-
-            if (!IntactCore.isInitialized(pub.getExperiments())) {
-                pub = getDaoFactory().getPublicationDao().getByAc(pub.getAc());
-                publicationController.setPublication(pub);
-            }
+            List<ExperimentSummary> experiments = publicationController.collectExperiments();
 
             // publication does have experiments so we can propose them
-            if (!pub.getExperiments().isEmpty()){
-                for ( Experiment e : pub.getExperiments() ) {
-                    String description = completeExperimentLabel(e);
-                    experimentSelectItems.add(new SelectItem(e, description, e.getFullName()));
+            if (!experiments.isEmpty()){
+                for ( ExperimentSummary e : experiments ) {
+                    String description = completeExperimentLabel(e.getExperiment());
+                    experimentSelectItems.add(new SelectItem(e.getExperiment(), description, publicationController.getTitle()));
+                    this.experimentMap.put(e.getAc(), e.getExperiment());
                 }
             }
         }
     }
 
-    public String completeExperimentLabel(Experiment e) {
+    public String completeExperimentLabel(IntactExperiment e) {
         return e.getShortLabel()+" | "+
-                (e.getCvInteraction() != null? e.getCvInteraction().getShortLabel()+", " : "")+
-                (e.getCvIdentification() != null? e.getCvIdentification().getShortLabel()+", " : "")+
-                (e.getBioSource() != null? e.getBioSource().getShortLabel() : "");
+                e.getInteractionDetectionMethod().getShortName()+
+                (e.getParticipantIdentificationMethod() != null? ", "+e.getParticipantIdentificationMethod().getShortName() : "")+
+                (e.getHostOrganism() != null? ", "+e.getHostOrganism().getCommonName() : "");
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void forceRefreshCurrentViewObject(){
-        super.forceRefreshCurrentViewObject();
+    @Override
+    public void doPostSave(){
+        // the interaction was just created, add it to the list of interactions of the experiment
+        if (interaction.getExperiment() != null){
+            experimentController.reloadSingleInteractionEvidence(interaction);
+        }
+    }
 
-        if (interaction != null) {
-            if (!Hibernate.isInitialized(interaction.getComponents())) {
-                interaction = getDaoFactory().getInteractionDao().getByAc( interaction.getAc() );
-            }
-            refreshExperimentLists();
-            refreshParticipants();
+    @Override
+    public void postRevert() {
+        // the interaction was just created, add it to the list of interactions of the experiment
+        if (interaction.getExperiment() != null){
+            experimentController.reloadSingleInteractionEvidence(interaction);
+        }
+    }
+
+    @Override
+    public String doDelete() {
+        experimentController.removeInteractionEvidence(interaction);
+        return super.doDelete();
+    }
+
+    @Override
+    protected void postProcessDeletedEvent(UnsavedChange unsaved) {
+        super.postProcessDeletedEvent(unsaved);
+        if (unsaved.getUnsavedObject() instanceof IntactParticipantEvidence){
+            removeParticipant((IntactParticipantEvidence) unsaved.getUnsavedObject());
         }
     }
 
@@ -355,164 +296,83 @@ public class InteractionController extends ParameterizableObjectController {
         String currentAc = interaction != null ? interaction.getAc() : null;
 
         for (UnsavedChange unsaved : transcriptCreated) {
-            IntactObject transcript = unsaved.getUnsavedObject();
+            IntactInteractor transcript = (IntactInteractor)unsaved.getUnsavedObject();
 
             // the object to save is different from the current object. Checks that the scope of this object to save is the ac of the current object being saved
             // if the scope is null or different, the object should not be saved at this stage because we only save the current object and changes associated with it
             // if current ac is null, no unsaved event should be associated with it as this object has not been saved yet
             if (unsaved.getScope() != null && unsaved.getScope().equals(currentAc)){
-                getPersistenceController().doSaveMasterProteins(transcript);
+                try {
+                    getEditorService().doSaveMasterProteins(transcript);
+                } catch (BridgeFailedException e) {
+                    addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
+                } catch (SynchronizerException e) {
+                    addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
+                } catch (FinderException e) {
+                    addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
+                } catch (PersisterException e) {
+                    addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
+                }  catch (Throwable e) {
+                    addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
+                }
 
                 getChangesController().removeFromHiddenChanges(unsaved);
 
             }
             else if (unsaved.getScope() == null && currentAc == null){
-                getPersistenceController().doSaveMasterProteins(transcript);
+                try {
+                    getEditorService().doSaveMasterProteins(transcript);
+                } catch (BridgeFailedException e) {
+                    addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
+                } catch (SynchronizerException e) {
+                    addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
+                } catch (FinderException e) {
+                    addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
+                } catch (PersisterException e) {
+                    addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
+                } catch (Throwable e) {
+                    addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
+                }
                 getChangesController().removeFromHiddenChanges(unsaved);
             }
         }
 
-        // Reload experiments
-        if (!Hibernate.isInitialized(interaction.getExperiments())){
-            interaction = loadByAc(getDaoFactory().getInteractionDao(), interaction.getAc());
-        }
-
-        Collection<Experiment> experiments = new ArrayList<Experiment>( interaction.getExperiments() );
-
-        if (interaction.getExperiments().isEmpty() && experiment != null){
-            experiments.add(experiment);
-        }
-
-        interaction.getExperiments().clear();
-
-        for ( Experiment exp : experiments ) {
-            Experiment reloaded = exp;
-
-            // if experiment already exists, reload it
-            if (exp.getAc() != null){
-                reloaded = getDaoFactory().getExperimentDao().getByAc( exp.getAc() );
-            }
-
-            if (reloaded != null){
-                interaction.getExperiments().add( reloaded );
-            }
-        }
-    }
-
-    public void markParticipantToDelete(Component component) {
-        if (component == null) return;
-
-        // unlink feature before deleting participant
-        if (!component.getFeatures().isEmpty()){
-            for (Feature f : component.getFeatures()){
-                unlinkFeature(f);
-            }
-        }
-
-        if (component.getAc() == null) {
-            interaction.removeComponent(component);
-            refreshParticipants();
-        } else {
-            getChangesController().markToDelete(component, component.getInteraction());
-        }
-    }
-
-    @Override
-    public boolean doSaveDetails() {
-        boolean saved = true;
-
-        // ensure that all the components are persisted (hack to fix Issue 652).
-        // There seems to be components with null AC when the master protein of that
-        // component needs to be saved
-        for (ParticipantWrapper pw : participantWrappers) {
-            Component component = pw.getParticipant();
-
-            if (component.getAc() == null) {
-                getCorePersister().saveOrUpdate(component);
-            }
-        }
-
-        for (Experiment experimentToUpdate : experimentsToUpdate) {
-            getCorePersister().saveOrUpdate(experimentToUpdate);
-        }
-
-        if (experiment != null) {
-            experiment = interaction.getExperiments().isEmpty() ? reload(experiment) : reload(interaction.getExperiments().iterator().next());
-
-            if (interaction.getExperiments().isEmpty()){
-                interaction.addExperiment(experiment);
-            }
-
-            getDaoFactory().getExperimentDao().update(experiment);
-
-            experimentController.setExperiment(experiment);
-        }
-
-        refreshParticipants();
-
-        if (interaction.getAc() == null) {
+        // update shortlabel if new interaction
+        if (this.interaction.getAc() == null){
             updateShortLabel();
         }
-
-        return saved;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void experimentChanged(AjaxBehaviorEvent evt) {
+    public void markParticipantToDelete(IntactParticipantEvidence component) {
+        if (component == null) return;
 
-        Experiment newExp = reload(experiment);
-
-        experimentController.setExperiment(newExp);
-
-        Collection<Experiment> experiments = new ArrayList<Experiment>(interaction.getExperiments());
-        for (Experiment exp : experiments){
-            exp = reload(exp);
-            interaction.removeExperiment(exp);
+        if (component.getAc() == null) {
+            interaction.removeParticipant(component);
+            refreshParticipants();
+        } else {
+            Collection<String> parents = collectParentAcsOfCurrentAnnotatedObject();
+            if (this.interaction.getAc() != null){
+                parents.add(this.interaction.getAc());
+            }
+            getChangesController().markToDelete(component, this.interaction, getEditorService().getIntactDao().getSynchronizerContext().getParticipantEvidenceSynchronizer(),
+                    "participant "+component.getAc(), parents);
         }
+    }
 
-        interaction.addExperiment(newExp);
-        updateParametersExperiment(interaction, newExp);
+    public void experimentChanged() {
 
-        experimentsToUpdate.add(newExp);
+        interaction.setExperiment(experiment);
+
+        refreshParentControllers();
 
         changed();
     }
 
-    private Experiment reload(Experiment oldExp) {
-        if (oldExp != null && oldExp.getAc() != null) {
-            oldExp = getDaoFactory().getExperimentDao().getByAc(oldExp.getAc());
-        }
-        return oldExp;
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String newInteraction(Publication publication, Experiment exp) {
-        Interaction interaction = new InteractionImpl();
-        interaction.setOwner(userSessionController.getUserInstitution());
-
-        CvInteractorType type = getDaoFactory().getCvObjectDao(CvInteractorType.class).getByPsiMiRef(CvInteractorType.INTERACTION_MI_REF);
-        interaction.setCvInteractorType(type);
+    public String newInteraction(IntactPublication publication, IntactExperiment exp) {
+        IntactInteractionEvidence interaction = new IntactInteractionEvidence();
+        interaction.setExperiment(exp);
 
         setInteraction(interaction);
-
-        if (publication != null) {
-            publicationController.setPublication(publication);
-        }
-
-        if (exp != null) {
-
-            Experiment reloadedExp = exp;
-
-            if (!IntactCore.isInitialized(exp.getInteractions())) {
-                reloadedExp = getDaoFactory().getExperimentDao().getByAc(exp.getAc());
-            }
-
-            experimentController.setExperiment(reloadedExp);
-            interaction.addExperiment(reloadedExp);
-        }
-
-        refreshExperimentLists();
-        refreshParticipants();
 
         changed();
 
@@ -520,61 +380,56 @@ public class InteractionController extends ParameterizableObjectController {
     }
 
     @Override
-    public void modifyClone(AnnotatedObject clone) {
-        Interaction clonedInteraction = (Interaction) clone;
+    protected EditorCloner<InteractionEvidence, IntactInteractionEvidence> newClonerInstance() {
+        return new InteractionEvidenceCloner();
+    }
 
-        if (!clonedInteraction.getExperiments().isEmpty()){
-            updateParametersExperiment(clonedInteraction, clonedInteraction.getExperiments().iterator().next());
+    @Override
+    protected void addNewXref(AbstractIntactXref newRef) {
+        if (XrefUtils.isXrefAnIdentifier(newRef) || XrefUtils.doesXrefHaveQualifier(newRef, null, "intact-secondary")){
+            this.interaction.getIdentifiers().add(newRef);
         }
-
-        clone.setOwner(userSessionController.getUserInstitution());
-
-        refreshTabs();
-
-        try {
-            updateShortLabel(clonedInteraction);
-        } catch (IllegalLabelFormatException e) {
-            addErrorMessage("Couldn't auto-create label", e.getMessage());
+        else{
+            this.interaction.getXrefs().add(newRef);
+            this.imexId = this.interaction.getImexId();
         }
     }
 
     @Override
-    protected IntactCloner newClonerInstance() {
-        return new InteractionIntactCloner(reload(experiment));
+    protected InteractionXref newXref(CvTerm db, String id, String secondaryId, String version, CvTerm qualifier) {
+        InteractionXref ref = new InteractionXref(db, id, version, qualifier);
+        ref.setSecondaryId(secondaryId);
+        return ref;
+    }
+
+    @Override
+    public InteractionXref newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+        return new InteractionXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, dbMI != null ? dbMI : db),
+                id, secondaryId, getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
     }
 
     public void refreshParticipants() {
         participantWrappers = new LinkedList<ParticipantWrapper>();
 
-        final Collection<Component> components = interaction.getComponents();
+        final Collection<ParticipantEvidence> components = interaction.getParticipants();
 
-        for ( Component component : components ) {
-            participantWrappers.add( new ParticipantWrapper( component, getChangesController(), this ) );
+        for ( ParticipantEvidence component : components ) {
+            participantWrappers.add( new ParticipantWrapper( (IntactParticipantEvidence)component) );
         }
 
         if (participantWrappers.size() > 0) {
-            //TODO: Improve the performance
             //We sort the participants for avoiding confusion with the place that a new participant should be appeared.
             Collections.sort(participantWrappers, new ParticipantWrapperExperimentalRoleComparator());
         }
     }
 
-    public void addParticipant(Component component) {
-        interaction.addComponent(component);
+    public void addParticipant(IntactParticipantEvidence component) {
+        interaction.addParticipant(component);
 
-//        participantWrappers.addFirst(new ParticipantWrapper(component, getChangesController(), this));
-        participantWrappers.add(new ParticipantWrapper(component, getChangesController(), this));
+        participantWrappers.add(new ParticipantWrapper(component));
 
         if (participantWrappers.size() > 0) {
-            try {
-                updateShortLabel();
-            } catch (Exception e) {
-                addErrorMessage("Problem updating shortLabel", e.getMessage());
-            }
-            //TODO: Improve the performance
-            //We sort the participants for avoiding confusion with the place that a new participant should be appeared.
             Collections.sort(participantWrappers, new ParticipantWrapperExperimentalRoleComparator());
-
         }
 
         setUnsavedChanges(true);
@@ -584,79 +439,50 @@ public class InteractionController extends ParameterizableObjectController {
     public Collection<String> collectParentAcsOfCurrentAnnotatedObject(){
         Collection<String> parentAcs = new ArrayList<String>();
 
-        if (IntactCore.isInitialized(interaction.getExperiments()) && !interaction.getExperiments().isEmpty()){
-            for (Experiment exp : interaction.getExperiments()){
-                addParentAcsTo(parentAcs, exp);
-            }
-        }
-        else if (experiment != null){
-            addParentAcsTo(parentAcs, experiment);
-        }
-        else if (!IntactCore.isInitialized(interaction.getExperiments())){
-            Collection<Experiment> experiments = IntactCore.ensureInitializedExperiments(interaction);
-
-            for (Experiment exp : experiments){
-                addParentAcsTo(parentAcs, exp);
-            }
-        }
+        addParentAcsTo(parentAcs, experiment);
 
         return parentAcs;
     }
 
     @Override
-    protected void refreshUnsavedChangesBeforeRevert(){
-        Collection<String> parentAcs = new ArrayList<String>();
-
-        if (IntactCore.isInitialized(interaction.getExperiments()) && !interaction.getExperiments().isEmpty()){
-            for (Experiment exp : interaction.getExperiments()){
-                addParentAcsTo(parentAcs, exp);
-            }
-        }
-        else if (experiment != null){
-            addParentAcsTo(parentAcs, experiment);
-        }
-        else if (!IntactCore.isInitialized(interaction.getExperiments())){
-            Collection<Experiment> experiments = IntactCore.ensureInitializedExperiments(interaction);
-
-            for (Experiment exp : experiments){
-                addParentAcsTo(parentAcs, exp);
-            }
-        }
-
-        getChangesController().revertInteraction(interaction, parentAcs);
+    public Class<? extends IntactPrimaryObject> getAnnotatedObjectClass() {
+        return IntactInteractionEvidence.class;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    @Override
+    public boolean isAliasNotEditable(Alias alias) {
+        return false;
+    }
+
+    @Override
+    public boolean isAnnotationNotEditable(psidev.psi.mi.jami.model.Annotation annot) {
+        return AnnotationUtils.doesAnnotationHaveTopic(annot, Annotation.FIGURE_LEGEND_MI, Annotation.FIGURE_LEGEND);
+    }
+
+    @Override
+    public boolean isXrefNotEditable(Xref ref) {
+        return false;
+    }
+
     public String copyToExperiment() {
-        Interaction newInteraction = null;
+        IntactInteractionEvidence newInteraction = null;
 
         if (experimentToCopyTo != null && !experimentToCopyTo.isEmpty()) {
-            Experiment experiment = findExperimentByAcOrLabel(experimentToCopyTo);
+            IntactExperiment experiment = getInteractionEditorService().loadExperimentByAcOrLabel(experimentToCopyTo);
 
             if (experiment == null) {
                 addErrorMessage("Cannot copy", "No experiment found with this AC or short label: "+experimentToCopyTo);
                 return null;
             }
+            newInteraction = cloneAnnotatedObject(interaction, new InteractionEvidenceCloner());
+            newInteraction.setExperiment(experiment);
 
-            newInteraction = cloneAnnotatedObject(interaction, new InteractionIntactCloner(experiment));
-
-            // remove all experiments attached to the new interaction
-            /*Collection<Experiment> experiments = new ArrayList(newInteraction.getExperiments());
-            for (Experiment exp : experiments){
-                newInteraction.removeExperiment(exp);
-            }
-
-            // add the new experiment
-            newInteraction.addExperiment(experiment);*/
-
-            updateParametersExperiment(newInteraction, experiment);
-
+            newInteraction.getVariableParameterValues().clear();
         } else {
             return null;
         }
 
         setInteraction(newInteraction);
-        refreshExperimentLists();
         setUnsavedChanges(true);
 
         addInfoMessage("Copied interaction", "To experiment: "+experimentToCopyTo);
@@ -664,35 +490,23 @@ public class InteractionController extends ParameterizableObjectController {
         return getCurateController().edit(newInteraction);
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public String moveToExperiment() {
         if (experimentToMoveTo != null && !experimentToMoveTo.isEmpty()) {
-            Experiment experiment = findExperimentByAcOrLabel(experimentToMoveTo);
+            IntactExperiment experiment = getInteractionEditorService().loadExperimentByAcOrLabel(experimentToMoveTo);
 
             if (experiment == null) {
                 addErrorMessage("Cannot move", "No experiment found with this AC or short label: "+experimentToMoveTo);
                 return null;
             }
-
-            // remove all experiments
-            Collection<Experiment> experiments = new ArrayList(interaction.getExperiments());
-            for (Experiment exp : experiments){
-                interaction.removeExperiment(exp);
-            }
-
-            // add new experiment
-            interaction.addExperiment(experiment);
-
-            updateParametersExperiment(interaction, experiment);
-
+            // set experiment
+            interaction.setExperiment(experiment);
+            interaction.getVariableParameterValues().clear();
 
         } else {
             return null;
         }
 
         setInteraction(interaction);
-
-        refreshExperimentLists();
 
         setUnsavedChanges(true);
 
@@ -701,189 +515,119 @@ public class InteractionController extends ParameterizableObjectController {
         return null;
     }
 
-    private void updateParametersExperiment(Interaction interaction, Experiment experiment) {
-        // update interaction parameters if any
-        if (!interaction.getParameters().isEmpty()){
-            for (InteractionParameter param : interaction.getParameters()){
-                param.setExperiment(experiment);
-            }
-        }
-
-        // update component parameters if any
-        if (!interaction.getComponents().isEmpty()){
-            for (Component component : interaction.getComponents()){
-                if (!component.getParameters().isEmpty()){
-                    for (ComponentParameter param : component.getParameters()){
-                        param.setExperiment(experiment);
-                    }
-                }
-            }
-        }
-    }
-
-    private Experiment findExperimentByAcOrLabel(String acOrLabel) {
-        Experiment experiment = getDaoFactory().getExperimentDao().getByAc(acOrLabel.trim());
-
-        if (experiment == null) {
-            experiment = getDaoFactory().getExperimentDao().getByShortLabel(acOrLabel);
-            if (experiment == null) {
-                return null;
-            }
-        }
-
-        // WARNING : load the annotations when reloading an experiment because it is used to calculate the CRC64 of the interaction.
-        // if the annotations are not loaded and we do have lazy annotations, this will cause a StackOverFlow exception when computing the CRC64
-        // of the interaction. This is due to a bad practice in the Interaction in intact-core. The computeCrc64 method is a postUpdate but is calling the dao if
-        // annotations are lazy which is messing with hibernate checks
-        experiment.getAnnotations().size();
-
-        return experiment;
-    }
-
     public String getAc() {
-        if ( ac == null && interaction != null ) {
-            return interaction.getAc();
-        }
         return ac;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int countParticipantsByInteractionAc( String ac ) {
-        return getDaoFactory().getInteractionDao().countInteractorsByInteractionAc( ac );
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int countParticipantsByInteraction( Interaction interaction) {
-        if (interaction.getAc() != null) return countParticipantsByInteractionAc(interaction.getAc());
-
-        return interaction.getComponents().size();
-    }
-
-    public Experiment getFirstExperiment( Interaction interaction ) {
-        if (interaction.getExperiments().isEmpty()){
-            return null;
+    @Override
+    public int getXrefsSize() {
+        if (interaction == null){
+            return 0;
         }
-        return interaction.getExperiments().iterator().next();
+        else {
+            return interaction.getDbXrefs().size();
+        }
     }
 
     @Override
-    public void doRevertChanges(ActionEvent evt) {
-        super.doRevertChanges(evt);
-
-        /*for (ParticipantWrapper wrapper : participantWrappers) {
-            revertParticipant(wrapper);
-        }*/
+    public int getAliasesSize() {
+        return 0;
     }
 
-    /*public void deleteParticipant(ParticipantWrapper participantWrapper) {
-        participantWrapper.setDeleted(true);
-
-        Component participant = participantWrapper.getParticipant();
-        //interaction.removeComponent(participant);
-        //refreshParticipants();
-        setUnsavedChanges(true);
-
-        StringBuilder participantInfo = new StringBuilder();
-
-        if (participant.getInteractor() != null) {
-            participantInfo.append(participant.getInteractor().getShortLabel());
-            participantInfo.append(" ");
+    @Override
+    public int getAnnotationsSize() {
+        if (interaction == null){
+            return 0;
         }
-
-        if (participant.getAc() != null) {
-            participantInfo.append("(").append(participant.getAc()+")");
+        else {
+            return interaction.getDbAnnotations().size();
         }
+    }
 
-        updateShortLabel();
+    public int getParticipantsSize() {
+        if (interaction == null){
+            return 0;
+        }
+        else {
+            return interaction.getParticipants().size();
+        }
+    }
 
-        addInfoMessage("Participant marked to be removed.", participantInfo.toString());
-    }*/
+    public int getConfidencesSize() {
+        if (interaction == null){
+            return 0;
+        }
+        else {
+            return interaction.getConfidences().size();
+        }
+    }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public int getParametersSize() {
+        if (interaction == null){
+            return 0;
+        }
+        else {
+            return interaction.getParameters().size();
+        }
+    }
+
+    public int getVariableParameterValuesSize() {
+        if (interaction == null){
+            return 0;
+        }
+        else {
+            return interaction.getVariableParameterValues().size();
+        }
+    }
+
+    public int countParticipantsByInteraction( IntactInteractionEvidence interaction) {
+        return getInteractionEditorService().countParticipants(interaction);
+    }
+
     public void updateShortLabel() {
-        try {
-            updateShortLabel(getInteraction());
-        } catch (IllegalLabelFormatException e) {
-            addErrorMessage("Couldn't auto-create label", e.getMessage());
+        updateShortLabel(this.interaction);
+    }
+
+    public void refreshShortLabel(ActionEvent evt) {
+        if (interaction != null && !interaction.getParticipants().isEmpty()) {
+            updateShortLabel();
         }
     }
 
-    private void updateShortLabel(Interaction interaction) throws IllegalLabelFormatException {
-        if (participantWrappers.isEmpty()) {
+    private void updateShortLabel(IntactInteractionEvidence interaction) {
+
+        if (interaction.getParticipants().isEmpty()){
             return;
         }
 
-        //Issue 208: Interaction short-labels will be handled manually when in complexes
-        if (belongsToCuratedComplex()) {
-            return;
-        }
-
-        String shortLabel = InteractionShortLabelGenerator.createCandidateShortLabel(interaction);
-        shortLabel = InteractionShortLabelGenerator.nextAvailableShortlabel(shortLabel);
-
-        interaction.setShortLabel(shortLabel);
-    }
-
-    private boolean belongsToCuratedComplex() {
-        for (Experiment exp : interaction.getExperiments()) {
-
-            // to avoid lazy initialization of annotations in the experiments, checks if it is initialized, if not reload them
-            Collection<Annotation> annotations = IntactCore.ensureInitializedAnnotations(exp);
-
-            for (Annotation annot : annotations) {
-                if (CvTopic.CURATED_COMPLEX.equals(annot.getCvTopic().getShortLabel())) {
-                    return true;
-                }
+        String oldLabel = interaction.getShortName();
+        String shortLabel = getInteractionEditorService().computesShortLabel(interaction);
+        interaction.setShortName(shortLabel);
+        // synchronize with db
+        getEditorService().synchronizeInteractionShortLabel(interaction);
+        if (oldLabel == null || !oldLabel.equals(interaction.getShortName())){
+            addInfoMessage("ShortLabel updated","Interaction label updated");
+            Collection<String> parentsCs = new ArrayList<String>();
+            if (interaction.getExperiment() != null && ((IntactExperiment)interaction.getExperiment()).getAc() != null){
+                parentsCs.add(((IntactExperiment)interaction.getExperiment()).getAc());
             }
+            super.addParentAcsTo(parentsCs, (IntactExperiment)interaction.getExperiment());
+            changesController.markAsUnsaved(interaction, getEditorService().getIntactDao().getSynchronizerContext().getInteractionSynchronizer(),
+                    "Interaction "+oldLabel,
+                    parentsCs);
         }
-
-        return false;
     }
 
-    /*public void revertParticipant(ParticipantWrapper participantWrapper) {
-        participantWrapper.setDeleted(false);
-
-        Component participant = participantWrapper.getParticipant();
-        setUnsavedChanges(false);
-
-        StringBuilder participantInfo = new StringBuilder();
-
-        if (participant.getInteractor() != null) {
-            participantInfo.append(participant.getInteractor().getShortLabel());
-            participantInfo.append(" ");
-        }
-
-        if (participant.getAc() != null) {
-            participantInfo.append("(").append(participant.getAc()).append(")");
-        }
-    }*/
-
-    /**
-     * When reverting, we need to refresh the collection of wrappers because they are not part of the IntAct model.
-     */
-    @Override
-    protected void postRevert() {
-        refreshExperimentLists();
-        refreshParticipants();
-        refreshParentControllers();
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void cloneParticipant(ParticipantWrapper participantWrapper) {
 
-        IntactCloner cloner = new ParticipantIntactCloner();
+        ParticipantEvidenceCloner cloner = new ParticipantEvidenceCloner();
 
-        try {
-            Component clone = cloner.clone(participantWrapper.getParticipant());
-            addParticipant(clone);
-        } catch (IntactClonerException e) {
-            addErrorMessage("Problem cloning participant", e.getMessage());
-            handleException(e);
-        }
+        IntactParticipantEvidence clone = getEditorService().cloneAnnotatedObject((IntactParticipantEvidence)participantWrapper.getParticipant(), cloner);
+        addParticipant(clone);
     }
 
     public void linkSelectedFeatures(ActionEvent evt) {
-        List<Feature> selected = new ArrayList<Feature>();
+        List<AbstractIntactFeature> selected = new ArrayList<AbstractIntactFeature>();
 
         for (ParticipantWrapper pw : participantWrappers) {
             for (FeatureWrapper fw : pw.getFeatures()) {
@@ -892,53 +636,68 @@ public class InteractionController extends ParameterizableObjectController {
                 }
             }
         }
+        int selectedSize = selected.size();
 
-        if (selected.size() != 2) {
-            addErrorMessage("Incorrect feature selection", "Two features need to be selected if you want to link them. Currently selected: "+selected.size());
-            return;
+        Iterator<AbstractIntactFeature> fIterator1 = selected.iterator();
+        while (fIterator1.hasNext()){
+            AbstractIntactFeature f1 = fIterator1.next();
+
+            for (AbstractIntactFeature f2 : selected){
+                if (f1.getAc() == null && f1 != f2){
+                    f1.getLinkedFeatures().add(f2);
+                    f2.getLinkedFeatures().add(f1);
+                }
+                else if (f1.getAc() != null && !f1.getAc().equals(f2.getAc())){
+                    f1.getLinkedFeatures().add(f2);
+                    f2.getLinkedFeatures().add(f1);
+                }
+            }
+            fIterator1.remove();
         }
 
-        Feature featureToLink1 = selected.get(0);
-        Feature featureToLink2 = selected.get(1);
 
-        // clean any existing linked association, just in case the curator links an already linked feature with another
-        // binding domain
-        clearBoundDomain(featureToLink1);
-        clearBoundDomain(featureToLink2);
-
-        // link the features
-        featureToLink1.setBoundDomain(featureToLink2);
-        featureToLink2.setBoundDomain(featureToLink1);
-
-
-        addInfoMessage("Features linked", DebugUtil.intactObjectToString(featureToLink1, false)+" and "+DebugUtil.intactObjectToString(featureToLink2, false));
+        addInfoMessage("Features linked", "Size of linked features : "+selectedSize);
         setUnsavedChanges(true);
-
+        refreshParticipants();
     }
 
-    public void unlinkFeature(Feature feature) {
-        clearBoundDomain(feature);
+    public void unlinkFeature(FeatureWrapper wrapper) {
+        AbstractIntactFeature feature1 = wrapper.getFeature();
+        AbstractIntactFeature feature2 = wrapper.getSelectedLinkedFeature();
+        if (feature2 != null){
+            Iterator<Feature> featureIterator = feature1.getLinkedFeatures().iterator();
+            Iterator<Feature> feature2Iterator = feature2.getLinkedFeatures().iterator();
+            while (featureIterator.hasNext()){
+                AbstractIntactFeature f1 = (AbstractIntactFeature)featureIterator.next();
+                if (f1.getAc() == null && f1 == feature2){
+                    featureIterator.remove();
+                }
+                else if (f1.getAc() != null && f1.getAc().equals(feature2.getAc())){
+                    featureIterator.remove();
+                }
+            }
+            while (feature2Iterator.hasNext()){
+                AbstractIntactFeature f2 = (AbstractIntactFeature)feature2Iterator.next();
+                if (f2.getAc() == null && f2 == feature1){
+                    feature2Iterator.remove();
+                }
+                else if (f2.getAc() != null && f2.getAc().equals(feature1.getAc())){
+                    feature2Iterator.remove();
+                }
+            }
 
-        addInfoMessage("Feature unlinked", DebugUtil.intactObjectToString(feature, false));
-        setUnsavedChanges(true);
-    }
-
-    private void clearBoundDomain(Feature feature) {
-        if (feature.getBoundDomain() != null) {
-            feature.getBoundDomain().setBoundDomain(null);
+            addInfoMessage("Feature unlinked", feature2.toString());
+            setUnsavedChanges(true);
+            refreshParticipants();
         }
-
-        feature.setBoundDomain(null);
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public void selectLinkedFeature(FeatureWrapper wrapper, IntactFeatureEvidence linked){
+        wrapper.setSelectedLinkedFeature(linked);
+    }
+
     public String getImexId() {
-        return findXrefPrimaryId(CvDatabase.IMEX_MI_REF, CvXrefQualifier.IMEX_PRIMARY_MI_REF);
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void setImexId(String imexId) {
-        updateXref(CvDatabase.IMEX_MI_REF, CvXrefQualifier.IMEX_PRIMARY_MI_REF, imexId);
+        return imexId;
     }
 
     public void setAc( String ac ) {
@@ -949,36 +708,20 @@ public class InteractionController extends ParameterizableObjectController {
         return experimentSelectItems;
     }
 
-    public Interaction getInteraction() {
+    public IntactInteractionEvidence getInteraction() {
         return interaction;
     }
 
-    public Experiment getExperiment() {
-        return experiment;
-    }
-
-    public void setExperiment(Experiment experiment) {
-        if (this.experiment == null){
-            this.experiment = experiment;
-            experimentController.setExperiment(experiment);
-        }
-        else if (!this.experiment.equals(experiment)) {
-            this.experiment = experiment;
-
-            experimentController.setExperiment(experiment);
-        }
-    }
-
-    public void setInteraction( Interaction interaction ) {
+    public void setInteraction( IntactInteractionEvidence interaction ) {
         this.interaction = interaction;
 
         if (interaction != null) {
             this.ac = interaction.getAc();
 
-            if ( Hibernate.isInitialized(interaction.getExperiments()) && !interaction.getExperiments().isEmpty()) {
-                experimentController.setExperiment(interaction.getExperiments().iterator().next());
-                this.experiment = experimentController.getExperiment();
-            }
+            initialiseDefaultProperties(this.interaction);
+        }
+        else{
+            this.ac = null;
         }
     }
 
@@ -1003,66 +746,76 @@ public class InteractionController extends ParameterizableObjectController {
     }
 
     public String getFigureLegend() {
-        return findAnnotationText(FIG_LEGEND);
+        return this.figureLegend;
     }
 
     public void setFigureLegend(String figureLegend) {
-        updateAnnotation(FIG_LEGEND, figureLegend);
+        this.figureLegend = figureLegend;
     }
 
-    //////////////////////////////////
-    // Participant related methods
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getInteractorIdentity(Interactor interactor) {
-        if (interactor == null) return null;
-
-        final Collection<InteractorXref> identities =
-                AnnotatedObjectUtils.searchXrefsByQualifier( interactor, CvXrefQualifier.IDENTITY_MI_REF );
-        StringBuilder sb = new StringBuilder(64);
-        for ( Iterator<InteractorXref> iterator = identities.iterator(); iterator.hasNext(); ) {
-            InteractorXref xref = iterator.next();
-            sb.append( xref.getPrimaryId() );
-            if( iterator.hasNext() ) {
-                sb.append( "|" );
-            }
+    public void onFigureLegendChanged(ValueChangeEvent evt) {
+        setUnsavedChanges(true);
+        this.figureLegend = (String)evt.getNewValue();
+        if (this.figureLegend != null && figureLegend.length() > 0){
+            updateAnnotation(Annotation.FIGURE_LEGEND, Annotation.FIGURE_LEGEND_MI, figureLegend, interaction.getDbAnnotations());
         }
-        return sb.toString();
+        else{
+            removeAnnotation(Annotation.FIGURE_LEGEND, Annotation.FIGURE_LEGEND_MI, interaction.getDbAnnotations());
+        }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public boolean isFeaturesAvailable(){
-        boolean featuresAvailable = false;
-        Interaction interaction = getInteraction();
-        for(Component component : interaction.getComponents()){
-            featuresAvailable = featuresAvailable || (component.getBindingDomains().size() > 0);
-            if(featuresAvailable){
-                continue;
-            }
-        }
-        return featuresAvailable;
-    }
 
     // Confidence
     ///////////////////////////////////////////////
 
-    public void newConfidence() {
-        Confidence confidence = new Confidence();
-        interaction.addConfidence(confidence);
+    public void newConfidence(ActionEvent evt) {
+        if (this.newConfidenceType != null && this.newConfidenceValue != null){
+            InteractionEvidenceConfidence confidence = new InteractionEvidenceConfidence(this.newConfidenceType, this.newConfidenceValue);
+            interaction.getConfidences().add(confidence);
+            doSave(false);
+
+            this.newConfidenceValue = null;
+            this.newConfidenceType = null;
+        }
+        else{
+            addErrorMessage("Cannot add new confidence as it does not have any type/value", "Missing confidence type/value");
+        }
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List<Confidence> getConfidences() {
-        if (interaction == null) return Collections.EMPTY_LIST;
+    public void newParameter(ActionEvent evt) {
+        if (this.newParameterType != null && this.newParameterFactor != null
+                && this.newParameterBase != null && this.newParameterExponent != null){
+            FeatureEvidenceParameter param = new FeatureEvidenceParameter(this.newParameterType, new ParameterValue(new BigDecimal(this.newParameterFactor), this.newParameterBase.shortValue(),
+                    this.newParameterExponent.shortValue()));
+            if (this.newParameterUncertainty != null){
+                param.setUncertainty(new BigDecimal(this.newParameterUncertainty));
+            }
+            param.setUnit(this.newParameterUnit);
+            this.interaction.getParameters().add(param);
+            doSave(false);
 
-        final List<Confidence> confidences = new ArrayList<Confidence>( IntactCore.ensureInitializedConfidences(interaction) );
-        Collections.sort( confidences, new IntactObjectComparator() );
+            this.newParameterBase = null;
+            this.newParameterFactor = null;
+            this.newParameterType = null;
+            this.newParameterUncertainty = null;
+            this.newParameterUnit = null;
+            this.newParameterExponent = null;
+        }
+        else{
+            addErrorMessage("Cannot add new parameter as it does not have any type/value", "Missing parameter type/value");
+        }
+    }
+
+    public List<Confidence> collectConfidences() {
+        final List<Confidence> confidences = new ArrayList<Confidence>( interaction.getConfidences() );
+        Collections.sort( confidences, new AuditableComparator() );
         return confidences;
     }
 
-    @Override
-    public List<Parameter> getParameters() {
-        return super.getParameters();
+    public List<Parameter> collectParameters() {
+        final List<Parameter> parameters = new ArrayList<Parameter>( interaction.getParameters() );
+        Collections.sort( parameters, new AuditableComparator() );
+        return parameters;
     }
 
     public boolean isParticipantDisabled() {
@@ -1089,12 +842,17 @@ public class InteractionController extends ParameterizableObjectController {
         isConfidenceDisabled = confidenceDisabled;
     }
 
-    public boolean isAdvancedDisabled() {
-        return isAdvancedDisabled;
+    public boolean isVariableParametersDisabled() {
+        return isVariableParametersDisabled;
     }
 
-    public void setAdvancedDisabled(boolean advancedDisabled) {
-        isAdvancedDisabled = advancedDisabled;
+    public void setVariableParametersDisabled(boolean isVariableParametersDisabled) {
+        this.isVariableParametersDisabled = isVariableParametersDisabled;
+    }
+
+    public boolean isVariableParametersTableEnabled(){
+        List<VariableParameter> variableParameters = experimentController.collectVariableParameters();
+        return !variableParameters.isEmpty();
     }
 
     public void onTabChanged(TabChangeEvent e) {
@@ -1108,127 +866,328 @@ public class InteractionController extends ParameterizableObjectController {
                 isParticipantDisabled = false;
                 isParameterDisabled = true;
                 isConfidenceDisabled = true;
-                isAdvancedDisabled = true;
+                isVariableParametersDisabled = true;
             }
             else if (e.getTab().getId().equals("parametersTab")){
                 isParticipantDisabled = true;
                 isParameterDisabled = false;
                 isConfidenceDisabled = true;
-                isAdvancedDisabled = true;
+                isVariableParametersDisabled = true;
             }
             else if (e.getTab().getId().equals("confidencesTab")){
                 isParticipantDisabled = true;
                 isParameterDisabled = true;
                 isConfidenceDisabled = false;
-                isAdvancedDisabled = true;
+                isVariableParametersDisabled = true;
+            }
+            else if (e.getTab().getId().equals("vparametersTab")){
+                isParticipantDisabled = true;
+                isParameterDisabled = true;
+                isConfidenceDisabled = true;
+                isVariableParametersDisabled = false;
             }
             else {
                 isParticipantDisabled = true;
                 isParameterDisabled = true;
                 isConfidenceDisabled = true;
-                isAdvancedDisabled = false;
+                isVariableParametersDisabled = true;
             }
         }
         else {
             isParticipantDisabled = true;
             isParameterDisabled = true;
             isConfidenceDisabled = true;
-            isAdvancedDisabled = true;
+            isVariableParametersDisabled = true;
         }
     }
 
     @Override
-    public void doSave(boolean refreshCurrentView) {
-        ChangesController changesController = (ChangesController) getSpringContext().getBean("changesController");
-        PersistenceController persistenceController = getPersistenceController();
-
-        doSaveIntact(refreshCurrentView, changesController, persistenceController);
+    public IntactDbSynchronizer getDbSynchronizer() {
+        return getEditorService().getIntactDao().getSynchronizerContext().getInteractionSynchronizer();
     }
 
     @Override
-    public String doSave() {
-        return super.doSave();
+    public String getObjectName() {
+        return interaction != null ? interaction.getShortName():null;
+    }
+
+
+    @Override
+    protected void initialiseDefaultProperties(IntactPrimaryObject annotatedObject) {
+        IntactInteractionEvidence interaction = (IntactInteractionEvidence)annotatedObject;
+        if (!getInteractionEditorService().isInteractionFullyLoaded(interaction)){
+            this.interaction = getInteractionEditorService().reloadFullyInitialisedInteraction(interaction);
+        }
+
+        refreshParentControllers();
+        refreshExperimentLists();
+        refreshParticipants();
+        loadConditionsToImport();
+    }
+
+    public List<Annotation> collectAnnotations() {
+        List<Annotation> annotations = new ArrayList<Annotation>(interaction.getDbAnnotations());
+        Collections.sort(annotations, new AuditableComparator());
+        // annotations are always initialised
+        return annotations;
     }
 
     @Override
-    public void doSaveIfNecessary(ActionEvent evt) {
-        super.doSaveIfNecessary(evt);
+    public void newAlias(ActionEvent evt) {
+        // nothing to do
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getCautionMessage() {
-        if (interaction == null){
-            return null;
-        }
-        if (!Hibernate.isInitialized(interaction.getAnnotations())){
-            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()),
-                    CvTopic.CAUTION_MI_REF, getDaoFactory());
-        }
-        return findAnnotationText(CvTopic.CAUTION_MI_REF);
+    @Override
+    protected void addNewAlias(AbstractIntactAlias newAlias) {
+         // nothing to do
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public String getInternalRemarkMessage() {
-        if (interaction == null){
-            return null;
-        }
-        if (!Hibernate.isInitialized(interaction.getAnnotations())){
-            return getAnnotatedObjectHelper().findAnnotationText(getDaoFactory().getInteractionDao().getByAc(interaction.getAc()),
-                    CvTopic.INTERNAL_REMARK, getDaoFactory());
-        }
-        return findAnnotationText(CvTopic.INTERNAL_REMARK);
+    @Override
+    public <T extends AbstractIntactAlias> T newAlias(CvTerm aliasType, String name) {
+        return null;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int getParticipantSize() {
-        if (interaction != null && Hibernate.isInitialized(interaction.getComponents())){
-            return interaction.getComponents().size();
-        }
-        else if (interaction != null){
-            return getDaoFactory().getInteractionDao().countInteractorsByInteractionAc(interaction.getAc());
-        }
-        else {
-            return 0;
-        }
+    @Override
+    public <T extends AbstractIntactAlias> T newAlias(String alias, String aliasMI, String name) {
+        return null;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int getParameterSize() {
-        if (interaction != null && Hibernate.isInitialized(interaction.getParameters())){
-            return interaction.getParameters().size();
-        }
-        else if (interaction != null){
-            return getDaoFactory().getInteractionParameterDao().getByInteractionAc(interaction.getAc()).size();
-        }
-        else {
-            return 0;
-        }
+    @Override
+    public void removeAlias(Alias alias) {
+        // nothing to do
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public int getConfidenceSize() {
-        if (interaction != null && Hibernate.isInitialized(interaction.getConfidences())){
-            return interaction.getConfidences().size();
-        }
-        else if (interaction != null){
-            return getDaoFactory().getConfidenceDao().getByInteractionAc(interaction.getAc()).size();
-        }
-        else {
-            return 0;
-        }
-    }
-
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectAnnotations() {
-        return super.collectAnnotations();
-    }
-
-    public List collectAliases() {
+    public List<Alias> collectAliases() {
         return Collections.EMPTY_LIST;
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public List collectXrefs() {
-        return super.collectXrefs();
+    public List<Xref> collectXrefs() {
+        List<Xref> xrefs = new ArrayList<Xref>(this.interaction.getDbXrefs());
+        Collections.sort(xrefs, new AuditableComparator());
+        return xrefs;
+    }
+
+    @Override
+    public void removeXref(Xref xref) {
+        if (!this.interaction.getIdentifiers().remove(xref)){
+            this.interaction.getXrefs().remove(xref);
+        }
+        imexId = this.interaction.getImexId();
+    }
+
+    @Override
+    protected void addNewAnnotation(AbstractIntactAnnotation newAnnot) {
+         this.interaction.getAnnotations().add(newAnnot);
+    }
+
+    @Override
+    public InteractionAnnotation newAnnotation(CvTerm annotation, String text) {
+        return new InteractionAnnotation(annotation, text);
+    }
+
+    @Override
+    public InteractionAnnotation newAnnotation(String topic, String topicMI, String text) {
+        return new InteractionAnnotation(getCvService().findCvObject(IntactUtils.TOPIC_OBJCLASS, topicMI != null ? topicMI: topic), text);
+    }
+
+    @Override
+    public void removeAnnotation(psidev.psi.mi.jami.model.Annotation annotation) {
+        interaction.getDbAnnotations().remove(annotation);
+    }
+
+    public void reloadSingleParticipant(IntactParticipantEvidence f){
+        Iterator<ParticipantEvidence> evIterator = interaction.getParticipants().iterator();
+        boolean add = true;
+        while (evIterator.hasNext()){
+            IntactParticipantEvidence intactEv = (IntactParticipantEvidence)evIterator.next();
+            if (intactEv.getAc() == null && f == intactEv){
+                add = false;
+            }
+            else if (intactEv.getAc() != null && intactEv.getAc().equals(f.getAc())){
+                evIterator.remove();
+            }
+        }
+
+        if (add){
+            interaction.getParticipants().add(f);
+        }
+
+        refreshParticipants();
+    }
+
+    public void removeParticipant(IntactParticipantEvidence f){
+        Iterator<ParticipantEvidence> evIterator = interaction.getParticipants().iterator();
+        while (evIterator.hasNext()){
+            IntactParticipantEvidence intactEv = (IntactParticipantEvidence)evIterator.next();
+            if (intactEv.getAc() == null && f == intactEv){
+                evIterator.remove();
+            }
+            else if (intactEv.getAc() != null && intactEv.getAc().equals(f.getAc())){
+                evIterator.remove();
+            }
+        }
+
+        refreshParticipants();
+        experimentController.reloadSingleInteractionEvidence(interaction);
+    }
+
+    public InteractionEditorService getInteractionEditorService() {
+        if (this.interactionEditorService == null){
+            this.interactionEditorService = ApplicationContextProvider.getBean("interactionEditorService");
+        }
+        return interactionEditorService;
+    }
+
+    public void loadConditionsToImport(){
+        List<VariableParameter> params = experimentController.getExperiment() != null ? experimentController.collectVariableParameters() :
+                Collections.EMPTY_LIST;
+        this.parameterValuesMap.clear();
+
+        this.conditionsToImport = new ArrayList<ImportExperimentalCondition>();
+        for (VariableParameter param : params){
+             this.conditionsToImport.add(new ImportExperimentalCondition(param, this.parameterValuesMap));
+        }
+    }
+
+    public List<ImportExperimentalCondition> getConditionsToImport() {
+        return conditionsToImport;
+    }
+
+    public void importExperimentalConditions(ActionEvent evt){
+        if (this.conditionsToImport == null || this.conditionsToImport.isEmpty()){
+            return;
+        }
+        VariableParameterValueSet newSet = new IntactVariableParameterValueSet();
+
+        for (ImportExperimentalCondition condition : this.conditionsToImport){
+           if (condition.getSelectedValue() != null){
+               newSet.add(condition.getSelectedValue());
+           }
+        }
+
+        if (!newSet.isEmpty()){
+            this.interaction.getVariableParameterValues().add(newSet);
+            doSave(false);
+        }
+        else{
+            addErrorMessage("No experimental conditions were selected so we could not import a new set of experimental conditions","No experimental conditions selected");
+        }
+    }
+
+    public List<VariableParameterValueSet> collectVariableParameterValues(){
+        List<VariableParameterValueSet> conditions = new ArrayList<VariableParameterValueSet>(this.interaction.getVariableParameterValues());
+        Collections.sort(conditions, new AuditableComparator());
+        return conditions;
+    }
+
+    public void removeVariableParameterValuesSet(VariableParameterValueSet toRemove){
+        this.interaction.getVariableParameterValues().remove(toRemove);
+    }
+
+    public void removeConfidence(Confidence conf){
+        this.interaction.getConfidences().remove(conf);
+    }
+
+    public void removeParameter(Parameter param){
+        this.interaction.getParameters().remove(param);
+    }
+
+    public String getNewConfidenceValue() {
+        return newConfidenceValue;
+    }
+
+    public void setNewConfidenceValue(String newConfidenceValue) {
+        this.newConfidenceValue = newConfidenceValue;
+    }
+
+    public CvTerm getNewConfidenceType() {
+        return newConfidenceType;
+    }
+
+    public void setNewConfidenceType(CvTerm newConfidenceType) {
+        this.newConfidenceType = newConfidenceType;
+    }
+
+    public CvTerm getNewParameterType() {
+        return newParameterType;
+    }
+
+    public void setNewParameterType(CvTerm newParameterType) {
+        this.newParameterType = newParameterType;
+    }
+
+    public Double getNewParameterFactor() {
+        return newParameterFactor;
+    }
+
+    public void setNewParameterFactor(Double newParameterFactor) {
+        this.newParameterFactor = newParameterFactor;
+    }
+
+    public CvTerm getNewParameterUnit() {
+        return newParameterUnit;
+    }
+
+    public void setNewParameterUnit(CvTerm newParameterUnit) {
+        this.newParameterUnit = newParameterUnit;
+    }
+
+    public Integer getNewParameterBase() {
+        return newParameterBase;
+    }
+
+    public void setNewParameterBase(Integer newParameterBase) {
+        this.newParameterBase = newParameterBase;
+    }
+
+    public Integer getNewParameterExponent() {
+        return newParameterExponent;
+    }
+
+    public void setNewParameterExponent(Integer newParameterExponent) {
+        this.newParameterExponent = newParameterExponent;
+    }
+
+    public Double getNewParameterUncertainty() {
+        return newParameterUncertainty;
+    }
+
+    public void setNewParameterUncertainty(Double newParameterUncertainty) {
+        this.newParameterUncertainty = newParameterUncertainty;
+    }
+
+    public IntactExperiment getExperiment() {
+        return experiment;
+    }
+
+    public void setExperiment(IntactExperiment experiment) {
+        this.experiment = experiment;
+    }
+
+    public BioSourceService getBioSourceService() {
+        if (this.bioSourceService == null){
+            this.bioSourceService = ApplicationContextProvider.getBean("bioSourceService");
+        }
+        return bioSourceService;
+    }
+
+    public void setBioSourceService(BioSourceService bioSourceService) {
+        this.bioSourceService = bioSourceService;
+    }
+
+    public void markInteractionToDelete(IntactInteractionEvidence inter){
+        Collection<String> parentAcs = new ArrayList<String>(1);
+        addParentAcsTo(parentAcs, (IntactExperiment)inter.getExperiment());
+        getChangesController().markToDelete(inter, experimentController.getExperiment() != null ? experimentController.getExperiment() :
+                        publicationController.getPublication(),
+                getDbSynchronizer(), inter.getShortName(), parentAcs);
+    }
+
+    public Map<String, Experiment> getExperimentMap() {
+        return experimentMap;
+    }
+
+    public Map<String, VariableParameterValue> getParameterValuesMap() {
+        return parameterValuesMap;
     }
 }

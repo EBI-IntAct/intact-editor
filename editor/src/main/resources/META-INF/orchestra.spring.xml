@@ -51,7 +51,7 @@
         <!-- 4. conversation - persistence adapter -->
         <bean id="persistentContextFactory"
               class="org.apache.myfaces.orchestra.conversation.spring.JpaPersistenceContextFactory"
-              p:entityManagerFactory-ref="entityManagerFactory" />
+              p:entityManagerFactory-ref="intactEntityManagerFactory" />
 
         <!-- Trinidad dialog... -->
        <bean name="accessScopeManagerConfiguration"

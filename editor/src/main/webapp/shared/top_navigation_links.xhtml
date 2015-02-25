@@ -15,7 +15,13 @@
         <li>
 
             <p:commandLink id="searchNavLink" value="Search" action="/search/search?faces-redirect=true"
-                           styleClass="#{selected == 'curate'? 'searchd' : ''}"
+                           styleClass="#{selected == 'search'? 'top-bar-selected' : ''}"
+                           ajax="false" immediate="true"/>
+        </li>
+        <li>
+
+            <p:commandLink id="advsearchNavLink" value="Advanced Search" action="/search/advanced_search?faces-redirect=true"
+                           styleClass="#{selected == 'advanced'? 'top-bar-selected' : ''}"
                            ajax="false" immediate="true"/>
         </li>
         <li>
@@ -26,17 +32,17 @@
                            styleClass="#{selected == 'curate'? 'top-bar-selected' : ''}"
                            immediate="true"/>
         </li>
-        <!--<li>-->
-
-            <!--<p:commandLink id="sanityCheckNavLink" value="Sanity Check" action="/sanity/sanityDashboard?faces-redirect=true&amp;includeViewParams=true"-->
-                           <!--rendered="#{userSessionController.hasRole('CURATOR')}"-->
-                           <!--ajax="false"-->
-                           <!--styleClass="#{selected == 'sanity'? 'top-bar-selected' : ''}"-->
-                           <!--immediate="true"/>-->
-        <!--</li>-->
         <li>
 
-            <p:commandLink id="bulkOpNavLink" value="Bulk Op." action="/bulk/bulk_default?faces-redirect=true&amp;includeViewParams=true"
+            <p:commandLink id="dataManagerLink" value="Data Management" action="/dbmanager/dbmanager?faces-redirect=true&amp;includeViewParams=true"
+                           rendered="#{userSessionController.hasRole('DATA_MANAGER')}"
+                           ajax="false"
+                           styleClass="#{selected == 'dbmanager'? 'top-bar-selected' : ''}"
+                           immediate="true"/>
+        </li>
+        <li>
+
+            <p:commandLink id="bulkOpNavLink" value="Bulk Op." action="/bulk/bulk_add_annotation?faces-redirect=true&amp;includeViewParams=true"
                            rendered="#{userSessionController.hasRole('CURATOR') or userSessionController.hasRole('COMPLEX_CURATOR')}"
                            ajax="false"
                            styleClass="#{selected == 'bulk'? 'top-bar-selected' : ''}"

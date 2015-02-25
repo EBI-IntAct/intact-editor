@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:batch="http://www.springframework.org/schema/batch"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+           http://www.springframework.org/schema/tx
+           http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+           http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch-2.2.xsd">
+
+    <context:component-scan base-package="uk.ac.ebi.intact.dataexchange.dbimporter" />
+    <context:component-scan base-package="uk.ac.ebi.intact.dataexchange.enricher" />
+
+    <!-- intact enricher config -->
+    <bean id="enricherConfig" class="uk.ac.ebi.intact.dataexchange.enricher.EnricherConfig"/>
+
+    <bean id="enricherContext" class="uk.ac.ebi.intact.dataexchange.enricher.EnricherContext">
+        <constructor-arg ref="enricherConfig"/>
+    </bean>
+
+    <bean id="enricherCacheManager" class="uk.ac.ebi.intact.dataexchange.enricher.cache.EnricherCacheManager"/>
+
+    <!-- enrichers -->
+    <bean id="editorComplexEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorComplexEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+    </bean>
+    <bean id="editorOrganismEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorOrganismEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+    </bean>
+    <bean id="editorComponentEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorComponentEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+    </bean>
+    <bean id="editorModelledComponentEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorModelledComponentEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+    </bean>
+    <bean id="editorCvObjectEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorCvObjectEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+        <property name="intactCvObjectEnricher" ref="intactCvObjectEnricher"/>
+    </bean>
+    <bean id="editorMiEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorCvObjectEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+        <property name="intactCvObjectEnricher" ref="miCvObjectEnricher"/>
+    </bean>
+    <bean id="simpleEditorMiEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorCvObjectEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+        <property name="intactCvObjectEnricher" ref="simpleMiCvObjectEnricher"/>
+    </bean>
+    <bean id="editorExperimentEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorExperimentEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+    </bean>
+    <bean id="editorInteractionEvidenceEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorInteractionEvidenceEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+    </bean>
+    <bean id="editorPublicationEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorPublicationEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+    </bean>
+    <bean id="editorFeatureEvidenceEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorFeatureEvidenceEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+    </bean>
+    <bean id="editorModelledFeatureEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorModelledFeatureEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+    </bean>
+    <bean id="editorSourceEnricher" class="uk.ac.ebi.intact.editor.enricher.EditorSourceEnricher" scope="step" lazy-init="true">
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+    </bean>
+
+    <!-- readers -->
+    <bean id="complexReader" class="uk.ac.ebi.intact.dataexchange.dbimporter.reader.ComplexFileReader" scope="step" lazy-init="true">
+        <property name="resource" value="file://#{jobParameters['input.file']}"/>
+    </bean>
+    <bean id="interactionReader" class="uk.ac.ebi.intact.dataexchange.dbimporter.reader.InteractionFileReader" scope="step" lazy-init="true">
+        <property name="resource" value="file://#{jobParameters['input.file']}"/>
+    </bean>
+
+    <!-- listener -->
+    <bean id="temporaryFileDeleter" class="uk.ac.ebi.intact.editor.batch.admin.TemporaryFileDeleter" scope="prototype" lazy-init="true"/>
+    <bean id="mailStepListener" class="uk.ac.ebi.intact.editor.batch.admin.MailNotifierStepExecutionListener" scope="prototype" lazy-init="true">
+        <property name="mailSender">
+            <bean class="org.springframework.mail.javamail.JavaMailSenderImpl">
+                <property name="host" value="${intact.notification.email.smtpHost}"/>
+            </bean>
+        </property>
+        <property name="senderAddress" value="${intact.notification.email.sender}"/>
+    </bean>
+
+    <!-- processors -->
+    <bean id="interactionEvidenceProcessor" class="uk.ac.ebi.intact.dataexchange.dbimporter.processor.IntactEnricherProcessor"
+          lazy-init="true" scope="step">
+        <property name="errorResource" value="file://#{jobParameters['error.file']}"/>
+        <property name="enricher" ref="editorInteractionEvidenceEnricher"/>
+    </bean>
+    <bean id="complexProcessor" class="uk.ac.ebi.intact.dataexchange.dbimporter.processor.IntactEnricherProcessor"
+          lazy-init="true" scope="step">
+        <property name="errorResource" value="file://#{jobParameters['error.file']}"/>
+        <property name="enricher" ref="editorComplexEnricher"/>
+    </bean>
+    <bean id="interactionMixProcessor" class="uk.ac.ebi.intact.dataexchange.dbimporter.processor.IntactInteractionEnricherCompositeProcessor" lazy-init="true" scope="step">
+        <property name="interactionEvidenceProcessor" ref="interactionEvidenceProcessor"/>
+        <property name="complexProcessor" ref="complexProcessor"/>
+    </bean>
+
+    <!-- writers -->
+    <bean id="interactionEvidenceImporter" class="uk.ac.ebi.intact.editor.batch.admin.EditorDbImporter"
+          lazy-init="true" scope="step">
+        <property name="intactService" ref="interactionEvidenceService"/>
+        <property name="userLogin" value="#{jobParameters['user.login']}"/>
+    </bean>
+    <bean id="complexImporter" class="uk.ac.ebi.intact.editor.batch.admin.EditorDbImporter"
+          lazy-init="true" scope="step">
+        <property name="intactService" ref="complexService"/>
+        <property name="userLogin" value="#{jobParameters['user.login']}"/>
+    </bean>
+    <bean id="interactionMixImporter" class="uk.ac.ebi.intact.editor.batch.admin.EditorMixDbImporter" lazy-init="true"
+            scope="step">
+        <property name="userLogin" value="#{jobParameters['user.login']}"/>
+    </bean>
+
+    <!-- Basic Step configuration -->
+
+    <!-- Enricher Steps -->
+    <batch:step id="complexEnricherStep" parent="basicBatchStep">
+        <batch:tasklet transaction-manager="jamiTransactionManager">
+            <batch:listeners>
+                <batch:listener ref="basicChunkLoggerListener" />
+            </batch:listeners>
+
+            <batch:chunk reader="complexReader"
+                         processor="complexProcessor"
+                         writer="complexImporter"
+                         commit-interval="50">
+                <batch:streams>
+                    <batch:stream ref="complexReader"/>
+                    <batch:stream ref="complexProcessor"/>
+                    <batch:stream ref="complexImporter"/>
+                </batch:streams>
+            </batch:chunk>
+        </batch:tasklet>
+    </batch:step>
+    <batch:step id="interactionEnricherStep" parent="basicBatchStep">
+        <batch:tasklet transaction-manager="jamiTransactionManager">
+            <batch:listeners>
+                <batch:listener ref="basicChunkLoggerListener" />
+            </batch:listeners>
+
+            <batch:chunk reader="interactionReader"
+                         processor="interactionMixProcessor"
+                         writer="interactionMixImporter"
+                         commit-interval="50">
+                <batch:streams>
+                    <batch:stream ref="interactionReader"/>
+                    <batch:stream ref="interactionMixImporter"/>
+                    <batch:stream ref="interactionEvidenceProcessor"/>
+                    <batch:stream ref="complexProcessor"/>
+                </batch:streams>
+            </batch:chunk>
+        </batch:tasklet>
+    </batch:step>
+
+    <!-- enricher job -->
+    <batch:job id="complexImport" job-repository="basicBatchJobRepository" parent="basicBatchJob">
+        <batch:listeners>
+            <batch:listener ref="basicJobLoggerListener"/>
+        </batch:listeners>
+
+        <batch:step id="complexStep" parent="complexEnricherStep">
+            <batch:fail on="FAILED"/>
+            <batch:end on="*"/>
+            <batch:listeners>
+                <batch:listener ref="temporaryFileDeleter"/>
+                <batch:listener ref="mailStepListener"/>
+            </batch:listeners>
+        </batch:step>
+    </batch:job>
+    <batch:job id="interactionMixImport" job-repository="basicBatchJobRepository" parent="basicBatchJob">
+        <batch:listeners>
+            <batch:listener ref="basicJobLoggerListener"/>
+        </batch:listeners>
+
+        <batch:step id="interactionMixStep" parent="interactionEnricherStep">
+            <batch:fail on="FAILED"/>
+            <batch:end on="*"/>
+            <batch:listeners>
+                <batch:listener ref="temporaryFileDeleter"/>
+                <batch:listener ref="mailStepListener"/>
+            </batch:listeners>
+        </batch:step>
+    </batch:job>
+</beans>

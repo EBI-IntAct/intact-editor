@@ -18,20 +18,18 @@ package uk.ac.ebi.intact.editor.security;
 import com.google.common.collect.Lists;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.security.*;
 import org.springframework.security.providers.AuthenticationProvider;
 import org.springframework.security.providers.UsernamePasswordAuthenticationToken;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.core.persistence.dao.DaoFactory;
 import uk.ac.ebi.intact.editor.controller.UserListener;
 import uk.ac.ebi.intact.editor.controller.admin.UserManagerController;
-import uk.ac.ebi.intact.model.user.Role;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.editor.services.UserSessionService;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.user.Role;
+import uk.ac.ebi.intact.jami.model.user.User;
 
+import javax.annotation.Resource;
 import java.util.Collection;
 import java.util.Map;
 
@@ -44,13 +42,9 @@ public class EditorAuthenticationProvider implements AuthenticationProvider {
     private static final Log log = LogFactory.getLog( EditorAuthenticationProvider.class );
 
     @Autowired
-    private DaoFactory daoFactory;
-
-    @Autowired
-    private ApplicationContext applicationContext;
-
-    @Autowired
     private UserManagerController userManagerController;
+    @Resource(name = "userSessionService")
+    private UserSessionService userSessionService;
 
     public Authentication authenticate( Authentication authentication ) throws AuthenticationException {
 
@@ -64,7 +58,7 @@ public class EditorAuthenticationProvider implements AuthenticationProvider {
         final User user = loadIntactUser(authentication);
 
         // get all the "user listener" beans and notify the login
-        final Map<String,UserListener> userListeners = applicationContext.getBeansOfType(UserListener.class);
+        final Map<String,UserListener> userListeners = ApplicationContextProvider.getApplicationContext().getBeansOfType(UserListener.class);
 
         for (UserListener userListener : userListeners.values()) {
             userListener.userLoggedIn(user);
@@ -83,15 +77,8 @@ public class EditorAuthenticationProvider implements AuthenticationProvider {
                                                         authorities.toArray( new GrantedAuthority[authorities.size()] ) );
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public User loadIntactUser(Authentication authentication) {
-        final User user = daoFactory.getUserDao().getByLogin( authentication.getPrincipal().toString() );
-
-        // initialize the user collections because we will access it often
-        if (user != null) {
-            Hibernate.initialize(user.getPreferences());
-            Hibernate.initialize(user.getRoles());
-        }
+        final User user = userSessionService.loadUser( authentication.getPrincipal().toString() );
 
         if ( user == null || !user.getPassword().equals( authentication.getCredentials() ) ) {
             if ( log.isDebugEnabled() ) log.debug( "Bad credentials for user: " + authentication.getPrincipal() );

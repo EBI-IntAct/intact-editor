@@ -3199,7 +3199,7 @@ is_a: MI:0346 ! experimental preparation
 id: MI:0343
 name: cdna library
 namespace: PSI-MI
-def: "Mixed population of cDNAs (complementaryDNA) made from mRNA from a defined source, usually a specific cell type. This term should be associated only to nucleic acid interactors not to their proteins product. For instance in 2h screening use living cells (MI:0349) as sample process." [PMID:6110205]
+def: "Mixed population of cDNAs (complementaryDNA) made from mRNA from a defined source, usually a specific cell type. This term should be associated only to nucleic acid complexes not to their proteins product. For instance in 2h screening use living cells (MI:0349) as sample process." [PMID:6110205]
 subset: PSI-MI slim
 is_a: MI:0342 ! sample process
 
@@ -3316,7 +3316,7 @@ is_a: MI:0353 ! cross-reference type
 id: MI:0357
 name: method reference
 namespace: PSI-MI
-def: "Reference to a related paper which more fully describes either the experimental method or one or more of the interactors used within the experiment." [PMID:14755292]
+def: "Reference to a related paper which more fully describes either the experimental method or one or more of the complexes used within the experiment." [PMID:14755292]
 subset: PSI-MI slim
 is_a: MI:0353 ! cross-reference type
 
@@ -3733,7 +3733,7 @@ is_a: MI:0415 ! enzymatic study
 id: MI:0407
 name: direct interaction
 namespace: PSI-MI
-def: "Interaction that is proven to involve only its interactors." [PMID:14755292]
+def: "Interaction that is proven to involve only its complexes." [PMID:14755292]
 subset: PSI-MI slim
 is_a: MI:0915 ! physical association
 
@@ -5763,7 +5763,7 @@ is_a: MI:0665 ! experiment attibute name
 id: MI:0623
 name: inhibition
 namespace: PSI-MI
-def: "The interaction between the proteins or the formation of a complex is disrupted by a biological molecule or by a modification of the interactors." [PMID:14755292]
+def: "The interaction between the proteins or the formation of a complex is disrupted by a biological molecule or by a modification of the complexes." [PMID:14755292]
 subset: PSI-MI slim
 is_a: MI:0664 ! interaction attribute name
 
@@ -5779,7 +5779,7 @@ is_a: MI:0664 ! interaction attribute name
 id: MI:0625
 name: agonist
 namespace: PSI-MI
-def: "Any chemical applied externally to cells or any type of environmental condition, such as hypoxia, that stimulates an interaction, potentially by causing modification of one or more of the interactors." [PMID:14755292]
+def: "Any chemical applied externally to cells or any type of environmental condition, such as hypoxia, that stimulates an interaction, potentially by causing modification of one or more of the complexes." [PMID:14755292]
 subset: PSI-MI slim
 is_a: MI:0664 ! interaction attribute name
 
@@ -5787,7 +5787,7 @@ is_a: MI:0664 ! interaction attribute name
 id: MI:0626
 name: antagonist
 namespace: PSI-MI
-def: "Any chemical applied externally to cells or any type of environmental condition, such as hypoxia, that inhibits an interaction, potentially by alteration of amount or binding affinity of one or more of the interactors." [PMID:14755292]
+def: "Any chemical applied externally to cells or any type of environmental condition, such as hypoxia, that inhibits an interaction, potentially by alteration of amount or binding affinity of one or more of the complexes." [PMID:14755292]
 subset: PSI-MI slim
 is_a: MI:0664 ! interaction attribute name
 
@@ -8077,7 +8077,7 @@ is_a: MI:0353 ! cross-reference type
 id: MI:0923
 name: irefindex
 namespace: PSI-MI
-def: "iRefIndex provides an index of protein interactions available in a number of primary interaction databases including BIND, BioGRID, DIP, HPRD, IntAct, MINT, MPact, MPPI and OPHID.  This index allows the user to search for a protein and retrieve a non-redundant list of interactors for that protein. iRefIndex uses the Sequence Global Unique Identifier (SEGUID) to group proteins and interactions into redundant groups.  This method allows users to integrate their own data with the iRefIndex in a way that ensures proteins with the exact same sequence will be represented only once.\nhttp://irefindex.uio.no/" [PMID:18823568]
+def: "iRefIndex provides an index of protein interactions available in a number of primary interaction databases including BIND, BioGRID, DIP, HPRD, IntAct, MINT, MPact, MPPI and OPHID.  This index allows the user to search for a protein and retrieve a non-redundant list of complexes for that protein. iRefIndex uses the Sequence Global Unique Identifier (SEGUID) to group proteins and interactions into redundant groups.  This method allows users to integrate their own data with the iRefIndex in a way that ensures proteins with the exact same sequence will be represented only once.\nhttp://irefindex.uio.no/" [PMID:18823568]
 subset: PSI-MI slim
 synonym: "iRefIndex" EXACT PSI-MI-alternate []
 is_a: MI:0461 ! interaction database

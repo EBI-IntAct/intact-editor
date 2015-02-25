@@ -1,36 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
 
-    <!-- Job database: Initialize the datasource -->
-    <bean id="intactDataSourceInitializer" class="uk.ac.ebi.intact.core.batch.BatchDatasourceInitializer">
-        <property name="dataSource" ref="intactBatchDataSource"/>
-        <property name="initScripts" value="classpath*:/org/springframework/batch/core/schema-h2.sql"/>
+    <!-- basic job repository WARNING: the isolation has to be the default one so JPATransactionManager can work fine-->
+    <bean id="basicBatchJobRepository"
+          class="org.springframework.batch.core.repository.support.JobRepositoryFactoryBean"
+          p:isolationLevelForCreate="ISOLATION_DEFAULT"
+          p:dataSource-ref="${jami.db.datasource}" p:transactionManager-ref="jamiTransactionManager" />
+
+    <!-- basic batch job launcher -->
+    <bean id="basicBatchJobLauncher"
+          class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+        <property name="jobRepository" ref="basicBatchJobRepository" />
+        <property name="taskExecutor" ref="syncTaskExecutor" />
     </bean>
 
-    <bean id="intactBatchDataSource" class="org.apache.commons.dbcp.BasicDataSource">
-        <property name="driverClassName" value="org.h2.Driver"/>
-        <property name="url" value="jdbc:h2:mem:editorbatch"/>
-        <property name="username" value="sa"/>
-        <property name="password" value=""/>
+    <!-- syncTaskExecutor -->
+    <bean id="syncTaskExecutor" class="org.springframework.core.task.SyncTaskExecutor"/>
+
+    <!-- Basic job explorer -->
+    <bean id="basicBatchJobExplorer" class="org.springframework.batch.core.explore.support.JobExplorerFactoryBean"
+          p:dataSource-ref="${jami.db.datasource}" />
+
+    <!-- Simple job registry -->
+    <bean id="basicBatchJobRegistry" class="psidev.psi.mi.jami.batch.SimpleJobRegistry"/>
+
+    <!-- basic batch job operator -->
+    <bean id="basicBatchJobOperator" class="org.springframework.batch.core.launch.support.SimpleJobOperator">
+        <property name="jobExplorer" ref="basicBatchJobExplorer"/>
+        <property name="jobRepository" ref="basicBatchJobRepository" />
+        <property name="jobRegistry" ref="basicBatchJobRegistry" />
+        <property name="jobLauncher" ref="basicBatchJobLauncher" />
     </bean>
 
+    <!-- listeners -->
+    <bean id="basicChunkLoggerListener" class="psidev.psi.mi.jami.batch.BasicChunkLoggerListener"/>
+    <bean id="basicJobLoggerListener" class="psidev.psi.mi.jami.batch.SimpleJobListener"/>
+
+    <!-- Basic Step configuration -->
+    <bean id="basicBatchStep" abstract="true"
+          class="org.springframework.batch.core.step.factory.SimpleStepFactoryBean" lazy-init="true">
+        <property name="transactionManager" ref="jamiTransactionManager"/>
+        <property name="jobRepository" ref="basicBatchJobRepository"/>
+        <property name="startLimit" value="5"/>
+        <property name="commitInterval" value="50"/>
+    </bean>
+
+    <!-- Basic Job configuration -->
+    <bean id="basicBatchJob" abstract="true" class="org.springframework.batch.core.job.SimpleJob">
+        <property name="jobRepository" ref="basicBatchJobRepository"/>
+    </bean>
+
+    <!-- Basic job manager configuration -->
+    <bean id="psiMIJobManager" class="psidev.psi.mi.jami.batch.MIBatchJobManager">
+        <property name="jobRepository" ref="basicBatchJobRepository"/>
+        <property name="jobOperator" ref="basicBatchJobOperator"/>
+    </bean>
     
     <bean id="editorJobLauncher"
 		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
-		<property name="jobRepository" ref="intactJobRepository" />
+		<property name="jobRepository" ref="basicBatchJobRepository" />
         <property name="taskExecutor" ref="editorAsyncTaskExecutor" />
 	</bean>
 
     <bean id="editorAsyncTaskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor"/>
 
-    <bean id="editorJobOperator" class="org.springframework.batch.core.launch.support.SimpleJobOperator">
-        <property name="jobExplorer" ref="intactJobExplorer"/>
-        <property name="jobRepository" ref="intactJobRepository" />
-        <property name="jobRegistry" ref="intactJobRegistry" />
-        <property name="jobLauncher" ref="editorJobLauncher" />
-      </bean>
+    <bean id="intactJobExplorer" class="org.springframework.batch.core.explore.support.JobExplorerFactoryBean"
+          p:dataSource-ref="${jami.db.datasource}" />
+    <bean id="intactJobLauncher"
+          class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+        <property name="jobRepository" ref="basicBatchJobRepository" />
+        <property name="taskExecutor" ref="editorAsyncTaskExecutor"/>
+    </bean>
 
 </beans>

@@ -16,10 +16,10 @@
 package uk.ac.ebi.intact.editor.controller;
 
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import uk.ac.ebi.intact.editor.config.EditorConfig;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.user.User;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
@@ -34,9 +34,6 @@ import java.io.Serializable;
  * @version $Id$
  */
 public abstract class BaseController implements Serializable {
-
-    @Autowired
-    private transient ApplicationContext applicationContext;
 
     public void addMessage( String message, String detail ) {
         FacesContext context = FacesContext.getCurrentInstance();
@@ -63,21 +60,16 @@ public abstract class BaseController implements Serializable {
     }
 
     protected ApplicationContext getSpringContext() {
-        return applicationContext;
+        return ApplicationContextProvider.getApplicationContext();
     }
 
     protected EditorConfig getEditorConfig() {
-        return (EditorConfig) getSpringContext().getBean("editorConfig");
+        return ApplicationContextProvider.getBean("editorConfig");
     }
 
     public User getCurrentUser() {
         UserSessionController userSessionController = getUserSessionController();
         return userSessionController.getCurrentUser();
-    }
-
-    public uk.ac.ebi.intact.jami.model.user.User getCurrentJamiUser() {
-        UserSessionController userSessionController = getUserSessionController();
-        return userSessionController.getCurrentJamiUser();
     }
 
     protected void handleException(Throwable e) {
@@ -88,7 +80,7 @@ public abstract class BaseController implements Serializable {
     }
 
     protected UserSessionController getUserSessionController() {
-        return (UserSessionController) getSpringContext().getBean("userSessionController");
+        return ApplicationContextProvider.getBean("userSessionController");
     }
 }
 

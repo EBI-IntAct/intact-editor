@@ -13,7 +13,7 @@
         <p:panel header="Look &amp; Feel">
             <h:panelGrid columns="3">
                 <h:outputLabel for="themeSel" value="Default theme: "/>
-                <p:selectOneMenu id="themeSel" value="#{editorConfig.theme}" >
+                <p:selectOneMenu id="themeSel" value="#{applicationInfo.editorConfig.theme}" >
                     <f:selectItem itemLabel="Black-Tie" itemValue="black-tie"/>
                     <f:selectItem itemLabel="Casablanca" itemValue="casablanca"/>
                     <f:selectItem itemLabel="EBI" itemValue="ebi"/>
@@ -32,7 +32,7 @@
         <p:panel id="defaultsPanel" header="Defaults">
             <h:panelGrid columns="2">
                 <h:outputLabel for="stoichiometryTxt" value="Stoichiometry: "/>
-                <p:inputText id="stoichiometryTxt" value="#{editorConfig.defaultStoichiometry}" size="3" converter="trimmingConverter">
+                <p:inputText id="stoichiometryTxt" value="#{applicationInfo.editorConfig.defaultStoichiometry}" size="3" converter="trimmingConverter">
                     <f:convertNumber/>
                 </p:inputText>
 
@@ -46,16 +46,16 @@
         <p:panel id="editorConfigPanel" header="Editor Configuration">
             <h:panelGrid columns="2">
                 <h:outputLabel for="instanceNameTxt" value="Instance name: "/>
-                <p:inputText id="instanceNameTxt" value="#{editorConfig.instanceName}" converter="trimmingConverter"/>
+                <p:inputText id="instanceNameTxt" value="#{applicationInfo.editorConfig.instanceName}" converter="trimmingConverter"/>
 
                 <h:outputLabel for="logoUrlTxt" value="Logo URL: "/>
-                <p:inputText id="logoUrlTxt" value="#{editorConfig.logoUrl}" converter="trimmingConverter"/>
+                <p:inputText id="logoUrlTxt" value="#{applicationInfo.editorConfig.logoUrl}" converter="trimmingConverter"/>
 
                 <h:outputLabel for="googleUserTxt" value="Google user (Reporting): "/>
-                <p:inputText id="googleUserTxt" value="#{editorConfig.googleUsername}" converter="trimmingConverter"/>
+                <p:inputText id="googleUserTxt" value="#{applicationInfo.editorConfig.googleUsername}" converter="trimmingConverter"/>
 
                 <h:outputLabel for="googlePassTxt" value="Google password: "/>
-                <p:inputText id="googlePassTxt" value="#{editorConfig.googlePassword}" converter="trimmingConverter"/>
+                <p:inputText id="googlePassTxt" value="#{applicationInfo.editorConfig.googlePassword}" converter="trimmingConverter"/>
 
             </h:panelGrid>
 
@@ -67,24 +67,15 @@
         <p:panel id="intactCorePanel" header="IntAct Core Configuration">
             <h:panelGrid columns="2">
                 <h:outputLabel for="acPrefixTxt" value="AC prefix: "/>
-                <p:inputText id="acPrefixTxt" value="#{intactConfig.acPrefix}" converter="trimmingConverter"/>
+                <p:inputText id="acPrefixTxt" value="#{applicationInfo.intactConfiguration.acPrefix}" converter="trimmingConverter"/>
 
                 <h:outputLabel for="cvPrefixTxt" value="Local CV prefix: "/>
-                <p:inputText id="cvPrefixTxt" value="#{intactConfig.localCvPrefix}" converter="trimmingConverter"/>
+                <p:inputText id="cvPrefixTxt" value="#{applicationInfo.intactConfiguration.localCvPrefix}" converter="trimmingConverter"/>
 
                 <h:outputLabel for="institutionSel" value="Default institution: "/>
-                <p:selectOneMenu id="institutionSel" value="#{intactConfig.defaultInstitution}">
+                <p:selectOneMenu id="institutionSel" value="#{applicationInfo.defaultInstitution}" converter="institutionConverter">
                     <f:selectItems value="#{applicationInfo.availableInstitutions}"/>
                 </p:selectOneMenu>
-
-                <h:outputLabel for="expLabelTxt" value="Auto-update experiment label: "/>
-                <p:selectBooleanCheckbox id="expLabelTxt" value="#{intactConfig.autoUpdateExperimentLabel}"/>
-
-                <h:outputLabel for="interactionLabelTxt" value="Auto-update interaction label: "/>
-                <p:selectBooleanCheckbox id="interactionLabelTxt" value="#{intactConfig.autoUpdateExperimentLabel}"/>
-
-                <h:outputLabel for="skipTxt" value="Skip schema check: "/>
-                <p:selectBooleanCheckbox id="skipTxt" value="#{intactConfig.skipSchemaCheck}"/>
 
             </h:panelGrid>
 

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+                xmlns:ed="http://ebi.ac.uk/intact/editor/ui">
+
+        <div class="intact-buttonBar">
+            <p:commandButton id="importInteractorSetBtn" value="Import Interactor set member" onclick="importInteractorMemberDialog.show();"/>
+            <ui:include src="dialog_import_interactor.xhtml"/>
+
+        </div>
+
+        <p:dataTable id="setMembersTable" var="member" value="#{interactorController.collectPoolMembers()}">
+            <p:column headerText="AC">
+                <h:link outcome="/curate/interactor" value="#{member.ac}" includeViewParams="true" rendered="#{member.ac != null}">
+                    <f:param name="ac" value="#{member.ac}"/>
+                </h:link>
+            </p:column>
+            <p:column>
+                <ui:include src="/curate/common_column_notifications.xhtml">
+                    <ui:param name="annotatedObjectController" value="#{interactorController}"/>
+                    <ui:param name="ao" value="#{member}"/>
+                </ui:include>
+                <h:panelGroup rendered="#{annotatedObjectController.isNoUniprotUpdate(member)}">
+                    <h:graphicImage alt="no uniprot update" library="images" name="no_uni_update.png"
+                                    title="No Uniprot Update"/>
+                </h:panelGroup>
+            </p:column>
+            <p:column headerText="Short name">
+                <h:outputText value="#{member.shortName}"/>
+            </p:column>
+            <p:column headerText="Full name">
+                <h:outputText value="#{member.fullName}"/>
+            </p:column>
+            <p:column headerText="Identity">
+                <h:outputText value="#{interactorController.getIdentityXref( member )}"/>
+            </p:column>
+            <p:column headerText="Organism">
+                <h:outputText value="#{member.organism.commonName}" rendered="#{member.organism != null}"/>
+                <h:outputText value="-" rendered="#{member.organism == null}"/>
+
+            </p:column>
+            <p:column headerText="Type">
+                <h:outputText value="#{member.interactorType.shortName}"/>
+            </p:column>
+            <p:column>
+                <f:facet name="header">
+                     <h:outputText value="Actions"/>
+                </f:facet>
+                <p:commandLink id="removeSetMemberBtn" styleClass="ui-icon ui-icon-closethick" process="removeSetMemberBtn"
+                               actionListener="#{interactorController.removePoolMember(member)}"
+                               oncomplete="markAsUnsaved()"
+                               update="setMembersTable"/>
+            </p:column>
+        </p:dataTable>
+
+
+
+</ui:composition>

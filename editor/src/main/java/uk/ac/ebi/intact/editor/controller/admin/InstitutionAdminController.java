@@ -15,30 +15,29 @@
  */
 package uk.ac.ebi.intact.editor.controller.admin;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
 import org.primefaces.model.DualListModel;
-import org.primefaces.model.SelectableDataModelWrapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.core.persistence.dao.AnnotatedObjectDao;
-import uk.ac.ebi.intact.core.persistence.util.InstitutionMerger;
-import uk.ac.ebi.intact.editor.controller.JpaAwareController;
-import uk.ac.ebi.intact.editor.controller.curate.institution.InstitutionService;
-import uk.ac.ebi.intact.editor.util.SelectableCollectionDataModel;
-import uk.ac.ebi.intact.model.Institution;
-import uk.ac.ebi.intact.model.OwnedAnnotatedObject;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.editor.controller.BaseController;
+import uk.ac.ebi.intact.editor.services.admin.InstitutionAdminService;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.extension.IntactSource;
+import uk.ac.ebi.intact.jami.model.user.User;
+import uk.ac.ebi.intact.jami.synchronizer.FinderException;
+import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
+import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
 
+import javax.annotation.Resource;
+import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
 import javax.faces.event.ComponentSystemEvent;
 import javax.faces.model.DataModel;
+import javax.faces.model.SelectItem;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /** *
  * @author Bruno Aranda (baranda@ebi.ac.uk)
@@ -47,119 +46,144 @@ import java.util.Map;
 @Controller
 @Scope( "conversation.access" )
 @ConversationName( "general" )
-public class InstitutionAdminController extends JpaAwareController {
+public class InstitutionAdminController extends BaseController {
+    private IntactSource[] selectedInstitutions;
+    private IntactSource mergeDestinationInstitution;
 
-    @Autowired
-    private InstitutionService institutionService;
+    private DualListModel<uk.ac.ebi.intact.jami.model.user.User> usersDualListModel;
+    private DataModel<IntactSource> institutionsDataModel;
 
-    private List<Institution> institutions;
+    @Resource(name = "institutionAdminService")
+    private transient InstitutionAdminService institutionAdminService;
 
-    private Institution[] selectedInstitutions;
-    private Institution mergeDestinationInstitution;
-
-    private DualListModel<User> usersDualListModel;
-    private DataModel<Institution> institutionsDataModel;
+    private static final Log log = LogFactory.getLog(InstitutionAdminController.class);
 
     public InstitutionAdminController() {
 
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void load(ComponentSystemEvent event) {
-        institutionService.refresh(null);
-        institutions = institutionService.getAllInstitutions();
-
-        List<User> usersAvailable = getDaoFactory().getUserDao().getAll();
-        List<User> usersSelected = new ArrayList<User>();
-
-        institutionsDataModel = new SelectableDataModelWrapper(new SelectableCollectionDataModel<Institution>(institutions), institutions);
-
-        usersDualListModel = new DualListModel<User>(usersAvailable, usersSelected);
-
+        if (!FacesContext.getCurrentInstance().isPostback()) {
+            reloadDataModels();
+        }
     }
 
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
+    private void reloadDataModels() {
+        List<User> usersSelected = new ArrayList<User>();
+
+        institutionsDataModel = getInstitutionAdminService().getAllInstitutions();
+
+        usersDualListModel = getInstitutionAdminService().createUserDualListModel(usersSelected);
+
+        selectedInstitutions = null;
+    }
+
     public void mergeSelected(ActionEvent evt) {
         if (mergeDestinationInstitution == null) {
             addErrorMessage("Destination institution not selected", "Select one in the drop down list");
             return;
         }
 
-        InstitutionMerger merger = new InstitutionMerger();
-        int updated = merger.merge(selectedInstitutions, mergeDestinationInstitution, true);
-
-        addInfoMessage(selectedInstitutions.length + " iInstitutions merged", updated + " annotated objects updated");
-
-        institutionService.refresh(null);
-    }
-
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
-    public void deleteSelected(ActionEvent evt) {
-        for (Institution selectedInstitution : selectedInstitutions) {
-            getDaoFactory().getInstitutionDao().deleteByAc(selectedInstitution.getAc());
+        int updated = 0;
+        try {
+            getInstitutionAdminService().getIntactDao().getUserContext().setUser(getCurrentUser());
+            updated = getInstitutionAdminService().mergeSelected(mergeDestinationInstitution, selectedInstitutions);
+            addInfoMessage(selectedInstitutions.length + " Institutions merged", updated + " annotated objects updated");
+        } catch (SynchronizerException e) {
+            addErrorMessage("Cannot merge institutions ", e.getCause() + ": " + e.getMessage());
+            log.error("Cannot merge institutions", e);
+        } catch (FinderException e) {
+            addErrorMessage("Cannot merge institutions ", e.getCause() + ": " + e.getMessage());
+            log.error("Cannot merge institutions", e);
+        } catch (PersisterException e) {
+            addErrorMessage("Cannot merge institutions ", e.getCause() + ": " + e.getMessage());
+            log.error("Cannot merge institutions", e);
+        } catch (Throwable e) {
+            addErrorMessage("Cannot merge institutions ", e.getCause() + ": " + e.getMessage());
+            log.error("Cannot merge institutions", e);
         }
+
+        reloadDataModels();
     }
 
-    public void fixAnnotatedObjectOwners(ActionEvent evt) {
+    public void deleteSelected(ActionEvent evt) {
+
+        try {
+            getInstitutionAdminService().getIntactDao().getUserContext().setUser(getCurrentUser());
+            getInstitutionAdminService().deleteSelected(selectedInstitutions);
+        } catch (SynchronizerException e) {
+            addErrorMessage("Cannot delete institutions ", e.getCause() + ": " + e.getMessage());
+            log.error("Cannot delete institutions", e);
+        } catch (FinderException e) {
+            addErrorMessage("Cannot delete institutions ", e.getCause() + ": " + e.getMessage());
+            log.error("Cannot delete institutions", e);
+        } catch (PersisterException e) {
+            addErrorMessage("Cannot delete institutions ", e.getCause() + ": " + e.getMessage());
+            log.error("Cannot delete institutions", e);
+        } catch (Throwable e) {
+            addErrorMessage("Cannot delete institutions ", e.getCause() + ": " + e.getMessage());
+            log.error("Cannot delete institutions", e);
+        }
+
+        reloadDataModels();
+    }
+
+    public void fixReleasableOwners(ActionEvent evt) {
         if (usersDualListModel.getTarget().isEmpty()) {
             addErrorMessage("No users selected", "Add some users to fix using the picklist");
             return;
         }
 
-        IntactContext intactContext = IntactContext.getCurrentInstance();
-
-        Map<String, AnnotatedObjectDao> annotatedObjectDaoMap = intactContext.getSpringContext().getBeansOfType(AnnotatedObjectDao.class);
-
+        getInstitutionAdminService().getIntactDao().getUserContext().setUser(getCurrentUser());
         int updatedCount = 0;
-
-        for (User userToFix : usersDualListModel.getTarget()) {
-            Institution userInstitution = ((UserAdminController) getSpringContext().getBean("userAdminController")).getInstitution(userToFix);
-
-            if (userInstitution != null) {
-
-                for (AnnotatedObjectDao annotatedObjectDao : annotatedObjectDaoMap.values()) {
-                    if (OwnedAnnotatedObject.class.isAssignableFrom(annotatedObjectDao.getEntityClass())) {
-                        int replaced = annotatedObjectDao.replaceInstitution(userInstitution, userToFix.getLogin().toUpperCase());
-
-                        updatedCount += replaced;
-                    }
-                }
-            }
+        try {
+            updatedCount = getInstitutionAdminService().fixReleasableOwners(usersDualListModel.getTarget());
+            addInfoMessage("Users object ownership fixed", "Updated annotated objects: "+updatedCount);
+        } catch (Throwable e) {
+            addErrorMessage("Problem updating user annotated objects", e.getCause()+": "+e.getMessage());
+            log.error("Problem updating user annotated objects", e);
         }
 
-        addInfoMessage("Users object ownership fixed", "Updated annotated objects: "+updatedCount);
+        reloadDataModels();
     }
 
-
-    public List<Institution> getInstitutions() {
-        return institutions;
-    }
-
-    public Institution[] getSelectedInstitutions() {
+    public IntactSource[] getSelectedInstitutions() {
         return selectedInstitutions;
     }
 
-    public void setSelectedInstitutions(Institution[] selectedInstitutions) {
+    public void setSelectedInstitutions(IntactSource[] selectedInstitutions) {
         this.selectedInstitutions = selectedInstitutions;
     }
 
-    public Institution getMergeDestinationInstitution() {
+    public IntactSource getMergeDestinationInstitution() {
         return mergeDestinationInstitution;
     }
 
-    public void setMergeDestinationInstitution(Institution mergeDestinationInstitution) {
+    public void setMergeDestinationInstitution(IntactSource mergeDestinationInstitution) {
         this.mergeDestinationInstitution = mergeDestinationInstitution;
     }
 
-    public DualListModel<User> getUsersDualListModel() {
+    public DualListModel<uk.ac.ebi.intact.jami.model.user.User> getUsersDualListModel() {
         return usersDualListModel;
     }
 
-    public void setUsersDualListModel(DualListModel<User> usersDualListModel) {
+    public void setUsersDualListModel(DualListModel<uk.ac.ebi.intact.jami.model.user.User> usersDualListModel) {
         this.usersDualListModel = usersDualListModel;
     }
 
-    public DataModel<Institution> getInstitutionsDataModel() {
+    public DataModel<IntactSource> getInstitutionsDataModel() {
         return institutionsDataModel;
+    }
+
+    public List<SelectItem> getInstitutionItems() {
+
+        return getInstitutionAdminService().getInstitutionItems();
+    }
+
+    public InstitutionAdminService getInstitutionAdminService() {
+        if (this.institutionAdminService == null){
+            this.institutionAdminService = ApplicationContextProvider.getBean("institutionAdminService");
+        }
+        return institutionAdminService;
     }
 }

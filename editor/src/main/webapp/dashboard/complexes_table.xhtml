@@ -16,40 +16,40 @@
                  paginatorAlwaysVisible="false"
                  paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
                  rowsPerPageTemplate="10,25,50"
-                 rowStyleClass="#{complexController.calculateStatusStyle(complex)}">
-        <p:column id="name" headerText="Name" sortBy="#{complexController.extractName(complex)}">
+                 rowStyleClass="#{complex.rowStyle}">
+        <p:column id="name" headerText="Name" sortBy="#{complex.name}">
             <ot:separateConversationContext>
-                <h:link outcome="/curate/complex" value="#{complexController.extractName(complex)}" includeViewParams="true">
+                <h:link outcome="/curate/complex" value="#{complex.name}" includeViewParams="true">
                     <f:param name="ac" value="#{complex.ac}"/>
                 </h:link>
             </ot:separateConversationContext>
         </p:column>
         <p:column>
-            <ui:include src="/curate/jcommon_column_notifications.xhtml">
-                <ui:param name="annotatedObjectController" value="#{complexController}"/>
-                <ui:param name="ao" value="#{complex}"/>
-            </ui:include>
+            <h:panelGroup rendered="#{complex.caution != null}">
+                <h:graphicImage alt="caution" library="images" name="warn.gif"
+                                title="#{complex.caution}"/>
+            </h:panelGroup>
         </p:column>
         <p:column id="ac" headerText="AC" sortBy="#{complex.ac}">
             <h:outputText value="#{complex.ac}"/>
         </p:column>
         <p:column id="complex_type" headerText="Complex Type">
-            <h:outputText value="#{complex.interactorType.shortName}" rendered="#{complex.interactorType != null}"/>
+            <h:outputText value="#{complex.complexType}"/>
         </p:column>
         <p:column id="interaction_type" headerText="Interaction Type">
-            <h:outputText value="#{complex.interactionType.shortName}"/>
+            <h:outputText value="#{complex.interactionType}"/>
         </p:column>
-        <p:column id="organism" headerText="Organism" sortBy="#{complex.organism.commonName}">
-            <h:outputText value="#{complex.organism.commonName}" rendered="#{complex.organism != null}"/>
+        <p:column id="organism" headerText="Organism" sortBy="#{complex.organism}">
+            <h:outputText value="#{complex.organism}"/>
         </p:column>
         <p:column id="participants" headerText="# Participants">
-            <h:outputText value="#{complexController.countParticipantsByInteractionAc(complex.ac)}"/>
+            <h:outputText value="#{complex.numberParticipants}"/>
         </p:column>
-        <p:column headerText="Owner" sortBy="#{complex.currentOwner}">
-            <h:outputText value="#{complex.currentOwner.login}" rendered="#{complex.currentOwner != null}"/>
+        <p:column headerText="Owner" sortBy="#{complex.owner}">
+            <h:outputText value="#{complex.owner}"/>
         </p:column>
-        <p:column headerText="Reviewer" sortBy="#{complex.currentReviewer}">
-            <h:outputText value="#{complex.currentReviewer.login}" rendered="#{complex.currentReviewer != null}"/>
+        <p:column headerText="Reviewer" sortBy="#{complex.reviewer}">
+            <h:outputText value="#{complex.reviewer}"/>
         </p:column>
         <p:column headerText="Status" sortBy="#{complex.status}">
             <h:outputText value="#{complex.status}"/>

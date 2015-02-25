@@ -15,7 +15,14 @@
  */
 package uk.ac.ebi.intact.editor.controller.curate.interaction;
 
-import uk.ac.ebi.intact.model.Feature;
+import org.hibernate.Hibernate;
+import psidev.psi.mi.jami.model.Range;
+import psidev.psi.mi.jami.utils.RangeUtils;
+import uk.ac.ebi.intact.jami.model.extension.AbstractIntactFeature;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * TODO comment this class header.
@@ -25,20 +32,50 @@ import uk.ac.ebi.intact.model.Feature;
  */
 public class FeatureWrapper {
 
-    private Feature feature;
+    private AbstractIntactFeature feature;
     private boolean selected;
     private String ranges;
+    private List<AbstractIntactFeature> linkedFeatures;
 
-    public FeatureWrapper(Feature feature) {
+    private AbstractIntactFeature selectedLinkedFeature;
+
+    public FeatureWrapper(AbstractIntactFeature feature) {
         this.feature = feature;
         this.ranges = feature.getRanges().toString();
+
+        initialiseRangesAsString();
+        this.linkedFeatures = new ArrayList<AbstractIntactFeature>(this.feature.getLinkedFeatures());
+
+        for (AbstractIntactFeature linked : this.linkedFeatures){
+            if (linked.getAc() != null){
+                Hibernate.initialize(linked.getLinkedFeatures());
+            }
+        }
     }
 
-    public Feature getFeature() {
+    private void initialiseRangesAsString(){
+
+        StringBuffer buffer = new StringBuffer();
+        buffer.append("[");
+
+        Iterator<Range> rangeIterator = feature.getRanges().iterator();
+        while (rangeIterator.hasNext()){
+            Range range = rangeIterator.next();
+            buffer.append(RangeUtils.convertRangeToString(range));
+            if (rangeIterator.hasNext()){
+                buffer.append(", ");
+            }
+        }
+        buffer.append("]");
+        this.ranges = buffer.toString();
+    }
+
+
+    public AbstractIntactFeature getFeature() {
         return feature;
     }
 
-    public void setFeature(Feature feature) {
+    public void setFeature(AbstractIntactFeature feature) {
         this.feature = feature;
     }
 
@@ -52,5 +89,51 @@ public class FeatureWrapper {
 
     public String getRanges() {
         return ranges;
+    }
+
+    public List<AbstractIntactFeature> getLinkedFeatures() {
+        return linkedFeatures;
+    }
+
+    public AbstractIntactFeature getSelectedLinkedFeature() {
+        return selectedLinkedFeature;
+    }
+
+    public void setSelectedLinkedFeature(AbstractIntactFeature selectedLinkedFeature) {
+        this.selectedLinkedFeature = selectedLinkedFeature;
+    }
+
+    public String getRelatedFeatureDivs(){
+        StringBuffer buffer = new StringBuffer();
+        Iterator<AbstractIntactFeature> linkedIterator = this.linkedFeatures.iterator();
+        while ( linkedIterator.hasNext()){
+            AbstractIntactFeature linked = linkedIterator.next();
+            if (linked.getAc() != null){
+                 buffer.append("feature_").append(linked.getAc());
+            }
+            else{
+                buffer.append("feature_").append(Integer.toString(linked.hashCode()));
+            }
+            if (linkedIterator.hasNext()){
+                buffer.append(" ");
+            }
+        }
+        return buffer.toString();
+    }
+
+    public String getRelatedFeatureDivs(AbstractIntactFeature linked){
+        StringBuffer buffer = new StringBuffer();
+        if (linked.getAc() != null){
+            buffer.append("feature_").append(linked.getAc().replaceAll("\\-","_"));
+        }
+        else{
+            buffer.append("feature_").append(Integer.toString(linked.hashCode()));
+        }
+        return buffer.toString();
+    }
+
+    public void reloadLinkedFeatures(){
+        this.linkedFeatures.clear();
+        this.linkedFeatures = new ArrayList<AbstractIntactFeature>(this.feature.getLinkedFeatures());
     }
 }

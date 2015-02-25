@@ -17,23 +17,19 @@ package uk.ac.ebi.intact.editor.controller;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Hibernate;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import psidev.psi.mi.jami.model.Source;
-import uk.ac.ebi.intact.core.persistence.dao.InstitutionDao;
-import uk.ac.ebi.intact.editor.controller.misc.AbstractUserController;
+import uk.ac.ebi.intact.editor.services.UserSessionService;
 import uk.ac.ebi.intact.jami.ApplicationContextProvider;
-import uk.ac.ebi.intact.jami.context.IntactContext;
-import uk.ac.ebi.intact.jami.dao.SourceDao;
-import uk.ac.ebi.intact.model.Institution;
-import uk.ac.ebi.intact.model.user.Preference;
-import uk.ac.ebi.intact.model.user.Role;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.jami.model.user.Role;
+import uk.ac.ebi.intact.jami.model.user.User;
+import uk.ac.ebi.intact.jami.synchronizer.FinderException;
+import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
+import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
+
+import javax.annotation.Resource;
 
 /**
  * @author Bruno Aranda (baranda@ebi.ac.uk)
@@ -41,12 +37,14 @@ import uk.ac.ebi.intact.model.user.User;
  */
 @Controller
 @Scope( "session" )
-public class UserSessionController extends JpaAwareController implements DisposableBean {
+public class UserSessionController extends BaseController implements DisposableBean {
 
     private static final Log log = LogFactory.getLog( UserSessionController.class );
 
     private User currentUser;
-    private uk.ac.ebi.intact.jami.model.user.User currentJamiUser;
+
+    @Resource(name = "userSessionService")
+    private transient UserSessionService userSessionService;
 
     public UserSessionController() {
     }
@@ -55,12 +53,9 @@ public class UserSessionController extends JpaAwareController implements Disposa
         return getCurrentUser(false);
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public User getCurrentUser(boolean refresh) {
-        if (refresh) {
-            currentUser = getDaoFactory().getUserDao().getByLogin(currentUser.getLogin());
-            Hibernate.initialize(currentUser.getRoles());
-            Hibernate.initialize(currentUser.getPreferences());
+        if (refresh && currentUser != null) {
+            currentUser = getUserSessionService().loadUser(currentUser.getLogin());
         }
 
         return currentUser;
@@ -68,14 +63,6 @@ public class UserSessionController extends JpaAwareController implements Disposa
 
     public void setCurrentUser( User currentUser ) {
         this.currentUser = currentUser;
-    }
-
-    public uk.ac.ebi.intact.jami.model.user.User getCurrentJamiUser() {
-        return currentJamiUser;
-    }
-
-    public void setCurrentJamiUser(uk.ac.ebi.intact.jami.model.user.User currentJamiUser) {
-        this.currentJamiUser = currentJamiUser;
     }
 
     public boolean hasRole(String role) {
@@ -96,79 +83,39 @@ public class UserSessionController extends JpaAwareController implements Disposa
         return user.equals(currentUser);
     }
 
-    public boolean isJamiUserMe(uk.ac.ebi.intact.jami.model.user.User user) {
-        if (user == null) return false;
-
-        return user.getLogin().equals(currentUser.getLogin());
-    }
-
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
     public void notifyLastActivity() {
-        DateTime dateTime = new DateTime();
-        String dateTimeStr = dateTime.toString("dd/MM/yyyy HH:mm");
 
         if (currentUser != null) {
-            // merge current user because detached
-            if (!getCoreEntityManager().contains(currentUser)){
-                currentUser = getCoreEntityManager().merge(currentUser);
+            try {
+                getUserSessionService().notifyLastActivity(currentUser);
+            } catch (SynchronizerException e) {
+                addErrorMessage("Cannot notify last activity of user "+currentUser, e.getCause()+": "+e.getMessage());
+            } catch (FinderException e) {
+                addErrorMessage("Cannot notify last activity of user " + currentUser, e.getCause() + ": " + e.getMessage());
+            } catch (PersisterException e) {
+                addErrorMessage("Cannot notify last activity of user " + currentUser, e.getCause() + ": " + e.getMessage());
+            } catch (Throwable e) {
+                addErrorMessage("Cannot notify last activity of user " + currentUser, e.getCause() + ": " + e.getMessage());
             }
-
-            Preference pref = currentUser.getPreference("last.activity");
-
-            if (pref == null) {
-                pref = new Preference(currentUser, "last.activity");
-            }
-
-            pref.setValue(dateTimeStr);
-
-            currentUser.getPreferences().add(pref);
-
-            getDaoFactory().getPreferenceDao().saveOrUpdate(pref);
         }
     }
 
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED, readOnly = true)
-    public Institution getUserInstitution() {
-        Preference instiPref = currentUser.getPreference(AbstractUserController.INSTITUTION_AC);
+    public Source getUserInstitution() {
 
-        if (instiPref == null) {
-            return getIntactContext().getInstitution();
-        }
-
-        InstitutionDao institutionDao = getDaoFactory().getInstitutionDao();
-
-        Institution institution = institutionDao.getByAc(instiPref.getValue());
-
-        if (institution == null) {
-            return getIntactContext().getInstitution();
-        }
-
-        return institution;
-    }
-
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public Source getUserSource() {
-        Preference instiPref = currentUser.getPreference(AbstractUserController.INSTITUTION_AC);
-
-        if (instiPref == null) {
-            IntactContext jamiContext = ApplicationContextProvider.getBean("jamiIntactContext");
-            return jamiContext.getIntactConfiguration().getDefaultInstitution();
-        }
-
-        SourceDao institutionDao = getIntactDao().getSourceDao();
-
-        Source institution = institutionDao.getByAc(instiPref.getValue());
-
-        if (institution == null) {
-            IntactContext jamiContext = ApplicationContextProvider.getBean("jamiIntactContext");
-            return jamiContext.getIntactConfiguration().getDefaultInstitution();
-        }
-
-        return institution;
+        return currentUser != null ? getUserSessionService().getUserInstitution(currentUser) : null;
     }
 
     @Override
     public void destroy() throws Exception {
-        log.info( "UserSessionController for user '" + currentUser.getLogin() + "' destroyed" );
+        if (currentUser != null){
+            log.info( "UserSessionController for user '" + currentUser.getLogin() + "' destroyed" );
+        }
+    }
+
+    public UserSessionService getUserSessionService() {
+        if (this.userSessionService == null){
+            this.userSessionService = ApplicationContextProvider.getBean("userSessionService");
+        }
+        return userSessionService;
     }
 }

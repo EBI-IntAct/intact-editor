@@ -113,3 +113,39 @@ function ia_enableButton(id, innerHTML) {
         e.innerHTML = innerHTML;
     }
 }
+
+function ia_showLinkedFeatures(e, c, hasLinkedFeatures) {
+    var current = document.getElementById(e);
+    if (hasLinkedFeatures){
+        current.style.fontWeight = 'bold';
+        var idNames = c.split(" ");
+        for (j = 0; j < idNames.length; j++) {
+            var x = document.getElementById(idNames[j]);
+            if (x != null){
+                if (hasLinkedFeatures){
+                    x.style.fontWeight = 'bold';
+                }
+                else{
+                    x.style.fontWeight = 'inherit';
+                }
+            }
+        }
+    }
+    else{
+        current.style.fontWeight = 'inherit';
+    }
+}
+
+function ia_hideLinkedFeatures(e, c, hasLinkedFeatures) {
+    var current = document.getElementById(e);
+    current.style.fontWeight = 'inherit';
+    if (hasLinkedFeatures){
+        var idNames = c.split(" ");
+        for (j = 0; j < idNames.length; j++) {
+            var x = document.getElementById(idNames[j]);
+            if (x != null){
+                x.style.fontWeight = 'inherit';
+            }
+        }
+    }
+}

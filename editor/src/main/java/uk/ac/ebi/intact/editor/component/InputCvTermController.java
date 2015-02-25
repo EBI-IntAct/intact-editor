@@ -17,20 +17,16 @@ package uk.ac.ebi.intact.editor.component;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Hibernate;
 import org.primefaces.model.DefaultTreeNode;
 import org.primefaces.model.TreeNode;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import psidev.psi.mi.jami.model.CvTerm;
 import uk.ac.ebi.intact.editor.controller.BaseController;
+import uk.ac.ebi.intact.editor.services.curate.cvobject.CvObjectService;
 import uk.ac.ebi.intact.jami.ApplicationContextProvider;
-import uk.ac.ebi.intact.jami.dao.CvTermDao;
-import uk.ac.ebi.intact.jami.dao.IntactDao;
 import uk.ac.ebi.intact.jami.model.extension.IntactCvTerm;
 
+import javax.annotation.Resource;
 import javax.faces.event.ComponentSystemEvent;
 
 /**
@@ -52,10 +48,12 @@ public class InputCvTermController extends BaseController{
 
     private IntactCvTerm selected;
 
+    @Resource(name = "cvObjectService")
+    private transient CvObjectService cvService;
+
     public InputCvTermController() {
     }
 
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void load( ComponentSystemEvent evt) {
         log.trace( "Loading CvObject with id '"+id+"'" );
 
@@ -63,36 +61,12 @@ public class InputCvTermController extends BaseController{
             throw new NullPointerException("id is null");
         }
 
-        IntactDao dao = ApplicationContextProvider.getBean("intactDao");
-        CvTermDao cvDAO = dao.getCvTermDao();
-        IntactCvTerm rootCv = cvDAO.getByMIIdentifier(id, this.cvClass);
+        this.root = getCvService().loadCvTreeNode(id, this.cvClass);
 
-        if (rootCv == null) {
+        if (root == null) {
             throw new IllegalArgumentException("Root does not exist: " + id);
         }
-
-        // load laxzy collections collections needed
-        Hibernate.initialize(rootCv.getDbAnnotations());
-        Hibernate.initialize(rootCv.getDbXrefs());
-
-        root = buildTreeNode(rootCv, null);
-
         log.trace( "\tLoading completed. Root: "+root+ "(children="+root.getChildCount()+")" );
-
-    }
-
-    private TreeNode buildTreeNode( IntactCvTerm cv, TreeNode node ) {
-
-        TreeNode childNode = new DefaultTreeNode(cv, node);
-
-        for ( CvTerm child : cv.getChildren() ) {
-            // load laxzy collections collections needed
-            Hibernate.initialize(((IntactCvTerm)child).getDbAnnotations());
-            Hibernate.initialize(((IntactCvTerm)child).getDbXrefs());
-            buildTreeNode( (IntactCvTerm)child, childNode );
-        }
-
-        return childNode;
     }
 
     public String getDescription(IntactCvTerm cvObject) {
@@ -161,5 +135,12 @@ public class InputCvTermController extends BaseController{
 
     public void setDialogId(String dialogId) {
         this.dialogId = dialogId;
+    }
+
+    public CvObjectService getCvService() {
+        if (this.cvService == null){
+            this.cvService = ApplicationContextProvider.getBean("cvObjectService");
+        }
+        return cvService;
     }
 }

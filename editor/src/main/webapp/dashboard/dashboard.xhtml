@@ -49,18 +49,19 @@
                 <h:panelGrid columns="3">
                     <h:outputLabel for="selStatus" value="Show status:" escape="false"/>
                     <h:selectManyCheckbox id="selStatus" value="#{dashboardController.statusToShow}">
-                        <f:selectItem itemLabel="New" itemValue="PL:0004"/>
-                        <f:selectItem itemLabel="Curation in progress" itemValue="PL:0007"/>
-                        <f:selectItem itemLabel="Ready for checking" itemValue="PL:0008"/>
-                        <f:selectItem itemLabel="Accepted on hold" itemValue="PL:0010"/>
-                        <f:selectItem itemLabel="Ready for release" itemValue="PL:0011"/>
-                        <f:selectItem itemLabel="Released" itemValue="PL:0012"/>
+                        <f:selectItem itemLabel="New" itemValue="new"/>
+                        <f:selectItem itemLabel="Curation in progress" itemValue="curation in progress"/>
+                        <f:selectItem itemLabel="Ready for checking" itemValue="ready for checking"/>
+                        <f:selectItem itemLabel="Accepted on hold" itemValue="accepted on hold"/>
+                        <f:selectItem itemLabel="Ready for release" itemValue="ready for release"/>
+                        <f:selectItem itemLabel="Released" itemValue="released"/>
                     </h:selectManyCheckbox>
                     <p:commandButton value="Refresh" actionListener="#{dashboardController.refreshAllTables()}" ajax="false"/>
                 </h:panelGrid>
             </p>
 
             <p:tabView id="publicationDashboard" dynamic="true" rendered="#{dashboardController.publicationTableEnabled}">
+                <p:ajax event="tabChange" onstart="loadDialog.show()" oncomplete="loadDialog.hide()" onerror="loadDialog.hide()"/>
                 <p:tab title="Publications owned by you (#{dashboardController.ownedByUser.rowCount})">
                     <h:panelGroup rendered="#{dashboardController.ownedByUser.rowCount gt 0}">
                         <ui:include src="publications_table.xhtml">
@@ -88,6 +89,7 @@
             </p:tabView>
 
             <p:tabView id="complexesDashboard" dynamic="true" rendered="#{dashboardController.complexTableEnabled}">
+                <p:ajax event="tabChange" onstart="loadDialog.show()" oncomplete="loadDialog.hide()" onerror="loadDialog.hide()"/>
                 <p:tab title="Biological Complexes owned by you (#{dashboardController.complexesOwnedByUser.rowCount})">
                     <h:panelGroup rendered="#{dashboardController.complexesOwnedByUser.rowCount gt 0}">
                         <ui:include src="complexes_table.xhtml">
@@ -116,6 +118,8 @@
 
 
         </h:panelGroup>
+
+        <ia:loadingDialog widgetVar="loadDialog"/>
 
     </ui:define>
 

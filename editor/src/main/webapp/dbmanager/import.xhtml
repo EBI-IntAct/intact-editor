@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:fn="http://java.sun.com/jsp/jstl/functions">
+
+<f:view contentType="text/html">
+
+    <h:head>
+        <title>#{title != null? title : 'Editor'}</title>
+        <link rel="stylesheet" type="text/css"
+              href="#{request.contextPath}/resources/css/#{editorConfig.theme}/skin.css"></link>
+        <link rel="stylesheet" type="text/css" href="#{request.contextPath}/resources/css/intact-extra.css"></link>
+
+        <link rel="shortcut icon"
+              href="#{facesContext.externalContext.request.contextPath}/favicon#{facesContext.application.projectStage == 'Development'? '-test' : ''}.ico"/>
+
+        <script type="text/javascript">
+            function fnCallback( e ) {
+                document.getElementById( "intact-blockingDiv" ).style.display = 'none';
+                //blockingDialog.hide();
+            }
+
+        </script>
+
+    </h:head>
+
+    <h:body style="margin: 5 5 5 5;">
+        <h:outputLink value="#{facesContext.externalContext.request.contextPath}/dbmanager/dbmanager.xhtml">Back to data management page</h:outputLink>
+        &#160;&#160;|&#160;&#160;
+        <h:outputLink value="#{facesContext.externalContext.request.contextPath}/dbmanager/jobSummary.xhtml">View jobs list</h:outputLink>
+
+        <br/>
+
+        <h2>Import MITAB/Psi-XML File</h2>
+
+        <ul>
+            <li>Until the validator is integrated with the editor, you MUST validate your file using
+                the <a href="http://www.ebi.ac.uk/intact/validator/start.xhtml">validator</a> before importing the file.</li>
+            <li>The import is running in the background, you will receive e-mails when the job starts and when the job has finished</li>
+            <li>You can view the jobs running in the <h:outputLink value="#{facesContext.externalContext.request.contextPath}/dbmanager/jobSummary.xhtml">job summary page</h:outputLink>.</li>
+            <li>When a job is finished and you are happy with the import, you will need to clear the job so import annotations are deleted.</li>
+            <li>When a job is finished and you are not happy with the import, you will need to reject the job so all imported objects will be deleted.</li>
+        </ul>
+
+        <blockquote>
+
+            <h:panelGroup id="fileUploadPanel">
+                <h:form id="fileUpload" enctype="multipart/form-data">
+                    <p:fileUpload value="#{dbImportController.uploadedFile}" mode="simple" required="true" requiredMessage="File containing interaction evidence has to be provided"/>
+                    <br/><br/>
+                    <p:commandButton value="Upload interaction evidences" ajax="false" actionListener="#{dbImportController.launchFileImport}"
+                                     update=":fileUploadPanel"/>
+                </h:form>
+                <br/>
+                <br/>
+                <h:form id="complexFileUpload" enctype="multipart/form-data">
+                    <p:fileUpload value="#{dbImportController.uploadedFile}" mode="simple" required="true" requiredMessage="File containing complexes has to be provided"/>
+                    <br/><br/>
+                    <p:commandButton value="Upload biological complexes" ajax="false" actionListener="#{dbImportController.launchComplexFileImport}"
+                                     update=":fileUploadPanel"/>
+                </h:form>
+                <br/>
+                <br/>
+                <h:outputText value="Job running #{dbImportController.jobId}" rendered="#{dbImportController.jobId != null}"/>
+            </h:panelGroup>
+
+        </blockquote>
+
+    </h:body>
+
+</f:view>
+
+</html>

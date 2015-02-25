@@ -18,59 +18,9 @@
     </ui:include>
 </ui:define>
 
-<ui:define name="topTitle">
-    <h:panelGroup rendered="#{annotatedObjectController.annotatedObject != null}">
-        <h:panelGroup rendered="#{publicationController.publication != null}" styleClass="top-title">
-            <h:link outcome="/curate/publication" value="#{publicationController.firstAuthor} et al (#{publicationController.year})" rendered="#{publicationController.firstAuthor != null}"/>
-
-            <h:panelGroup rendered="#{publicationController.publication.publicationId != null}" styleClass="top-title-details">
-                (&#160;
-                <ot:separateConversationContext>
-                    <h:outputLink value="http://europepmc.org/abstract/MED/#{publicationController.publication.publicationId}"
-                                  target="_blank">
-                        <h:outputText style="font-weight: normal;" value="#{publicationController.publication.publicationId}"/>
-                        <span class="ui-icon ui-icon-extlink" style="display:inline-block; vertical-align: bottom"/>
-                    </h:outputLink>
-                </ot:separateConversationContext>
-                )
-            </h:panelGroup>
-        </h:panelGroup>
-
-        <br/>
-        <h:outputText styleClass="subTitle" value="#{publicationController.publication.status.shortLabel}"/>,
-        <h:outputText styleClass="subTitle-text" value=" owned by "
-                      rendered="#{publicationController.publication.currentOwner != null}"/>
-        <h:outputText styleClass="subTitle" value="#{publicationController.publication.currentOwner.login}"
-                      rendered="#{publicationController.publication.currentOwner != null}"/>
-        <h:outputText value="," rendered="#{publicationController.publication.currentReviewer != null}"/>
-        <h:outputText styleClass="subTitle-text" value=" reviewed by "
-                      rendered="#{publicationController.publication.currentReviewer != null}"/>
-        <h:outputText styleClass="subTitle" value="#{publicationController.publication.currentReviewer.login}"
-                      rendered="#{publicationController.publication.currentReviewer != null}"/>
-    </h:panelGroup>
-    <h:panelGroup rendered="#{annotatedObjectController.jamiObject != null}">
-        <h:panelGroup rendered="#{complexController.complex != null}" styleClass="top-title">
-            <h:link outcome="/curate/complex" value="#{complexController.name} (#{complexController.organism})" rendered="#{complexController.name != null}"/>
-        </h:panelGroup>
-
-        <br/>
-        <h:outputText styleClass="subTitle" value="#{complexController.complex.status}"/>,
-        <h:outputText styleClass="subTitle-text" value=" owned by "
-                      rendered="#{complexController.complex.currentOwner != null}"/>
-        <h:outputText styleClass="subTitle" value="#{complexController.complex.currentOwner.login}"
-                      rendered="#{complexController.complex.currentOwner != null}"/>
-        <h:outputText value="," rendered="#{complexController.complex.currentReviewer != null}"/>
-        <h:outputText styleClass="subTitle-text" value=" reviewed by "
-                      rendered="#{complexController.complex.currentReviewer != null}"/>
-        <h:outputText styleClass="subTitle" value="#{complexController.complex.currentReviewer.login}"
-                      rendered="#{complexController.complex.currentReviewer != null}"/>
-    </h:panelGroup>
-
-</ui:define>
-
 <ui:define name="actionsBar">
         <div class="ui-widget-content top-actions">
-            <h:panelGroup rendered="#{annotatedObjectController.annotatedObject != null or annotatedObjectController.jamiObject != null}">
+            <h:panelGroup rendered="#{annotatedObjectController.annotatedObject != null}">
             <ui:insert name="topActionsPanel"/>
 
                 <h:panelGroup id="topSavePanel" style="padding: 10px">
@@ -98,7 +48,6 @@
         <p:submenu id="mainMenu" label="Main">
             <p:submenu id="newMenu" label="New" icon="/resources/images/new.png">
                 <p:menuitem id="newPublicationItem" value="Publication" onclick="newPublicationDlg.show();"/>
-                <p:menuitem id="newBiologicalComplexItem" value="Biological Complex" action="#{complexController.newComplex}" ajax="false"/>
                 <p:menuitem id="newInteractorItem" value="Interactor..." onclick="newInteractorDialog.show(); "/>
                 <p:menuitem id="newCvObjectItem" value="CV Object..." onclick="newCvObjectDialog.show(); "/>
                 <p:menuitem id="newOrganismItem" value="Organism" action="#{bioSourceController.newOrganism}" ajax="false"/>
@@ -109,10 +58,10 @@
                 <p:menuitem id="openByPmidItem" value="by PMID..." onclick="openByPmidDlg.show(); "/>
             </p:submenu>
             <p:menuitem id="saveItem" value="Save" oncomplete="save()" icon="/resources/images/save.gif"
-                        rendered="#{annotatedObjectController.annotatedObject != null or annotatedObjectController.jamiObject != null}"/>
+                        rendered="#{annotatedObjectController.annotatedObject != null}"/>
         </p:submenu>
 
-        <p:submenu label="Tools" rendered="#{annotatedObjectController.annotatedObject != null or annotatedObjectController.jamiObject != null}">
+        <p:submenu label="Tools" rendered="#{annotatedObjectController.annotatedObject != null}">
             <p:menuitem value="Clone #{annotatedObjectController.objectCategory}" action="#{annotatedObjectController.clone}" ajax="false"
                         onclick="cloningDialog.show()" oncomplete="cloningDialog.hide()"
                         rendered="#{annotatedObjectController.objectCategory != 'Publication'}"/>
@@ -122,7 +71,7 @@
                         onclick="if (confirm('Are you sure you sure you want to delete this sucker?')) { deletingDialog.show() } else { return false }" oncomplete="deletingDialog.hide()" />
         </p:submenu>
 
-        <p:submenu label="Debug" rendered="#{facesContext.application.projectStage == 'Development' and (annotatedObjectController.annotatedObject != null or annotatedObjectController.jamiObject != null)}">
+        <p:submenu label="Debug" rendered="#{facesContext.application.projectStage == 'Development' and (annotatedObjectController.annotatedObject != null)}">
             <p:menuitem value="Changes" action="/curate/debug/changes" ajax="false"/>
             <p:menuitem value="Refresh" update=":editorForm:contentSection" immediate="true"/>
             <p:menuitem value="Revert" actionListener="#{annotatedObjectController.doRevertChanges}" update="editorForm" immediate="true"/>
@@ -147,16 +96,11 @@
 
     </script>
 
-    <h:panelGroup rendered="#{annotatedObjectController.annotatedObject == null and annotatedObjectController.jamiObject == null}">
+    <h:panelGroup rendered="#{annotatedObjectController.annotatedObject == null}">
         <ui:insert name="emptyCurateContent"/>
     </h:panelGroup>
 
     <h:panelGroup rendered="#{annotatedObjectController.annotatedObject != null and changesController.isDeletedAc(annotatedObjectController.annotatedObject.ac)}">
-        <ia:panelMessage level="info">
-            <h:outputText value="This object will be deleted on save."/>
-        </ia:panelMessage>
-    </h:panelGroup>
-    <h:panelGroup rendered="#{annotatedObjectController.jamiObject != null and changesController.isDeletedAc(annotatedObjectController.jamiObject.ac)}">
         <ia:panelMessage level="info">
             <h:outputText value="This object will be deleted on save."/>
         </ia:panelMessage>
@@ -169,7 +113,7 @@
 
     <div style="width:100%;">
 
-        <h:panelGroup rendered="#{annotatedObjectController.annotatedObject != null or annotatedObjectController.jamiObject != null}">
+        <h:panelGroup rendered="#{annotatedObjectController.annotatedObject != null}">
             <h:panelGroup id="unsavedChangesInfo" style="float: right; margin-right: 40px">
                 <ui:insert name="curateTopRight">
                     <h:panelGroup rendered="#{changesController.numberUnsavedChangedForCurrentUser gt 0}">
@@ -226,14 +170,14 @@
                 </div>
 
             </h:panelGroup>
+
+            <p:remoteCommand name="save" actionListener="#{annotatedObjectController.doSave}"
+                             update=":editorForm"
+                             onstart="saveDialog.show(); var input = document.getElementById('topSaveButton'); input.disabled = true; input.value = 'Saving...'"
+                             onerror="alert('Error: '+error+' '+status)"
+                             oncomplete="saveDialog.hide(); var input = document.getElementById('topSaveButton'); input.disabled = false; input.value = 'Save'"/>
         </p:outputPanel>
     </div>
-
-    <p:remoteCommand name="save" actionListener="#{annotatedObjectController.doSave}"
-                     update=":editorForm"
-                     onstart="saveDialog.show(); var input = document.getElementById('topSaveButton'); input.disabled = true; input.value = 'Saving...'"
-                     onerror="alert('Error: '+error+' '+status)"
-                     oncomplete="saveDialog.hide(); var input = document.getElementById('topSaveButton'); input.disabled = false; input.value = 'Save'"/>
 
     <!-- New publication -->
     <p:dialog header="New publication" width="425" widgetVar="newPublicationDlg" visible="false" draggable="false"
@@ -264,7 +208,7 @@
                                  process="newPmid"
                                  action="#{publicationController.newAutocomplete}"
                                  disabled="#{not publicationController.citexploreOnline}"
-                                 update=":editorForm"/>
+                                 update=":editorForm" onclick="publicationDialog.show()" oncomplete="publicationDialog.hide()"/>
 
                 <br/>
 
@@ -311,6 +255,7 @@
                 <f:selectItem itemLabel="Tissue" itemValue="uk.ac.ebi.intact.model.CvTissue"/>
                 <f:selectItem itemLabel="Topic" itemValue="uk.ac.ebi.intact.model.CvTopic"/>
                 <f:selectItem itemLabel="Xref qualifier" itemValue="uk.ac.ebi.intact.model.CvXrefQualifier"/>
+                <f:selectItem itemLabel="Feature detection method" itemValue="uk.ac.ebi.intact.model.CvFeatureIdentification"/>
             </h:selectOneMenu>
 
         </ia:panelDialogLayout>
@@ -326,9 +271,18 @@
 
             <h:panelGrid columns="2">
                 <h:outputLabel for="interactorTxt" value="Type: "/>
-                <ia:inputCvObject id="interactorTxt" value="#{interactorController.newInteractorType}"
-                                  selectItems="#{cvObjectService.interactorTypeSelectItems}"
-                                  cvIdentifier="MI:0313"/>
+                <h:selectOneMenu id="interactorTxt" value="#{interactorController.newInteractorType}">
+                    <f:selectItem itemLabel="-- Select --" noSelectionOption="true"/>
+                    <f:selectItem itemLabel="Protein" itemValue="protein"/>
+                    <f:selectItem itemLabel="Peptide" itemValue="peptide"/>
+                    <f:selectItem itemLabel="Bioactive entity" itemValue="bioactive entity"/>
+                    <f:selectItem itemLabel="Gene" itemValue="gene"/>
+                    <f:selectItem itemLabel="Nucleic acid" itemValue="nucleic acid"/>
+                    <f:selectItem itemLabel="Complex" itemValue="complex"/>
+                    <f:selectItem itemLabel="Polymer" itemValue="biopolymer"/>
+                    <f:selectItem itemLabel="Molecule set" itemValue="molecule set"/>
+                    <f:selectItem itemLabel="Other" itemValue="unknown participant"/>
+                </h:selectOneMenu>
             </h:panelGrid>
 
         </ia:panelDialogLayout>
@@ -382,6 +336,7 @@
     <ia:loadingDialog widgetVar="revertDialog" message="Reverting changes..."/>
     <ia:loadingDialog widgetVar="cloningDialog" message="Cloning #{annotatedObjectController.objectCategory}..."/>
     <ia:loadingDialog widgetVar="deletingDialog" message="Deleting #{annotatedObjectController.objectCategory}..."/>
+    <ia:loadingDialog widgetVar="publicationDialog" message="Creating publication..."/>
 </ui:define>
 
 </ui:composition>

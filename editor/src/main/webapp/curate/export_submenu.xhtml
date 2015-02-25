@@ -9,17 +9,27 @@
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui">
 
-            <p:menuitem value="PSI-MI XML 2.5.4" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=xml254"
-                        target="_blank"/>
-            <p:menuitem value="Standard MITAB 2.5" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=tab25"
-                        target="_blank"/>
-            <p:menuitem value="Standard MITAB 2.6" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=tab26"
+    <p:menuitem value="PSI-MI XML 2.5.4 (compact)" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=xml254_compact"
                 target="_blank"/>
-            <p:menuitem value="Standard MITAB 2.7" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=tab27"
+    <p:menuitem value="PSI-MI XML 2.5.4 (expanded)" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=xml254_expanded"
                 target="_blank"/>
-            <p:menuitem value="HTML" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=html"
-                        target="_blank"/>
-            <p:menuitem value="FEBS SDA" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=sda"
+    <p:menuitem value="PSI-MI XML 3.0.0 (compact)" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=xml300_compact"
+                target="_blank"/>
+    <p:menuitem value="PSI-MI XML 3.0.0 (expanded)" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=xml300_expanded"
+                target="_blank"/>
+    <p:menuitem value="Standard MITAB 2.5" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=tab25"
+                target="_blank"/>
+    <p:menuitem value="Standard MITAB 2.6" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=tab26"
+                target="_blank"/>
+    <p:menuitem value="Standard MITAB 2.7" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=tab27"
+                target="_blank"/>
+    <p:menuitem value="MI Json binary" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=json_binary"
+                target="_blank"/>
+    <p:menuitem value="MI Json" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=json"
+                target="_blank"/>
+    <p:menuitem value="HTML" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=html"
+                target="_blank"/>
+    <p:menuitem value="FEBS SDA" url="/service/export/mi/#{slug}?ac=#{ac}&amp;format=sda"
                 target="_blank"/>
 
 </ui:composition>

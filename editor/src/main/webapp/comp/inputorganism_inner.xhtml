@@ -8,7 +8,7 @@
     <f:view contentType="text/html">
         <f:metadata>
             <f:viewParam name="dialogId" value="#{inputOrganismController.dialogId}"/>
-            <f:event type="preRenderView" listener="#{inputOrganismController.loadBioSources}"/>
+            <f:event type="preRenderView" listener="#{inputOrganismController.loadOrganisms}"/>
         </f:metadata>
 
         <h:head>
@@ -24,10 +24,8 @@
                 <h:panelGrid columns="1" >
                     <h:panelGroup>
                         <p:inputText id="biosourceQuery" value="#{inputOrganismController.query}" converter="trimmingConverter">
-                            <!--<f:ajax event="valueChange" timeout="0" render="bioSourceBrowserDialog" execute="@this"-->
-                                <!--listener="#{cc.autoSearch}"/>-->
                         </p:inputText>
-                        <p:commandButton value="Search" actionListener="#{inputOrganismController.search}"
+                        <p:commandButton value="Search" actionListener="#{inputOrganismController.searchOrganisms}"
                                          update="bioSourceBrowserPanel"/>
                     </h:panelGroup>
 

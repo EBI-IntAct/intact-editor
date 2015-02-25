@@ -15,9 +15,9 @@
  */
 package uk.ac.ebi.intact.editor.converter;
 
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.core.persistence.dao.InstitutionDao;
-import uk.ac.ebi.intact.model.Institution;
+import uk.ac.ebi.intact.editor.services.curate.institution.InstitutionService;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.extension.IntactSource;
 
 import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
@@ -29,26 +29,26 @@ import javax.faces.convert.FacesConverter;
  * @author Bruno Aranda (baranda@ebi.ac.uk)
  * @version $Id$
  */
-@FacesConverter( value = "institutionConverter", forClass = Institution.class )
+@FacesConverter( value = "institutionConverter", forClass = IntactSource.class )
 public class InstitutionConverter implements Converter {
 
     @Override
     public Object getAsObject( FacesContext facesContext, UIComponent uiComponent, String ac ) throws ConverterException {
         if ( ac == null ) return null;
 
-        InstitutionDao institutionDao = ( InstitutionDao ) IntactContext.getCurrentInstance().getSpringContext().getBean( "institutionDaoImpl" );
-        return institutionDao.getByAc( ac );
+        InstitutionService institutionService = ApplicationContextProvider.getBean("institutionService");
+        return institutionService.findInstitutionByAc( ac );
     }
 
     @Override
     public String getAsString( FacesContext facesContext, UIComponent uiComponent, Object o ) throws ConverterException {
         if ( o == null ) return null;
 
-        if ( o instanceof Institution ) {
-            Institution institution = ( Institution ) o;
+        if ( o instanceof IntactSource) {
+            IntactSource institution = ( IntactSource ) o;
             return institution.getAc();
         } else {
-            throw new IllegalArgumentException( "Argument must be a CvObject: " + o + " (" + o.getClass() + ")" );
+            throw new IllegalArgumentException( "Argument must be an Institution: " + o + " (" + o.getClass() + ")" );
         }
     }
 }

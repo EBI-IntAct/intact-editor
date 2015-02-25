@@ -15,9 +15,10 @@
  */
 package uk.ac.ebi.intact.editor.converter;
 
-import uk.ac.ebi.intact.core.context.IntactContext;
-import uk.ac.ebi.intact.core.persistence.dao.user.UserDao;
-import uk.ac.ebi.intact.model.user.User;
+
+import uk.ac.ebi.intact.editor.services.UserSessionService;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.user.User;
 
 import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
@@ -36,8 +37,8 @@ public class UserConverter implements Converter {
     public Object getAsObject( FacesContext facesContext, UIComponent uiComponent, String loginName ) throws ConverterException {
         if ( loginName == null ) return null;
 
-        UserDao userDao = (UserDao) IntactContext.getCurrentInstance().getSpringContext().getBean("userDaoImpl");
-        return userDao.getByLogin(loginName);
+        UserSessionService userService = ApplicationContextProvider.getBean("userSessionService");
+        return userService.loadUser(loginName);
     }
 
     @Override

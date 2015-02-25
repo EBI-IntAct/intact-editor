@@ -63,8 +63,8 @@ public class LazyDataModelFactory {
         return createLazyDataModel( entityManager, query, countQuery, Maps.<String, String>newHashMap(), var, sortField, sortOrder );
     }
 
-    public static LazyDataModel createLazyDataModel( IntactService service, String query, String countQuery, String var, String sortField, boolean sortOrder) {
-        return createLazyDataModel( service, query, countQuery, Maps.<String, String>newHashMap(), var, sortField, sortOrder );
+    public static LazyDataModel createLazyDataModel( IntactService service, String serviceName, String query, String countQuery, String var, String sortField, boolean sortOrder) {
+        return createLazyDataModel( service, serviceName, query, countQuery, Maps.<String, String>newHashMap(), var, sortField, sortOrder );
     }
 
     public static LazyDataModel createLazyDataModel( EntityManager entityManager, String query, Map<String, String> params, String var, String sortField, boolean sortOrder) {
@@ -76,6 +76,10 @@ public class LazyDataModelFactory {
 
     public static LazyDataModel createLazyDataModel( EntityManager entityManager, String query, String countQuery ) {
         return createLazyDataModel( entityManager, query, countQuery, Maps.<String, String>newHashMap(), null, null, false);
+    }
+
+    public static LazyDataModel createLazyDataModel( IntactService service, String serviceName, String query, String countQuery ) {
+        return createLazyDataModel( service, serviceName, query, countQuery, Maps.<String, String>newHashMap(), null, null, false);
     }
 
     public static LazyDataModel createLazyDataModel( EntityManager entityManager,
@@ -111,6 +115,7 @@ public class LazyDataModelFactory {
     }
 
     public static LazyDataModel createLazyDataModel( IntactService service,
+                                                     String serviceName,
                                                      String query,
                                                      String countQuery,
                                                      Map<String, String> params,
@@ -130,7 +135,7 @@ public class LazyDataModelFactory {
             throw new IllegalArgumentException("Problem running query: "+query, e);
         }
 
-        return createLazyDataModel( service, query, totalNumRows, params, var, sortField, sortOrder );
+        return createLazyDataModel( service, serviceName, query, totalNumRows, params, var, sortField, sortOrder );
     }
 
     public static LazyDataModel createLazyDataModel( EntityManager entityManager,
@@ -148,13 +153,14 @@ public class LazyDataModelFactory {
     }
 
     public static LazyDataModel createLazyDataModel( IntactService service,
+                                                     String serviceName,
                                                      String query,
                                                      int totalNumRows,
                                                      Map<String, String> params,
                                                      String var,
                                                      String sortField,
                                                      boolean sortOrder) {
-        LazyDataModel lazyDataModel = new HqlServiceLazyDataModel( service, query, params, sortField, sortOrder, var );
+        LazyDataModel lazyDataModel = new HqlServiceLazyDataModel( service, serviceName, query, params, sortField, sortOrder, var );
         lazyDataModel.setPageSize(10);
         lazyDataModel.setRowCount(totalNumRows);
 

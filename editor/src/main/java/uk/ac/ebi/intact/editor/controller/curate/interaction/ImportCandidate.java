@@ -1,11 +1,8 @@
 package uk.ac.ebi.intact.editor.controller.curate.interaction;
 
-import uk.ac.ebi.intact.model.BioSource;
-import uk.ac.ebi.intact.model.Interactor;
-import uk.ac.ebi.intact.uniprot.model.UniprotFeatureChain;
-import uk.ac.ebi.intact.uniprot.model.UniprotProtein;
-import uk.ac.ebi.intact.uniprot.model.UniprotProteinLike;
-import uk.ac.ebi.intact.uniprot.model.UniprotSpliceVariant;
+import psidev.psi.mi.jami.model.*;
+import psidev.psi.mi.jami.utils.comparator.interactor.UnambiguousExactInteractorComparator;
+import uk.ac.ebi.intact.jami.model.extension.IntactInteractor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,34 +19,40 @@ public class ImportCandidate {
     private List<String> primaryAcs;
     private List<String> secondaryAcs;
     private String source;
-    private Interactor interactor;
-    private UniprotProteinLike uniprotProtein;
+    private IntactInteractor interactor;
+    private Protein uniprotProtein;
+    private List<Feature> clonedFeatures=new ArrayList<Feature>();
 
-    public ImportCandidate(String query, Interactor interactor) {
+    public ImportCandidate(String query, IntactInteractor interactor) {
         this.query = query;
         this.interactor = interactor;
 
-        if (interactor.getBioSource() != null) {
-            BioSource biosource = interactor.getBioSource();
+        if (interactor.getOrganism() != null) {
+            Organism biosource = interactor.getOrganism();
 
-            if (biosource.getFullName() != null){
-                this.organism = biosource.getFullName();
+            if (biosource.getScientificName() != null){
+                this.organism = biosource.getScientificName();
             }
             else {
-                this.organism = biosource.getShortLabel();
+                this.organism = biosource.getCommonName();
             }
         }
     }
 
-    public ImportCandidate(String query, UniprotProteinLike uniprotProteinLike) {
+    public ImportCandidate(String query, Protein uniprotProteinLike) {
         this.query = query;
         this.uniprotProtein = uniprotProteinLike;
 
         primaryAcs = new ArrayList<String>(1);
 
-        primaryAcs.add(uniprotProtein.getPrimaryAc());
-        secondaryAcs = uniprotProtein.getSecondaryAcs();
-        organism = uniprotProtein.getOrganism().getName();
+        primaryAcs.add(uniprotProtein.getUniprotkb());
+        secondaryAcs = new ArrayList<String>(uniprotProtein.getIdentifiers().size());
+        for (Xref ref : uniprotProtein.getIdentifiers()){
+            if (!ref.getId().equals(uniprotProtein.getUniprotkb())){
+                secondaryAcs.add(ref.getId());
+            }
+        }
+        organism = uniprotProtein.getOrganism().getCommonName();
     }
 
     public boolean isSelected() {
@@ -68,11 +71,11 @@ public class ImportCandidate {
         this.query = query;
     }
 
-    public Interactor getInteractor() {
+    public IntactInteractor getInteractor() {
         return interactor;
     }
 
-    public void setInteractor(Interactor interactor) {
+    public void setInteractor(IntactInteractor interactor) {
         this.interactor = interactor;
     }
 
@@ -108,19 +111,47 @@ public class ImportCandidate {
         this.organism = organism;
     }
 
-    public UniprotProteinLike getUniprotProtein() {
+    public Protein getUniprotProtein() {
         return uniprotProtein;
     }
 
-    public void setUniprotProtein(UniprotProtein uniprotProtein) {
+    public void setUniprotProtein(Protein uniprotProtein) {
         this.uniprotProtein = uniprotProtein;
     }
 
     public boolean isIsoform() {
-        return uniprotProtein != null && (uniprotProtein instanceof UniprotSpliceVariant);
+        return uniprotProtein != null && (uniprotProtein.getUniprotkb().contains("-"));
     }
 
     public boolean isChain() {
-        return uniprotProtein != null && (uniprotProtein instanceof UniprotFeatureChain);
+        return uniprotProtein != null && (uniprotProtein.getUniprotkb().contains("-PRO"));
+    }
+
+    public List<Feature> getClonedFeatures() {
+        return clonedFeatures;
+    }
+
+    @Override
+    public int hashCode() {
+        int hashcode = 31;
+
+        if (interactor != null){
+            hashcode = 31*hashcode + interactor.hashCode();
+        }
+
+        return hashcode;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o){
+            return true;
+        }
+
+        if (!(o instanceof Interactor)){
+            return false;
+        }
+
+        return UnambiguousExactInteractorComparator.areEquals(interactor, (Interactor) o);
     }
 }

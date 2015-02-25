@@ -18,21 +18,23 @@ package uk.ac.ebi.intact.editor.controller.misc;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
-import org.primefaces.model.LazyDataModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.intact.core.persister.IntactCore;
-import uk.ac.ebi.intact.editor.controller.JpaAwareController;
+import uk.ac.ebi.intact.editor.controller.BaseController;
 import uk.ac.ebi.intact.editor.controller.UserSessionController;
 import uk.ac.ebi.intact.editor.controller.admin.UserAdminController;
-import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
-import uk.ac.ebi.intact.model.*;
-import uk.ac.ebi.intact.model.user.Preference;
-import uk.ac.ebi.intact.model.user.User;
+import uk.ac.ebi.intact.editor.services.misc.MyNotesService;
+import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.context.IntactConfiguration;
+import uk.ac.ebi.intact.jami.model.extension.*;
+import uk.ac.ebi.intact.jami.model.user.Preference;
+import uk.ac.ebi.intact.jami.model.user.User;
+import uk.ac.ebi.intact.jami.synchronizer.FinderException;
+import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
+import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
 
+import javax.annotation.Resource;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
 import javax.faces.event.ComponentSystemEvent;
@@ -50,7 +52,7 @@ import java.util.regex.Pattern;
  */
 @Controller
 @Scope( "session" )
-public class MyNotesController extends JpaAwareController {
+public class MyNotesController extends BaseController {
 
     private static final Log log = LogFactory.getLog(MyNotesController.class);
     private static final int MAX_RESULTS = 200;
@@ -64,6 +66,12 @@ public class MyNotesController extends JpaAwareController {
     @Autowired
     private UserSessionController userSessionController;
 
+    @Resource(name = "myNotesService")
+    private transient MyNotesService myNotesService;
+
+    @Resource(name = "intactJamiConfiguration")
+    private transient IntactConfiguration intactConfiguration;
+
     public MyNotesController() {
         this.queryMacros = new ArrayList<QueryMacro>();
 
@@ -76,20 +84,25 @@ public class MyNotesController extends JpaAwareController {
                request.getContextPath();
     }
 
-    @Transactional(value = "transactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void loadPage(ComponentSystemEvent evt) {
         User user = userSessionController.getCurrentUser(true);
 
         Preference pref = user.getPreference(UserAdminController.RAW_NOTES);
 
         if (pref == null) {
-            pref = new Preference(user, UserAdminController.RAW_NOTES);
-            pref.setValue("These are your notes. You can write anything you wish here. \nYou can link to publications like EBI-2928483 or an interaction EBI-2928497.\n" +
-                    "You can use it as well for experiments, participants, etc.");
-
-            user.getPreferences().add(pref);
-
-            getDaoFactory().getPreferenceDao().persist(pref);
+            try {
+                getMyNotesService().getIntactDao().getUserContext().setUser(getCurrentUser());
+                getMyNotesService().saveNotes(user, "These are your notes. You can write anything you wish here. \nYou can link to publications like EBI-2928483 or an interaction EBI-2928497.\n" +
+                        "You can use it as well for experiments, participants, etc.");
+            }catch (SynchronizerException e) {
+                addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+            } catch (FinderException e) {
+                addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+            } catch (PersisterException e) {
+                addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+            }catch (Throwable e) {
+                addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+            }
         }
 
         rawNotes = pref.getValue();
@@ -101,14 +114,21 @@ public class MyNotesController extends JpaAwareController {
         processNotes();
     }
 
-    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
     public void saveNotes(ActionEvent evt) {
         User user = userSessionController.getCurrentUser();
 
-        Preference pref = user.getPreference(UserAdminController.RAW_NOTES);
-        pref.setValue(rawNotes);
-
-        getDaoFactory().getPreferenceDao().update(pref);
+        try {
+            getMyNotesService().getIntactDao().getUserContext().setUser(getCurrentUser());
+            getMyNotesService().saveNotes(user, rawNotes);
+        }catch (SynchronizerException e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (FinderException e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        } catch (PersisterException e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        }catch (Throwable e) {
+            addErrorMessage("Cannot save user " + user.getLogin(), e.getCause() + ": " + e.getMessage());
+        }
 
         processNotes();
 
@@ -132,7 +152,7 @@ public class MyNotesController extends JpaAwareController {
 
         String[] lines = rawNotes.split("\n");
 
-        String acPrefix = getIntactContext().getConfig().getAcPrefix();
+        String acPrefix = getIntactConfiguration().getAcPrefix();
         Pattern acPattern = Pattern.compile(acPrefix + "-\\d+");
 
         Pattern macroPattern = Pattern.compile("\\{(\\w+):(\\w+)\\s(.+)\\}");
@@ -173,7 +193,7 @@ public class MyNotesController extends JpaAwareController {
                         outcome = "[only select queries allowed]";
                     } else {
                         try {
-                            DataModel results = createDataModel(macroStatement);
+                            DataModel results = getMyNotesService().createDataModel(macroStatement);
 
                             QueryMacro queryMacro = new QueryMacro(macroName, macroStatement, results);
                             queryMacros.add(queryMacro);
@@ -196,11 +216,6 @@ public class MyNotesController extends JpaAwareController {
         return outcome;
     }
 
-    private DataModel createDataModel(String hqlQuery) {
-        LazyDataModel dataModel = LazyDataModelFactory.createLazyDataModel(getCoreEntityManager(), hqlQuery);
-        return dataModel;
-    }
-
     public String getFormattedNotes() {
         return formattedNotes;
     }
@@ -215,36 +230,46 @@ public class MyNotesController extends JpaAwareController {
 
             String replacement;
 
-            try {
-                Class aoClass = IntactCore.classForAc(getIntactContext(), ac);
+            Class aoClass = getMyNotesService().loadClassFromAc(ac);
 
-                String urlFolderName = null;
-
-                if (Publication.class.isAssignableFrom(aoClass)) {
-                    urlFolderName = "publication";
-                } else if (Experiment.class.isAssignableFrom(aoClass)) {
-                    urlFolderName = "experiment";
-                } else if (Interaction.class.isAssignableFrom(aoClass)) {
-                    urlFolderName = "interaction";
-                } else if (Interactor.class.isAssignableFrom(aoClass)) {
-                    urlFolderName = "interactor";
-                } else if (Component.class.isAssignableFrom(aoClass)) {
-                    urlFolderName = "participant";
-                } else if (Feature.class.isAssignableFrom(aoClass)) {
-                    urlFolderName = "feature";
-                } else if (BioSource.class.isAssignableFrom(aoClass)) {
-                    urlFolderName = "organism";
-                } else if (CvObject.class.isAssignableFrom(aoClass)) {
-                    urlFolderName = "cvobject";
-                }
-
-                replacement = "<a href=\""+absoluteContextPath+"/"+urlFolderName+"/"+ac+"\">"+ac+"</a>";
-
-            } catch (Throwable e) {
-                addWarningMessage("Accession problem: "+ac, "Some accession numbers in the note could not be auto-linked because there is no object type for that accession, or it does not exist in the database");
+            if (aoClass == null){
+                addWarningMessage("Accession problem: "+ac, "Some accession numbers in the note could not be auto-linked because there is no object type for " +
+                        "that accession, or it does not exist in the database");
 
                 replacement = ac;
             }
+
+            String urlFolderName = null;
+
+            if (IntactPublication.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "publication";
+            } else if (IntactExperiment.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "experiment";
+            } else if (IntactInteractionEvidence.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "interaction";
+            }
+            else if (IntactComplex.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "complex";
+            }
+            else if (IntactInteractor.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "interactor";
+            } else if (IntactModelledParticipant.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "complex participant";
+            } else if (IntactParticipantEvidence.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "participant";
+            } else if (IntactModelledFeature.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "complex feature";
+            } else if (IntactFeatureEvidence.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "feature";
+            } else if (IntactOrganism.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "organism";
+            } else if (IntactCvTerm.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "cvobject";
+            }else if (IntactSource.class.isAssignableFrom(aoClass)) {
+                urlFolderName = "institution";
+            }
+
+            replacement = "<a href=\""+absoluteContextPath+"/"+urlFolderName+"/"+ac+"\">"+ac+"</a>";
 
             matcher.appendReplacement(sb, replacement);
         }
@@ -288,5 +313,19 @@ public class MyNotesController extends JpaAwareController {
             System.out.println(matcher.group(2));
             System.out.println(matcher.group(3));
         }
+    }
+
+    public MyNotesService getMyNotesService() {
+        if (this.myNotesService == null){
+           this.myNotesService = ApplicationContextProvider.getBean("myNotesService");
+        }
+        return myNotesService;
+    }
+
+    public IntactConfiguration getIntactConfiguration() {
+        if (this.intactConfiguration == null){
+            this.intactConfiguration = ApplicationContextProvider.getBean("intactJamiConfiguration");
+        }
+        return intactConfiguration;
     }
 }

@@ -9,8 +9,8 @@
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
 
                 template="/curate/curate_template.xhtml">
-
-
+    <a href="http://www.uniprot.org/uniprot/P00519-1 " style="text-decoration:none; "><b>ABL1</b></a> <a href="http://www.ebi.ac.uk/ontology-lookup/?termId=MI:0217 " style="text-decoration:none; ">phosphorylates</a>  <a href="http://www.uniprot.org/uniprot/Q04929 " style="text-decoration:none; "><b>CRK</b></a> by <a href="http://www.ebi.ac.uk/ontology-lookup/?termId=MI:0424 " style="text-decoration:none; ">protein kinase assay</a> (<a href="http://www.ebi.ac.uk/intact/interaction/EBI-5278171 " >View interaction</a>)<a href="http://www.uniprot.org/uniprot/P00519-1 " style="text-decoration:none; "><b>ABL1</b></a> <a href="http://www.ebi.ac.uk/ontology-lookup/?termId=MI:0217 " style="text-decoration:none; ">phosphorylates</a>  <a href="http://www.uniprot.org/uniprot/P46108 " style="text-decoration:none; "><b>CRK</b></a> by <a href="http://www.ebi.ac.uk/ontology-lookup/?termId=MI:0424 " style="text-decoration:none; ">protein kinase assay</a> (<a href="http://www.ebi.ac.uk/intact/interaction/EBI-5278177 " >View interaction</a>)
+    <a href="http://www.ebi.ac.uk/intenz/query?cmd=Search&amp;q=3.5.1&amp;t=exact&amp;fields=ec " style="text-decoration:none; "><b>abgab_ecoli</b></a> <a href="http://www.ebi.ac.uk/ontology-lookup/?termId=MI:0194 " style="text-decoration:none; ">cleaves</a>  <a href="http://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:60903 " style="text-decoration:none; "><b>n-(4-aminobenzoyl)-l-glutamate</b></a> by <a href="http://www.ebi.ac.uk/ontology-lookup/?termId=MI:0990 " style="text-decoration:none; ">cleavage assay</a> (<a href="http://www.ebi.ac.uk/intact/interaction/EBI-10053527 " >View interaction</a>)<br/><a href="http://www.uniprot.org/uniprot/P76052 " style="text-decoration:none; "><b>abgB</b></a> and <a href="http://www.uniprot.org/uniprot/P77357 " style="text-decoration:none; "><b>abgA</b></a> <a href="http://www.ebi.ac.uk/ontology-lookup/?termId=MI:0407 " style="text-decoration:none; ">bind</a> by <a href="http://www.ebi.ac.uk/ontology-lookup/?termId=MI:0071 " style="text-decoration:none; ">molecular sieving</a> (<a href="http://www.ebi.ac.uk/intact/interaction/EBI-10053396 " >View interaction</a>)<br/><a href="http://www.uniprot.org/uniprot/P76052 " style="text-decoration:none; "><b>abgB</b></a> <a href="http://www.ebi.ac.uk/ontology-lookup/?termId=MI:0915 " style="text-decoration:none; ">physically interacts</a> with <a href="http://www.uniprot.org/uniprot/P77357 " style="text-decoration:none; "><b>abgA</b></a> by <a href="http://www.ebi.ac.uk/ontology-lookup/?termId=MI:0096 " style="text-decoration:none; ">pull down</a> (<a href="http://www.ebi.ac.uk/intact/interaction/EBI-10053383 " >View interaction</a>)
     <ui:define name="emptyCurateContent">
 
                 <p>
@@ -18,16 +18,19 @@
                 </p>
            <ul>
                <li>
-                   <p:commandLink value="Create a new publication" onclick="newPublicationDlg.show();"/>
+                   <p:commandLink value="Create a new publication" onclick="newPublicationDlg.show();"
+                                  rendered="#{curateController.publicationCurationEnabled}"/>
                </li>
                <li>
-                   <p:commandLink value="Load a publication by PMID" onclick="openByPmidDlg.show();"/>
+                   <p:commandLink value="Load a publication by PMID" onclick="openByPmidDlg.show();"
+                                  rendered="#{curateController.publicationCurationEnabled}"/>
                </li>
                <li>
                    <p:commandLink value="Load any annotated object by AC" onclick="openByAcDlg.show();"/>
                </li>
                <li>
-                   <p:commandLink value="Create a new biological complex" action="#{complexController.newComplex}" ajax="false"/>
+                   <p:commandLink value="Create a new biological complex" action="#{complexController.newComplex}" ajax="false"
+                                  rendered="#{curateController.complexCurationEnabled}"/>
                </li>
            </ul>
 

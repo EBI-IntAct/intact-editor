@@ -37,6 +37,7 @@
         <intercept-url pattern="/interactor/**" access="ROLE_CURATOR, ROLE_ADMIN, ROLE_COMPLEX_CURATOR, ROLE_REVIEWER, ROLE_COMPLEX_REVIEWER"/>
         <intercept-url pattern="/cv/**" access="ROLE_CURATOR, ROLE_ADMIN, ROLE_COMPLEX_CURATOR, ROLE_REVIEWER, ROLE_COMPLEX_REVIEWER"/>
         <intercept-url pattern="/notes/query/**" access="ROLE_CURATOR, ROLE_ADMIN, ROLE_COMPLEX_CURATOR, ROLE_REVIEWER, ROLE_COMPLEX_REVIEWER"/>
+        <intercept-url pattern="/dbmanager/**" access="ROLE_DATA_MANAGER, ROLE_ADMIN"/>
         <intercept-url pattern="/**" access="ROLE_CURATOR, ROLE_ADMIN, ROLE_COMPLEX_CURATOR, ROLE_REVIEWER, ROLE_COMPLEX_REVIEWER"/>
 
         <!-- Login/Logout navigation -->

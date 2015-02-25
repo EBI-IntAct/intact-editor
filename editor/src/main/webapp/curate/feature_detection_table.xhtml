@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://java.sun.com/jsp/jstl/core"
+                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
+                xmlns:ed="http://ebi.ac.uk/intact/editor/ui">
+
+    <div class="intact-buttonBar">
+        <h:selectOneMenu id="newDetectTxt" value="#{featureController.detectionMethodToAdd}"
+                         disabled="#{disableMethodSelectItems}"
+                         converter="cvObjectConverter">
+            <f:selectItems value="#{cvObjectService.featureDetectionMethodSelectItems}"/>
+        </h:selectOneMenu>
+        <p:commandButton id="newDetectBtn" value="Add Detection Method"
+                         actionListener="#{featureController.newDetectionMethod}"
+                         process="newDetectTxt"
+                         update="newDetectTxt methodsTable #{update}"/>
+    </div>
+
+    <p:dataTable id="methodsTable" var="method" value="#{featureController.collectDetectionMethods()}">
+        <p:column>
+            <f:facet name="description">
+                <h:outputText value=""/>
+            </f:facet>
+            <h:outputText value="#{method.shortName}"/>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Actions"/>
+            </f:facet>
+            <p:commandLink id="removeDetMethodBtn" styleClass="ui-icon ui-icon-closethick" process="removeDetMethodBtn"
+                           actionListener="#{annotatedObjectController.removeDetectionMethod(method)}"
+                           oncomplete="markAsUnsaved()"
+                           update="methodsTable #{update}"/>
+        </p:column>
+    </p:dataTable>
+
+
+
+</ui:composition>

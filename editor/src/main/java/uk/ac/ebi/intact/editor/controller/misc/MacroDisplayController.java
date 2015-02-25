@@ -18,7 +18,7 @@ package uk.ac.ebi.intact.editor.controller.misc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import uk.ac.ebi.intact.editor.controller.JpaAwareController;
+import uk.ac.ebi.intact.editor.controller.BaseController;
 
 import javax.faces.event.ComponentSystemEvent;
 
@@ -29,7 +29,7 @@ import javax.faces.event.ComponentSystemEvent;
  */
 @Controller
 @Scope( "session" )
-public class MacroDisplayController extends JpaAwareController {
+public class MacroDisplayController extends BaseController {
 
     @Autowired
     private MyNotesController myNotesController;

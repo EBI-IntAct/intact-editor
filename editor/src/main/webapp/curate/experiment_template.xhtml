@@ -9,25 +9,41 @@
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
 
-                template="/curate/curate_template.xhtml">
+                template="/curate/curate_publication_template.xhtml">
 
     <ui:param name="annotatedObjectController" value="#{experimentController}"/>
 
     <ui:define name="topActionsPanel">
         <p:commandButton value="Accept Experiment"
                          styleClass="important-button-good"
-                         rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                         rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)
+                         and !experimentController.accepted}"
                          actionListener="#{experimentController.acceptExperiment}"
                          action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true"/>
-
+        <p:commandButton value="Revert Accepted"
+                         styleClass="important-button-alt"
+                         rendered="#{experimentController.accepted
+                         and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                         actionListener="#{experimentController.revertAccepted}"
+                         action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true"/>
         <p:commandButton value="Reject Experiment" type="button"
                          styleClass="important-button-bad"
                          rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                          onclick="rejectExperimentDialog.show()"/>
+        <p:commandButton value="Remove to be reviewed"
+                         styleClass="important-button-bad"
+                         rendered="#{experimentController.rejected and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                         actionListener="#{experimentController.removeToBeReviewed}"
+                         action="#{experimentController.doSave}" ajax="false"/>
         <p:commandButton value="Correction Comment" type="button"
                          styleClass="important-button-alt"
                          rendered="#{publicationController.curationInProgress and userSessionController.isItMe(publicationController.publication.currentOwner)}"
                          onclick="correctionCommentDialog.show()"/>
+        <p:commandButton value="Remove Correction Comment" actionListener="#{experimentController.removeCorrectionComment}"
+                         styleClass="important-button-alt"
+                         rendered="#{experimentController.corrected and (userSessionController.isItMe(publicationController.publication.currentOwner)
+                         or userSessionController.isItMe(publicationController.publication.currentReviewer))}"
+                         action="#{experimentController.doSave}" ajax="false"/>
     </ui:define>
 
     <ui:define name="breadcrumbs">
@@ -59,12 +75,6 @@
 
     </ui:define>
 
-    <!--<ui:define name="reviewerContextual">-->
-        <!--<p:menuitem value="Accept experiment" actionListener="#{experimentController.acceptExperiment}"-->
-                        <!--update="centralUnit,topSection"/>-->
-        <!--<p:menuitem value="Reject experiment" onclick="rejectExperimentDialog.show()"/>-->
-    <!--</ui:define>-->
-
     <ui:define name="curateContent">
 
         <h:panelGroup id="noExpLoaded" rendered="#{experimentController.experiment == null}">
@@ -93,7 +103,7 @@
                   modal="true" position="center">
             <h:panelGrid columns="3" style="margin-bottom:10px">
                     <h:outputLabel for="corrComTxt" value="Comment to reviewer:"/>
-                    <p:inputTextarea id="corrComTxt" value="#{experimentController.correctedComment}" rows="4" cols="40"
+                    <p:inputTextarea id="corrComTxt" value="#{experimentController.correctionComment}" rows="4" cols="40"
                                      autoResize="false"
                                      converter="trimmingConverter"/>
 
