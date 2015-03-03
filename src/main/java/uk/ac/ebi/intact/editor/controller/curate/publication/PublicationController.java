@@ -831,7 +831,7 @@ public class PublicationController extends AnnotatedObjectController {
         loadFormFields();
         refreshExperiments();
 
-        setDescription("Publication: "+(publication.getPubmedId() != null ? publication.getPubmedId() : publication.getShortLabel()));
+        setDescription("Publication: "+(this.publication.getPubmedId() != null ? this.publication.getPubmedId() : this.publication.getShortLabel()));
     }
 
     @Override
