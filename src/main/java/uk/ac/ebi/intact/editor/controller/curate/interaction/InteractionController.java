@@ -624,6 +624,7 @@ public class InteractionController extends AnnotatedObjectController {
 
         IntactParticipantEvidence clone = getEditorService().cloneAnnotatedObject((IntactParticipantEvidence)participantWrapper.getParticipant(), cloner);
         addParticipant(clone);
+        doSave(false);
     }
 
     public void linkSelectedFeatures(ActionEvent evt) {

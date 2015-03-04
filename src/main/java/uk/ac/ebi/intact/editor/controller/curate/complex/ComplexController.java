@@ -353,6 +353,7 @@ public class ComplexController extends AnnotatedObjectController {
 
         IntactModelledParticipant clone = getEditorService().cloneAnnotatedObject((IntactModelledParticipant)participantWrapper.getParticipant(), cloner);
         addParticipant(clone);
+        doSave(false);
     }
 
     public void linkSelectedFeatures(ActionEvent evt) {
