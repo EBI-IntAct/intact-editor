@@ -32,6 +32,10 @@
         <spring.version>3.2.4.RELEASE</spring.version>
         <jami.version>1.1.0</jami.version>
         <jami.core.version>1.2.1</jami.core.version>
+        <jami.xml.version>1.1.2</jami.xml.version>
+        <jami.commons.version>1.1.2</jami.commons.version>
+        <jami.mitab.version>1.1.1</jami.mitab.version>
+        <jami.html.version>1.1.1</jami.html.version>
         <jami.bridges.version>1.1.1</jami.bridges.version>
         <jami.interactionViewer.version>2.0.1</jami.interactionViewer.version>
         <intact.jami.version>1.2.1</intact.jami.version>
@@ -211,7 +215,7 @@
         <dependency>
             <groupId>psidev.psi.mi.jami</groupId>
             <artifactId>jami-commons</artifactId>
-            <version>${jami.version}</version>
+            <version>${jami.commons.version}</version>
         </dependency>
 
         <dependency>
@@ -223,7 +227,7 @@
         <dependency>
             <groupId>psidev.psi.mi.jami</groupId>
             <artifactId>jami-html</artifactId>
-            <version>${jami.version}</version>
+            <version>${jami.html.version}</version>
         </dependency>
 
         <dependency>
@@ -398,6 +402,11 @@
             <groupId>psidev.psi.mi.jami</groupId>
             <artifactId>jami-xml</artifactId>
             <version>1.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>psidev.psi.mi.jami</groupId>
+            <artifactId>jami-mitab</artifactId>
+            <version>1.1.1</version>
         </dependency>
 
         <dependency>
