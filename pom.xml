@@ -70,6 +70,7 @@
         <intact.instance.name>Not Set</intact.instance.name>
         <google.username></google.username>
         <google.password></google.password>
+        <editor.theme>ui-lightness</editor.theme>
         <maintainer.emails>intact-dev@ebi.ac.uk</maintainer.emails>
 
         <userContext.scope>session</userContext.scope>
