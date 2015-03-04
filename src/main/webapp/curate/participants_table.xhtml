@@ -9,196 +9,196 @@
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components">
 
-    <h:panelGroup id="participantsTableGroup">
+<h:panelGroup id="participantsTableGroup">
 
-        <ui:param name="toDeleteCount" value="#{changesController.getDeletedAcsByClassName('uk.ac.ebi.intact.jami.model.extension.IntactParticipantEvidence', interactionController.ac).size()}"/>
+    <ui:param name="toDeleteCount" value="#{changesController.getDeletedAcsByClassName('uk.ac.ebi.intact.jami.model.extension.IntactParticipantEvidence', interactionController.ac).size()}"/>
 
-        <h:panelGroup rendered="#{toDeleteCount gt 0}">
-            <ia:panelMessage level="info">
-                <h:outputText value="#{toDeleteCount} participants will be deleted on save."/>
-            </ia:panelMessage>
-        </h:panelGroup>
-
-        <p:dataTable id="participantsTable" var="wrapper" value="#{value}"
-                     sortBy="#{wrapper.participant.experimentalRole}"
-                     sortFunction="#{wrapper.sortByExperimentalRole}"
-                     sortOrder="ascending"
-                     paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
-                     rowsPerPageTemplate="10,20,50,100"
-                     rows="10" paginatorAlwaysVisible="false" paginator="true" paginatorPosition="both"
-                     rowStyleClass="#{wrapper.participant.ac == null? 'intact-new' : changesController.isDeletedAc(wrapper.participant.ac)? 'intact-deleted' : null}"
-                     widgetVar="participantsTableWidget"
-                >
-
-            <ui:param name="participant" value="#{wrapper.participant}" />
-            <ui:param name="interactor" value="#{participant.interactor}" />
-
-            <p:column id="ac" headerText="AC"
-                      sortBy="#{participant.ac}"
-                      filterBy="#{participant.ac}"
-                      filterMatchMode="contains">
-                <h:panelGroup rendered="#{not changesController.isDeletedAc(participant.ac)}">
-                    <h:outputText value="#{participant.ac}" styleClass="#{participant.ac == null? 'intact-new' :''}"/>
-                </h:panelGroup>
-                <h:panelGroup rendered="#{changesController.isDeletedAc(participant.ac)}">
-                    <h:outputText value="#{participant.ac}" styleClass="intact-deleted"/>
-                </h:panelGroup>
-            </p:column>
-
-            <p:column id="shortLabel" headerText="Name"
-                      sortBy="#{interactor.shortName}"
-                      filterBy="#{interactor.shortName}"
-                      filterMatchMode="contains">
-                <p:commandLink onclick="load_participant.show()" action="#{curateController.edit(participant)}"
-                               value="#{interactor.shortName}" rendered="#{interactor != null and not changesController.isDeletedAc(participant.ac)}"
-                               styleClass="#{participant.ac == null? 'intact-new' :''}"
-                               ajax="false"/>
-                <h:panelGroup rendered="#{changesController.isDeletedAc(participant.ac)}">
-                    <h:outputText value="#{interactor.shortName}" styleClass="intact-deleted"/>
-                </h:panelGroup>
-            </p:column>
-
-            <p:column id="ao">
-                <ui:include src="common_column_notifications.xhtml">
-                    <ui:param name="annotatedObjectController" value="#{participantController}"/>
-                    <ui:param name="ao" value="#{participant}"/>
-                </ui:include>
-                <h:panelGroup rendered="#{annotatedObjectController.isNoUniprotUpdate(participant.interactor)}">
-                    <h:graphicImage alt="no uniprot update" library="images" name="no_uni_update.png"
-                                    title="No Uniprot Update"/>
-                </h:panelGroup>
-            </p:column>
-
-            <p:column id="identity" headerText="Identity"
-                      sortBy="#{wrapper.interactorIdentity}"
-                      filterBy="#{wrapper.interactorIdentity}"
-                      filterMatchMode="contains">
-                <h:outputText id="participantId" value="#{wrapper.interactorIdentity}"
-                              styleClass="#{changesController.isDeletedAc(participant.ac)? 'intact-deleted' : ''}"/>
-            </p:column>
-
-            <p:column id="expressIn" headerText="Expressed in">
-                <h:selectOneMenu id="expressedInBiosource" value="#{participant.expressedInOrganism}" rendered="#{value.size() lt 5}"
-                                 disabled="#{interactionController.isParticipantDisabled()}" converter="organismConverter">
-                    <f:selectItems value="#{bioSourceService.bioSourceSelectItems}" />
-                    <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
-                </h:selectOneMenu>
-                <h:outputText value="#{participant.expressedInOrganism != null? participant.expressedInOrganism.commonName : ''}"
-                              rendered="#{value.size() ge 5}"/>
-            </p:column>
-
-            <p:column id="expRoleCol" headerText="Experimental role"
-                      sortFunction="#{wrapper.sortByExperimentalRole}"
-                      sortBy="#{participant.experimentalRole}"
-                      filterBy="#{participant.experimentalRole}"
-                      filterMatchMode="contains">
-
-                <h:selectOneMenu id="expRoleCv" value="#{participant.experimentalRole}" rendered="#{value.size() lt 5}"
-                                 disabled="#{interactionController.isParticipantDisabled()}" converter="cvObjectConverter">
-                    <f:selectItems value="#{cvObjectService.experimentalRoleSelectItems}" />
-                    <p:ajax process="@this" event="change"
-                            oncomplete="markAsUnsaved()"
-                            update=":editorForm:shortlabelTxt,:editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent, participantsTable"/>
-                </h:selectOneMenu>
-                <h:outputText value="#{participant.experimentalRole != null? participant.experimentalRole.shortName : ''}"
-                              rendered="#{value.size() ge 5}"/>
-            </p:column>
-
-            <p:column id="bioRoleCol" headerText="Biological role">
-
-                <h:selectOneMenu id="bioRoleCv" value="#{participant.biologicalRole}"
-                                 rendered="#{value.size() lt 5}" disabled="#{interactionController.isParticipantDisabled()}"
-                        converter="cvObjectConverter">
-                    <f:selectItems value="#{cvObjectService.biologicalRoleSelectItems}" />
-                    <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
-                </h:selectOneMenu>
-                <h:outputText value="#{participant.biologicalRole != null? participant.biologicalRole.shortName : ''}"
-                              rendered="#{value.size() ge 5}"/>
-            </p:column>
-
-            <p:column headerText="Features">
-                <f:facet name="footer">
-                    <p:commandButton value="Link" actionListener="#{interactionController.linkSelectedFeatures}" ajax="false"/>
-                </f:facet>
-
-                <h:dataTable  var="featureWrapper" value="#{wrapper.features}"
-                              paginator="false" styleClass="inner-table">
-                    <h:column style="width: 14px">
-                        <h:selectBooleanCheckbox value="#{featureWrapper.selected}"/>
-                    </h:column>
-                    <h:column>
-                        <div id="feature_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}">
-                            <h:outputText value="#{featureWrapper.feature.shortName} #{featureWrapper.ranges}"/>
-                            <h:panelGroup id="linkedFeaturePanelGroup" rendered="#{!empty featureWrapper.linkedFeatures}">
-                                <ui:repeat value="#{featureWrapper.linkedFeatures}" var="linked" varStatus="status">
-                                    <p:commandLink id="unlinkBtn_${intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}" type="button" oncomplete="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.show()"
-                                                   styleClass="ui-icon ui-icon-link" style="display:inline-block"
-                                                   title="Linked to #{linked.shortName}" action="#{interactionController.selectLinkedFeature(featureWrapper, linked)}"
-                                                   update=":editorForm:interactionTabs:participantsTable"
-                                                   onmouseover="ia_showLinkedFeatures('feature_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}', '#{featureWrapper.getRelatedFeatureDivs(linked)}', '#{!empty featureWrapper.linkedFeatures}')"
-                                                   onmouseout="ia_hideLinkedFeatures('feature_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}', '#{featureWrapper.getRelatedFeatureDivs(linked)}', '#{!empty featureWrapper.linkedFeatures}')">
-                                    </p:commandLink>
-
-                                    <p:outputPanel rendered="#{status.index lt (status.end - 1)}">
-                                        <br/>
-                                    </p:outputPanel>
-                                </ui:repeat>
-                            </h:panelGroup>
-                            <p:confirmDialog widgetVar="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}"
-                                             message="Do you want to unlink this feature?" modal="true">
-                                <p:commandButton value="Yes Sure"
-                                                 actionListener="#{interactionController.unlinkFeature(featureWrapper)}"
-                                                 update=":editorForm:interactionTabs:participantsTable :editorForm:changesPanel :editorForm:messagesComponent :editorForm:unsavedChangesInfo"
-                                                 onclick="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.hide()"/>
-                                <p:commandButton value="Not Yet" onclick="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.hide()" />
-                            </p:confirmDialog>
-                        </div>
-                    </h:column>
-                </h:dataTable>
-
-            </p:column>
-
-            <p:column headerText="Min Stoich.">
-                <p:spinner id="minStoichiometryValue" value="#{wrapper.minStoichiometry}"
-                           min="0" stepFactor="1" maxlength="3" size="3">
-                    <p:ajax event="change" process="@this maxStoichiometryValue" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent,:editorForm:basic"/>
-                </p:spinner>
-            </p:column>
-
-            <p:column headerText="Max Stoich.">
-                <p:spinner id="maxStoichiometryValue" value="#{wrapper.maxStoichiometry}"
-                           min="0" stepFactor="1" maxlength="3" size="3">
-                    <p:ajax event="change" process="@this minStoichiometryValue" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent,:editorForm:basic"/>
-                </p:spinner>
-            </p:column>
-
-            <p:column headerText="Options">
-                <div style="float:right">
-                    <p:commandLink id="markDeletedBtn" process="markDeletedBtn" title="Mark to be deleted" styleClass="ui-icon ui-icon-closethick"
-                                   actionListener="#{interactionController.markParticipantToDelete(participant)}"
-                                   update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:interactionTabs:participantsTab"
-                                   rendered="#{not changesController.isDeletedAc(participant.ac)}"/>
-                </div>
-                <div style="float:right">
-                    <p:commandLink id="revertBtn" process="revertBtn" title="Revert" styleClass="ui-icon ui-icon-arrowreturnthick-1-w"
-                                   actionListener="#{changesController.revert(participant)}"
-                                   update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo,:editorForm:interactionTabs:participantsTab"
-                                   rendered="#{changesController.isDeletedAc(participant.ac)}"/>
-                </div>
-                <div style="float:left">
-                    <p:commandLink id="duplicateBtn" process="duplicateBtn" title="Duplicate" styleClass="ui-icon ui-icon-newwin"
-                                   actionListener="#{interactionController.cloneParticipant(wrapper)}"
-                                   update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:interactionTabs:participantsTab"
-                                   rendered="#{not changesController.isDeletedAc(participant.ac)}"/>
-                </div>
-            </p:column>
-        </p:dataTable>
-
-        <ia:loadingDialog widgetVar="load_participant" message="Loading participant..."/>
-        <ia:loadingDialog widgetVar="delParticipantDialog" message="Marking participant to be deleted..."/>
-        <ia:loadingDialog widgetVar="revdelParticipantDialog" message="Reverting participant..."/>
-        <ia:loadingDialog widgetVar="clone_articipant_dialog" message="Cloning participant..."/>
-
+    <h:panelGroup rendered="#{toDeleteCount gt 0}">
+        <ia:panelMessage level="info">
+            <h:outputText value="#{toDeleteCount} participants will be deleted on save."/>
+        </ia:panelMessage>
     </h:panelGroup>
+
+    <p:dataTable id="participantsTable" var="wrapper" value="#{value}"
+                 sortBy="#{wrapper.participant.experimentalRole}"
+                 sortFunction="#{wrapper.sortByExperimentalRole}"
+                 sortOrder="ascending"
+                 paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
+                 rowsPerPageTemplate="10,20,50,100"
+                 rows="10" paginatorAlwaysVisible="false" paginator="true" paginatorPosition="both"
+                 rowStyleClass="#{wrapper.participant.ac == null? 'intact-new' : changesController.isDeletedAc(wrapper.participant.ac)? 'intact-deleted' : null}"
+                 widgetVar="participantsTableWidget"
+            >
+
+        <ui:param name="participant" value="#{wrapper.participant}" />
+        <ui:param name="interactor" value="#{participant.interactor}" />
+
+        <p:column id="ac" headerText="AC"
+                  sortBy="#{wrapper.participant.ac}"
+                  filterBy="#{wrapper.participant.ac}"
+                  filterMatchMode="contains">
+            <h:panelGroup rendered="#{not changesController.isDeletedAc(wrapper.participant.ac)}">
+                <h:outputText value="#{wrapper.participant.ac}" styleClass="#{wrapper.participant.ac == null? 'intact-new' :''}"/>
+            </h:panelGroup>
+            <h:panelGroup rendered="#{changesController.isDeletedAc(wrapper.participant.ac)}">
+                <h:outputText value="#{wrapper.participant.ac}" styleClass="intact-deleted"/>
+            </h:panelGroup>
+        </p:column>
+
+        <p:column id="shortLabel" headerText="Name"
+                  sortBy="#{wrapper.participant.interactor.shortName}"
+                  filterBy="#{wrapper.participant.interactor.shortName}"
+                  filterMatchMode="contains">
+            <p:commandLink onclick="load_participant.show()" action="#{curateController.edit(wrapper.participant)}"
+                           value="#{wrapper.participant.interactor.shortName}" rendered="#{wrapper.participant.interactor != null and not changesController.isDeletedAc(wrapper.participant.ac)}"
+                           styleClass="#{wrapper.participant.ac == null? 'intact-new' :''}"
+                           ajax="false"/>
+            <h:panelGroup rendered="#{changesController.isDeletedAc(wrapper.participant.ac)}">
+                <h:outputText value="#{wrapper.participant.interactor.shortName}" styleClass="intact-deleted"/>
+            </h:panelGroup>
+        </p:column>
+
+        <p:column id="ao">
+            <ui:include src="common_column_notifications.xhtml">
+                <ui:param name="annotatedObjectController" value="#{participantController}"/>
+                <ui:param name="ao" value="#{wrapper.participant}"/>
+            </ui:include>
+            <h:panelGroup rendered="#{annotatedObjectController.isNoUniprotUpdate(wrapper.participant.interactor)}">
+                <h:graphicImage alt="no uniprot update" library="images" name="no_uni_update.png"
+                                title="No Uniprot Update"/>
+            </h:panelGroup>
+        </p:column>
+
+        <p:column id="identity" headerText="Identity"
+                  sortBy="#{wrapper.interactorIdentity}"
+                  filterBy="#{wrapper.interactorIdentity}"
+                  filterMatchMode="contains">
+            <h:outputText id="participantId" value="#{wrapper.interactorIdentity}"
+                          styleClass="#{changesController.isDeletedAc(wrapper.participant.ac)? 'intact-deleted' : ''}"/>
+        </p:column>
+
+        <p:column id="expressIn" headerText="Expressed in">
+            <h:selectOneMenu id="expressedInBiosource" value="#{wrapper.participant.expressedInOrganism}" rendered="#{value.size() lt 5}"
+                             disabled="#{interactionController.isParticipantDisabled()}" converter="organismConverter">
+                <f:selectItems value="#{bioSourceService.bioSourceSelectItems}" />
+                <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
+            </h:selectOneMenu>
+            <h:outputText value="#{wrapper.participant.expressedInOrganism != null? wrapper.participant.expressedInOrganism.commonName : ''}"
+                          rendered="#{value.size() ge 5}"/>
+        </p:column>
+
+        <p:column id="expRoleCol" headerText="Experimental role"
+                  sortFunction="#{wrapper.sortByExperimentalRole}"
+                  sortBy="#{wrapper.participant.experimentalRole}"
+                  filterBy="#{wrapper.participant.experimentalRole}"
+                  filterMatchMode="contains">
+
+            <h:selectOneMenu id="expRoleCv" value="#{wrapper.participant.experimentalRole}" rendered="#{value.size() lt 5}"
+                             disabled="#{interactionController.isParticipantDisabled()}" converter="cvObjectConverter">
+                <f:selectItems value="#{cvObjectService.experimentalRoleSelectItems}" />
+                <p:ajax process="@this" event="change"
+                        oncomplete="markAsUnsaved()"
+                        update=":editorForm:shortlabelTxt,:editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent, participantsTable"/>
+            </h:selectOneMenu>
+            <h:outputText value="#{wrapper.participant.experimentalRole != null? wrapper.participant.experimentalRole.shortName : ''}"
+                          rendered="#{value.size() ge 5}"/>
+        </p:column>
+
+        <p:column id="bioRoleCol" headerText="Biological role">
+
+            <h:selectOneMenu id="bioRoleCv" value="#{wrapper.participant.biologicalRole}"
+                             rendered="#{value.size() lt 5}" disabled="#{interactionController.isParticipantDisabled()}"
+                             converter="cvObjectConverter">
+                <f:selectItems value="#{cvObjectService.biologicalRoleSelectItems}" />
+                <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
+            </h:selectOneMenu>
+            <h:outputText value="#{wrapper.participant.biologicalRole != null? wrapper.participant.biologicalRole.shortName : ''}"
+                          rendered="#{value.size() ge 5}"/>
+        </p:column>
+
+        <p:column headerText="Features">
+            <f:facet name="footer">
+                <p:commandButton value="Link" actionListener="#{interactionController.linkSelectedFeatures}" ajax="false"/>
+            </f:facet>
+
+            <h:dataTable  var="featureWrapper" value="#{wrapper.features}"
+                          paginator="false" styleClass="inner-table">
+                <h:column style="width: 14px">
+                    <h:selectBooleanCheckbox value="#{featureWrapper.selected}"/>
+                </h:column>
+                <h:column>
+                    <div id="feature_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}">
+                        <h:outputText value="#{featureWrapper.feature.shortName} #{featureWrapper.ranges}"/>
+                        <h:panelGroup id="linkedFeaturePanelGroup" rendered="#{!empty featureWrapper.linkedFeatures}">
+                            <ui:repeat value="#{featureWrapper.linkedFeatures}" var="linked" varStatus="status">
+                                <p:commandLink id="unlinkBtn_${intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}" type="button" oncomplete="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.show()"
+                                               styleClass="ui-icon ui-icon-link" style="display:inline-block"
+                                               title="Linked to #{linked.shortName}" action="#{interactionController.selectLinkedFeature(featureWrapper, linked)}"
+                                               update=":editorForm:interactionTabs:participantsTable"
+                                               onmouseover="ia_showLinkedFeatures('feature_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}', '#{featureWrapper.getRelatedFeatureDivs(linked)}', '#{!empty featureWrapper.linkedFeatures}')"
+                                               onmouseout="ia_hideLinkedFeatures('feature_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}', '#{featureWrapper.getRelatedFeatureDivs(linked)}', '#{!empty featureWrapper.linkedFeatures}')">
+                                </p:commandLink>
+
+                                <p:outputPanel rendered="#{status.index lt (status.end - 1)}">
+                                    <br/>
+                                </p:outputPanel>
+                            </ui:repeat>
+                        </h:panelGroup>
+                        <p:confirmDialog widgetVar="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}"
+                                         message="Do you want to unlink this feature?" modal="true">
+                            <p:commandButton value="Yes Sure"
+                                             actionListener="#{interactionController.unlinkFeature(featureWrapper)}"
+                                             update=":editorForm:interactionTabs:participantsTable :editorForm:changesPanel :editorForm:messagesComponent :editorForm:unsavedChangesInfo"
+                                             onclick="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.hide()"/>
+                            <p:commandButton value="Not Yet" onclick="unlinkConfirm_#{intactComponentUtils.toJavascriptFriendlyVar(featureWrapper.feature.ac)}.hide()" />
+                        </p:confirmDialog>
+                    </div>
+                </h:column>
+            </h:dataTable>
+
+        </p:column>
+
+        <p:column headerText="Min Stoich.">
+            <p:spinner id="minStoichiometryValue" value="#{wrapper.minStoichiometry}"
+                       min="0" stepFactor="1" maxlength="3" size="3">
+                <p:ajax event="change" process="@this maxStoichiometryValue" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent,:editorForm:basic"/>
+            </p:spinner>
+        </p:column>
+
+        <p:column headerText="Max Stoich.">
+            <p:spinner id="maxStoichiometryValue" value="#{wrapper.maxStoichiometry}"
+                       min="0" stepFactor="1" maxlength="3" size="3">
+                <p:ajax event="change" process="@this minStoichiometryValue" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent,:editorForm:basic"/>
+            </p:spinner>
+        </p:column>
+
+        <p:column headerText="Options">
+            <div style="float:right">
+                <p:commandLink id="markDeletedBtn" process="markDeletedBtn" title="Mark to be deleted" styleClass="ui-icon ui-icon-closethick"
+                               actionListener="#{interactionController.markParticipantToDelete(wrapper.participant)}"
+                               update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:interactionTabs:participantsTab"
+                               rendered="#{not changesController.isDeletedAc(wrapper.participant.ac)}"/>
+            </div>
+            <div style="float:right">
+                <p:commandLink id="revertBtn" process="revertBtn" title="Revert" styleClass="ui-icon ui-icon-arrowreturnthick-1-w"
+                               actionListener="#{changesController.revert(wrapper.participant)}"
+                               update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo,:editorForm:interactionTabs:participantsTab"
+                               rendered="#{changesController.isDeletedAc(wrapper.participant.ac)}"/>
+            </div>
+            <div style="float:left">
+                <p:commandLink id="duplicateBtn" process="duplicateBtn" title="Duplicate" styleClass="ui-icon ui-icon-newwin"
+                               actionListener="#{interactionController.cloneParticipant(wrapper)}"
+                               update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:interactionTabs:participantsTab"
+                               rendered="#{not changesController.isDeletedAc(wrapper.participant.ac)}"/>
+            </div>
+        </p:column>
+    </p:dataTable>
+
+    <ia:loadingDialog widgetVar="load_participant" message="Loading participant..."/>
+    <ia:loadingDialog widgetVar="delParticipantDialog" message="Marking participant to be deleted..."/>
+    <ia:loadingDialog widgetVar="revdelParticipantDialog" message="Reverting participant..."/>
+    <ia:loadingDialog widgetVar="clone_articipant_dialog" message="Cloning participant..."/>
+
+</h:panelGroup>
 
 </ui:composition>
