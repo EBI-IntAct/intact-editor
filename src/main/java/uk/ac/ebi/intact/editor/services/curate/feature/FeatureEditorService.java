@@ -177,7 +177,7 @@ public class FeatureEditorService extends AbstractEditorService {
             return true;
         }
         if (areFeatureCollectionsLazy(feature)
-                || (((IntactFeatureEvidence) feature).getFeatureIdentification() != null && !isCvInitialised(((IntactFeatureEvidence) feature).getFeatureIdentification()))
+                || (feature instanceof IntactFeatureEvidence && ((IntactFeatureEvidence) feature).getFeatureIdentification() != null && !isCvInitialised(((IntactFeatureEvidence) feature).getFeatureIdentification()))
                 || (feature.getType() != null && !isCvInitialised(feature.getType()))
                 || (feature.getRole() != null && !isCvInitialised(feature.getRole()))
                 || (feature.getParticipant() != null && !isParticipantInitialised(feature.getParticipant()))
