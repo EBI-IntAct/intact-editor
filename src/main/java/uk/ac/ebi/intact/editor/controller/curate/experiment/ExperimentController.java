@@ -441,7 +441,7 @@ public class ExperimentController extends AnnotatedObjectController {
     public void rejectExperiment(ActionEvent actionEvent) {
 
         UserSessionController userSessionController = (UserSessionController) getSpringContext().getBean("userSessionController");
-        if (reasonForRejection.startsWith("Rejected")) {
+        if (reasonForRejection != null && reasonForRejection.startsWith("Rejected")) {
             reasonForRejection = reasonForRejection.substring(reasonForRejection.indexOf(".")+2);
         }
         String date = "Rejected " +new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase()+
