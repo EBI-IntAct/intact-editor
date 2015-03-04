@@ -326,10 +326,10 @@
             </td>
             <td colspan="3">
                 <h:panelGroup>
-                    <p:inputText id="onHoldTxt" value="#{publicationController.onHold}" size="70"
+                    <p:inputTextarea id="onHoldTxt" value="#{publicationController.onHold}" size="70" autoResize="false"
                                  valueChangeListener="#{publicationController.onHoldChanged}">
                         <ed:curation/>
-                    </p:inputText>
+                    </p:inputTextarea>
                 </h:panelGroup>
             </td>
         </h:panelGroup>
@@ -341,10 +341,10 @@
             </td>
             <td colspan="3">
                 <h:panelGroup>
-                    <p:inputText id="toBeReviewedTxt" value="#{publicationController.toBeReviewed}" size="70"
+                    <p:inputTextarea id="toBeReviewedTxt" value="#{publicationController.toBeReviewed}" size="70" autoResize="false"
                                  valueChangeListener="#{publicationController.onToBeReviewedChanged}">
                         <ed:curation/>
-                    </p:inputText>
+                    </p:inputTextarea>
                 </h:panelGroup>
             </td>
         </h:panelGroup>

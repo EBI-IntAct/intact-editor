@@ -307,7 +307,7 @@
                 <h:outputLabel value="To be reviewed: " for="toBeReviewedTxt"/>
             </td>
             <td colspan="3">
-                <p:inputTextarea id="toBeReviewedTxt" value="#{complexController.toBeReviewed}" size="70"
+                <p:inputTextarea id="toBeReviewedTxt" value="#{complexController.toBeReviewed}" size="70" autoResize="false"
                                  valueChangeListener="#{complexController.onToBeReviewedChanged}">
                     <ed:curation/>
                 </p:inputTextarea>
@@ -321,7 +321,7 @@
                 <h:outputLabel value="Correction comment: " for="correctionCommentTxt"/>
             </td>
             <td colspan="3">
-                <p:inputTextarea id="correctionCommentTxt" value="#{complexController.correctionComment}" size="70"
+                <p:inputTextarea id="correctionCommentTxt" value="#{complexController.correctionComment}" size="70" autoResize="false"
                                  valueChangeListener="#{complexController.onCorrectionCommentChanged}">
                     <ed:curation/>
                 </p:inputTextarea>

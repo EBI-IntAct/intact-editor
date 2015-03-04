@@ -122,7 +122,7 @@
                             <h:outputLabel value="To be reviewed: " for="toBeReviewedTxt"/>
                         </td>
                         <td colspan="3">
-                            <p:inputTextarea id="toBeReviewedTxt" value="#{experimentController.toBeReviewed}" size="70"
+                            <p:inputTextarea id="toBeReviewedTxt" value="#{experimentController.toBeReviewed}" size="70" autoResize="false"
                                              valueChangeListener="#{experimentController.onToBeReviewedChanged}">
                                 <ed:curation/>
                             </p:inputTextarea>
@@ -136,7 +136,7 @@
                             <h:outputLabel value="Correction comment: " for="correctionCommentTxt"/>
                         </td>
                         <td colspan="3">
-                            <p:inputTextarea id="correctionCommentTxt" value="#{experimentController.correctionComment}" size="70"
+                            <p:inputTextarea id="correctionCommentTxt" value="#{experimentController.correctionComment}" size="70" autoResize="false"
                                              valueChangeListener="#{experimentController.onCorrectionCommentChanged}">
                                 <ed:curation/>
                             </p:inputTextarea>
