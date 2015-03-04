@@ -547,7 +547,7 @@ public class ExperimentController extends AnnotatedObjectController {
     }
 
     public void setToBeReviewed(String toBeReviewed) {
-        this.reasonForRejection = null;
+        this.reasonForRejection = toBeReviewed;
     }
 
     public String getToBeReviewed() {
