@@ -16,9 +16,9 @@
 
 <ui:define name="metadata">
     <f:metadata>
-        <f:viewParam id="expViewContAc" name="ac" value="#{experimentDetailedViewController.ac}"/>
+        <f:viewParam name="ac" value="#{experimentDetailedViewController.ac}"/>
+        <f:event type="preRenderView" listener="#{experimentDetailedViewController.loadData}"/>
     </f:metadata>
-    <f:event type="preRenderView" listener="#{experimentDetailedViewController.loadData}"/>
 </ui:define>
 
 
@@ -90,7 +90,7 @@
                             <p:tab title="Participants: #{experimentDetailedViewController.experimentWrapper.getParticipants(interaction).size()}">
 
                                 <p:dataTable var="participant"
-                                value="#{experimentDetailedViewController.experimentWrapper.getParticipants(interaction)}">
+                                             value="#{experimentDetailedViewController.experimentWrapper.getParticipants(interaction)}">
                                     <p:column headerText="Identity">
                                         <h:outputLink value="#{request.contextPath}/participant/#{participant.ac}">
                                             <h:outputText
@@ -120,8 +120,8 @@
                                                 <ul>
                                                     <ui:repeat value="#{feature.bindDomains}" var="linked">
                                                         <li class="ui-icon ui-icon-link linked-feature-for-#{participantController.participantPrimaryId(participant)}"
-                                                             style="display:inline-block"
-                                                             title="Linked to #{linked}"></li>
+                                                            style="display:inline-block"
+                                                            title="Linked to #{linked}"></li>
                                                         <br/>
                                                     </ui:repeat>
                                                 </ul>
