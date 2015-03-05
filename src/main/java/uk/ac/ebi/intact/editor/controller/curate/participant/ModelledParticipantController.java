@@ -102,6 +102,12 @@ public class ModelledParticipantController extends AbstractParticipantController
         return parentAcs;
     }
 
+    @Override
+    public String doDelete() {
+        interactionController.removeParticipant(getParticipant());
+        return super.doDelete();
+    }
+
     /**
      * Add all the parent acs of this interaction
      * @param parentAcs
