@@ -17,27 +17,23 @@ public class ExperimentalRoleComparator implements Comparator<CvTerm> {
     public int compare(CvTerm cvExpRole1, CvTerm cvExpRole2) {
         if (cvExpRole1 != null && cvExpRole2 != null) {
             if (cvExpRole1.getShortName() != null && cvExpRole2.getShortName() != null) {
-                if (cvExpRole1.getShortName().equals("bait")) {
+                if (cvExpRole1.getShortName().equals("bait") && !cvExpRole2.getShortName().equals("bait")) {
                     return -1;
-                } else if (cvExpRole2.getShortName().equals("bait")) {
+                } else if (cvExpRole2.getShortName().equals("bait") && !cvExpRole1.getShortName().equals("bait")) {
                     return 1;
                 } else {
                     return cvExpRole1.getShortName().compareTo(cvExpRole2.getShortName());
                 }
             }
-            else {
-                if (cvExpRole1.getShortName() == null && cvExpRole2.getShortName() != null) {
+            else if (cvExpRole1.getShortName() == null && cvExpRole2.getShortName() != null) {
                     return -1;
-                } else if (cvExpRole1.getShortName() != null && cvExpRole2.getShortName() == null) {
+            } else if (cvExpRole1.getShortName() != null && cvExpRole2.getShortName() == null) {
                     return 1;
-                }
             }
-        } else {
-            if (cvExpRole1 == null && cvExpRole2 != null) {
+        } else if (cvExpRole1 == null && cvExpRole2 != null) {
                 return -1;
-            } else if (cvExpRole1 != null && cvExpRole2 == null) {
+        } else if (cvExpRole1 != null && cvExpRole2 == null) {
                 return 1;
-            }
         }
         return 0;
     }
