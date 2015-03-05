@@ -433,11 +433,12 @@ public abstract class AnnotatedObjectController extends BaseController implement
     protected abstract void initialiseDefaultProperties(IntactPrimaryObject annotatedObject);
 
     protected void refreshCurrentViewObject() {
+        if (curateController.getCurrentAnnotatedObjectController() != null){
+            final IntactPrimaryObject currentAo = curateController.getCurrentAnnotatedObjectController().getAnnotatedObject();
 
-        final IntactPrimaryObject currentAo = curateController.getCurrentAnnotatedObjectController().getAnnotatedObject();
-
-        if (currentAo != null && currentAo.getAc() != null) {
-            refreshCurrentViewIntactObject(curateController, currentAo);
+            if (currentAo != null && currentAo.getAc() != null) {
+                refreshCurrentViewIntactObject(curateController, currentAo);
+            }
         }
     }
 
