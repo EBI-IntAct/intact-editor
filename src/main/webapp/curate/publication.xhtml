@@ -320,19 +320,17 @@
         </td>
     </tr>
     <tr>
-        <h:panelGroup rendered="#{publicationController.publicationOnHold}">
-            <td class="firstCell">
-                <h:outputLabel value="On hold: " for="onHoldTxt"/>
-            </td>
-            <td colspan="3">
-                <h:panelGroup>
-                    <p:inputTextarea id="onHoldTxt" value="#{publicationController.onHold}" size="70" autoResize="false"
+        <td class="firstCell">
+            <h:outputLabel value="On hold: " for="onHoldTxt"/>
+        </td>
+        <td colspan="3">
+            <h:panelGroup>
+                <p:inputTextarea id="onHoldTxt" value="#{publicationController.onHold}" size="70" autoResize="false"
                                  valueChangeListener="#{publicationController.onHoldChanged}">
-                        <ed:curation/>
-                    </p:inputTextarea>
-                </h:panelGroup>
-            </td>
-        </h:panelGroup>
+                    <ed:curation/>
+                </p:inputTextarea>
+            </h:panelGroup>
+        </td>
     </tr>
     <tr>
         <h:panelGroup rendered="#{publicationController.publicationToBeReviewed}">
