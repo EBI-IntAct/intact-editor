@@ -543,9 +543,17 @@ public class CvObjectService extends AbstractEditorService {
         final List<IntactCvTerm>participantTopics = getSortedTopicList( "uk.ac.ebi.intact.model.Component", cvObjectsByUsedInClass);
         final List<IntactCvTerm>featureTopics = getSortedTopicList( "uk.ac.ebi.intact.model.Feature", cvObjectsByUsedInClass);
         final List<IntactCvTerm>cvObjectTopics = getSortedTopicList( "uk.ac.ebi.intact.model.CvObject", cvObjectsByUsedInClass);
-        final Set<IntactCvTerm> complexTopics = new HashSet<IntactCvTerm>(getSortedTopicList(IntactComplex.class.getCanonicalName(), cvObjectsByUsedInClass));
-        complexTopics.addAll(interactionTopics);
-        interactorTopics.addAll(complexTopics);
+        final List<IntactCvTerm> complexTopics = getSortedTopicList(IntactComplex.class.getCanonicalName(), cvObjectsByUsedInClass);
+        for (IntactCvTerm cv : interactionTopics){
+           if (!complexTopics.contains(cv)){
+               complexTopics.add(cv);
+           }
+        }
+        for (IntactCvTerm cv : interactorTopics){
+            if (!complexTopics.contains(cv)){
+                complexTopics.add(cv);
+            }
+        }
         final List<IntactCvTerm>noClassTopics = getSortedTopicList( NO_CLASS, cvObjectsByUsedInClass);
 
         // select items
@@ -621,6 +629,8 @@ public class CvObjectService extends AbstractEditorService {
                items.add(createSelectItem(evidenceTypeParent, true));
             }
             items.addAll(createSelectItems(terms, select));
+
+            Collections.sort(items, new CvSelectItemComparator());
         }
     }
 
@@ -637,6 +647,8 @@ public class CvObjectService extends AbstractEditorService {
                     items.addAll(createSelectItems(intactCvs, select, filter));
                 }
             }
+
+            Collections.sort(items, new CvSelectItemComparator());
         }
     }
 
@@ -1147,6 +1159,21 @@ public class CvObjectService extends AbstractEditorService {
             }
 
             return o1.getShortName().compareTo(o2.getShortName());
+        }
+    }
+
+    public static class CvSelectItemComparator implements Comparator<SelectItem> {
+        @Override
+        public int compare( SelectItem o1, SelectItem o2 ) {
+            if ( o1 == null ) {
+                return 1;
+            }
+
+            if ( o2 == null ) {
+                return -1;
+            }
+
+            return o1.getLabel().compareTo(o2.getLabel());
         }
     }
 
