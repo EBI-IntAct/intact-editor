@@ -1217,8 +1217,9 @@ public class PublicationController extends AnnotatedObjectController {
         if (newValue != null && newValue > 0){
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy");
             try{
-                this.publication.setPublicationDate(formatter.parse(Short.toString(this.year)));
+                this.publication.setPublicationDate(formatter.parse(Short.toString(newValue)));
                 this.year = newValue;
+                setExperimentAnnotation(Annotation.PUBLICATION_YEAR, Annotation.PUBLICATION_YEAR_MI, Short.toString(newValue));
             }
             catch (ParseException e){
                 this.year = null;
@@ -1229,8 +1230,6 @@ public class PublicationController extends AnnotatedObjectController {
             this.publication.setPublicationDate(null);
             this.year = null;
         }
-
-        setExperimentAnnotation(Annotation.PUBLICATION_YEAR, Annotation.PUBLICATION_YEAR_MI, Short.toString(newValue));
     }
 
     public void publicationTitleChanged(ValueChangeEvent evt) {
