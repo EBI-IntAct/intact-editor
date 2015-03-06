@@ -1240,7 +1240,7 @@ public class PublicationController extends AnnotatedObjectController {
         setUnsavedChanges(true);
         String newValue = (String)evt.getNewValue();
         if (newValue != null && newValue.length() > 0){
-            setPrimaryReference(identifier);
+            setPrimaryReference(newValue);
 
             Collection<Experiment> experiments = publication.getExperiments();
 
@@ -1250,7 +1250,7 @@ public class PublicationController extends AnnotatedObjectController {
                     parentAcs.add(publication.getAc());
                 }
                 for (Experiment experiment : experiments) {
-                    experiment.getXrefs().add(new ExperimentXref(IntactUtils.createMIDatabase(Xref.PUBMED, Xref.PUBMED_MI), identifier,
+                    experiment.getXrefs().add(new ExperimentXref(IntactUtils.createMIDatabase(Xref.PUBMED, Xref.PUBMED_MI), newValue,
                             IntactUtils.createMIQualifier(Xref.PRIMARY, Xref.PRIMARY_MI)));
                     getChangesController().markAsUnsaved((IntactExperiment) experiment, getEditorService().getIntactDao().getSynchronizerContext().getExperimentSynchronizer(),
                             "Experiment: " + ((IntactExperiment) experiment).getShortLabel(), parentAcs);
