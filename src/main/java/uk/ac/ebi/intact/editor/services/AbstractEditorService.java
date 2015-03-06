@@ -435,7 +435,7 @@ public abstract class AbstractEditorService implements EditorService {
             initialiseAnnotations(((IntactInteractor) inter).getDbAnnotations());
             initialiseXrefs(((IntactInteractor)inter).getDbXrefs());
             initialiseOtherInteractorProperties((IntactInteractor)inter);
-            if (inter instanceof Polymer){
+            if (inter instanceof Polymer && ((Polymer)inter).getSequence() != null){
                 ((Polymer)inter).getSequence().length();
             }
         }
