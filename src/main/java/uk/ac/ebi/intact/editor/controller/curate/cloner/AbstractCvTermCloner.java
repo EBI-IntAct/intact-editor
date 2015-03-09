@@ -21,6 +21,7 @@ import psidev.psi.mi.jami.model.CvTerm;
 import psidev.psi.mi.jami.model.Xref;
 import uk.ac.ebi.intact.jami.dao.IntactDao;
 import uk.ac.ebi.intact.jami.model.extension.AbstractIntactCvTerm;
+import uk.ac.ebi.intact.jami.model.extension.AbstractIntactXref;
 
 /**
  * Editor specific cloning routine for cvs.
@@ -44,7 +45,11 @@ public abstract class AbstractCvTermCloner<I extends CvTerm, T extends AbstractI
         }
 
         for (Xref ref : cv.getXrefs()){
-            clone.getXrefs().add(instantiateXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier()));
+            AbstractIntactXref intactRef = instantiateXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+            if (ref instanceof AbstractIntactXref){
+                intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+            }
+            clone.getXrefs().add(intactRef);
         }
 
         for (Annotation annotation : cv.getAnnotations()){
@@ -56,7 +61,7 @@ public abstract class AbstractCvTermCloner<I extends CvTerm, T extends AbstractI
 
     protected abstract Annotation instantiateAnnotation(CvTerm topic, String value);
 
-    protected abstract Xref instantiateXref(CvTerm database, String id, String version, CvTerm qualifier);
+    protected abstract AbstractIntactXref instantiateXref(CvTerm database, String id, String version, CvTerm qualifier);
 
     protected abstract Alias instantiateAliase(CvTerm type, String name);
 

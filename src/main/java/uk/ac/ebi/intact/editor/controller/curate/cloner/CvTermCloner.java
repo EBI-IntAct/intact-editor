@@ -2,10 +2,7 @@ package uk.ac.ebi.intact.editor.controller.curate.cloner;
 
 import psidev.psi.mi.jami.model.*;
 import uk.ac.ebi.intact.jami.dao.IntactDao;
-import uk.ac.ebi.intact.jami.model.extension.CvTermAlias;
-import uk.ac.ebi.intact.jami.model.extension.CvTermAnnotation;
-import uk.ac.ebi.intact.jami.model.extension.CvTermXref;
-import uk.ac.ebi.intact.jami.model.extension.IntactCvTerm;
+import uk.ac.ebi.intact.jami.model.extension.*;
 
 /**
  * Cv cloner
@@ -22,7 +19,7 @@ public class CvTermCloner extends AbstractCvTermCloner<CvTerm, IntactCvTerm>{
     }
 
     @Override
-    protected Xref instantiateXref(CvTerm database, String id, String version, CvTerm qualifier) {
+    protected AbstractIntactXref instantiateXref(CvTerm database, String id, String version, CvTerm qualifier) {
         return new CvTermXref(database, id, version, qualifier);
     }
 

@@ -101,15 +101,33 @@ public class ComplexCloner extends AbstractEditorCloner<Complex, IntactComplex> 
                         db = cvService.findCvObject(IntactUtils.DATABASE_OBJCLASS, ref.getDatabase().getShortName());
                     }
                 }
-                clone.getIdentifiers().add(new InteractorXref(db, ref.getId(), ref.getVersion(),
-                        cvService.findCvObjectByAc(expEvidence.getAc())));
+                AbstractIntactXref intactRef = new InteractorXref(db, ref.getId(), ref.getVersion(),
+                        cvService.findCvObjectByAc(expEvidence.getAc()));
+                if (ref instanceof AbstractIntactXref){
+                    intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                }
+                clone.getIdentifiers().add(intactRef);
             }
         }
 
         for (Xref ref : evidence.getXrefs()){
             if (!XrefUtils.isXrefFromDatabase(ref, Xref.IMEX_MI, Xref.IMEX)
                     && !XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY)){
-                clone.getXrefs().add(new InteractorXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier()));
+                if (ref instanceof ComplexGOXref){
+                    ComplexGOXref intactRef = new ComplexGOXref(ref.getId(), ref.getVersion(), ref.getQualifier());
+                    intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                    intactRef.setDatabase(ref.getDatabase());
+                    intactRef.setPubmed(((ComplexGOXref)ref).getPubmed());
+                    intactRef.setEvidenceType(((ComplexGOXref)ref).getEvidenceType());
+                    clone.getXrefs().add(intactRef);
+                }
+                else{
+                    AbstractIntactXref intactRef = new InteractorXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+                    if (ref instanceof AbstractIntactXref){
+                        intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                    }
+                    clone.getXrefs().add(intactRef);
+                }
             }
         }
 
@@ -163,7 +181,21 @@ public class ComplexCloner extends AbstractEditorCloner<Complex, IntactComplex> 
         for (Xref ref : complex.getXrefs()){
             if (!XrefUtils.isXrefFromDatabase(ref, Xref.IMEX_MI, Xref.IMEX)
                     && !XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY)){
-                clone.getXrefs().add(new InteractorXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier()));
+                if (ref instanceof ComplexGOXref){
+                    ComplexGOXref intactRef = new ComplexGOXref(ref.getId(), ref.getVersion(), ref.getQualifier());
+                    intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                    intactRef.setDatabase(ref.getDatabase());
+                    intactRef.setPubmed(((ComplexGOXref)ref).getPubmed());
+                    intactRef.setEvidenceType(((ComplexGOXref)ref).getEvidenceType());
+                    clone.getXrefs().add(intactRef);
+                }
+                else{
+                    AbstractIntactXref intactRef = new InteractorXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+                    if (ref instanceof AbstractIntactXref){
+                        intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                    }
+                    clone.getXrefs().add(intactRef);
+                }
             }
         }
 

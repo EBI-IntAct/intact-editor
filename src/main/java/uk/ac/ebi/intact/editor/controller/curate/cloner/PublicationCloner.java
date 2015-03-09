@@ -23,9 +23,7 @@ import psidev.psi.mi.jami.utils.XrefUtils;
 import uk.ac.ebi.intact.editor.controller.UserSessionController;
 import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 import uk.ac.ebi.intact.jami.dao.IntactDao;
-import uk.ac.ebi.intact.jami.model.extension.IntactPublication;
-import uk.ac.ebi.intact.jami.model.extension.PublicationAnnotation;
-import uk.ac.ebi.intact.jami.model.extension.PublicationXref;
+import uk.ac.ebi.intact.jami.model.extension.*;
 import uk.ac.ebi.intact.jami.model.lifecycle.Releasable;
 
 /**
@@ -55,7 +53,11 @@ public class PublicationCloner extends AbstractEditorCloner<Publication, IntactP
         for (Xref ref : publication.getXrefs()){
             if (!(XrefUtils.doesXrefHaveQualifier(ref, Xref.IMEX_PRIMARY_MI, Xref.IMEX_PRIMARY)
                     && XrefUtils.isXrefFromDatabase(ref, Xref.IMEX_MI, Xref.IMEX))){
-                clone.getXrefs().add(new PublicationXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier()));
+                AbstractIntactXref intactRef = new PublicationXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+                if (ref instanceof AbstractIntactXref){
+                    intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                }
+                clone.getXrefs().add(intactRef);
             }
         }
 

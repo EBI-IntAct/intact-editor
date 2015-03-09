@@ -61,7 +61,11 @@ public class ExperimentCloner extends AbstractEditorCloner<Experiment, IntactExp
         for (Xref ref : experiment.getXrefs()){
             if (!(XrefUtils.doesXrefHaveQualifier(ref, Xref.IMEX_PRIMARY_MI, Xref.IMEX_PRIMARY)
                     && XrefUtils.isXrefFromDatabase(ref, Xref.IMEX_MI, Xref.IMEX))){
-                clone.getXrefs().add(new ExperimentXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier()));
+                AbstractIntactXref intactRef = new ExperimentXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+                if (ref instanceof AbstractIntactXref){
+                    intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                }
+                clone.getXrefs().add(intactRef);
             }
         }
 

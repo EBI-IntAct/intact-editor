@@ -51,7 +51,11 @@ public class InteractorCloner extends AbstractEditorCloner<Interactor, IntactInt
 
             for (Object obj : interactor.getXrefs()){
                 Xref ref = (Xref)obj;
-                clone.getXrefs().add(new InteractorXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier()));
+                AbstractIntactXref intactRef = new InteractorXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+                if (ref instanceof AbstractIntactXref){
+                    intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                }
+                clone.getXrefs().add(intactRef);
             }
 
             for (Object obj : interactor.getAnnotations()){

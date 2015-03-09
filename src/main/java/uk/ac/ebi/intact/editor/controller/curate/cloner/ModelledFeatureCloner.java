@@ -56,12 +56,20 @@ public class ModelledFeatureCloner extends AbstractEditorCloner<Feature, IntactM
             // exclude feature accession
             if (!XrefUtils.isXrefFromDatabase(ref, config.getDefaultInstitution().getMIIdentifier(), config.getDefaultInstitution().getShortName())
                     || !XrefUtils.doesXrefHaveQualifier(ref, Xref.IDENTITY_MI, Xref.IDENTITY)){
-                clone.getIdentifiers().add(new ModelledFeatureXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier()));
+                AbstractIntactXref intactRef = new ModelledFeatureXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+                if (ref instanceof AbstractIntactXref){
+                    intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                }
+                clone.getIdentifiers().add(intactRef);
             }
         }
         for (Object obj : feature.getXrefs()){
             Xref ref = (Xref)obj;
-            clone.getXrefs().add(new ModelledFeatureXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier()));
+            AbstractIntactXref intactRef = new ModelledFeatureXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+            if (ref instanceof AbstractIntactXref){
+                intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+            }
+            clone.getXrefs().add(intactRef);
         }
 
         for (Object obj : feature.getAnnotations()){

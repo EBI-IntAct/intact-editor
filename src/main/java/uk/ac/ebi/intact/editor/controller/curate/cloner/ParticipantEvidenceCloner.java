@@ -50,7 +50,11 @@ public class ParticipantEvidenceCloner extends AbstractEditorCloner<ParticipantE
 
         for (Object obj : participant.getXrefs()){
             Xref ref = (Xref)obj;
-            clone.getXrefs().add(new ParticipantEvidenceXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier()));
+            AbstractIntactXref intactRef = new ParticipantEvidenceXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+            if (ref instanceof AbstractIntactXref){
+                intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+            }
+            clone.getXrefs().add(intactRef);
         }
 
         for (Object obj : participant.getAnnotations()){
