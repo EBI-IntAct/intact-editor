@@ -171,6 +171,9 @@ public class CvObjectController extends AnnotatedObjectController {
             if (IntactUtils.TOPIC_OBJCLASS.equals(cvObject.getObjClass())) {
                 isTopic = true;
             }
+            else{
+                isTopic = false;
+            }
         }
     }
 
