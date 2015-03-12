@@ -444,7 +444,7 @@ public class CvObjectService extends AbstractEditorService {
             }
             else if (objClass.equals(IntactUtils.CELL_TYPE_OBJCLASS)){
                 refreshSelectItems(IntactUtils.CELL_TYPE_OBJCLASS, this.cellTypeSelectItems, null, "-- Select cell type --");
-                BioSourceService biosourceService = ApplicationContextProvider.getBean("BioSourceService");
+                BioSourceService biosourceService = ApplicationContextProvider.getBean("bioSourceService");
                 biosourceService.loadData();
             }
             else if (objClass.equals(IntactUtils.CONFIDENCE_TYPE_OBJCLASS)){
