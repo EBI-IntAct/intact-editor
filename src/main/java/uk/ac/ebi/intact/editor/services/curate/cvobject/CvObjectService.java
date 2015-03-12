@@ -633,24 +633,29 @@ public class CvObjectService extends AbstractEditorService {
         synchronized (items){
             // collect all cvs and give previous select item
             IntactCvTerm evidenceTypeParent = getIntactDao().getCvTermDao().getByMIIdentifier(MIIdentifier, objClass);
+
             Set<IntactCvTerm> terms = new HashSet<IntactCvTerm>();
             if (evidenceTypeParent != null){
                 terms = loadChildren(evidenceTypeParent, false, new HashSet<String>());
                 refreshMaps(terms, items);
             }
+
+            List<IntactCvTerm> cvCopy = new ArrayList<IntactCvTerm>(terms);
+            Collections.sort(cvCopy, new CvObjectComparator());
+
             items.clear();
             if (addParent && evidenceTypeParent != null){
                 items.add(createSelectItem(evidenceTypeParent, true));
             }
-            items.addAll(createSelectItems(terms, select));
-
-            Collections.sort(items, new CvSelectItemComparator());
+            items.addAll(createSelectItems(cvCopy, select));
         }
     }
 
     private void refreshSelectItems(String objClass, List<SelectItem> items, String filter, String select) {
         synchronized (items){
-            Collection<IntactCvTerm> intactCvs = getIntactDao().getCvTermDao().getByObjClass(objClass);
+            List<IntactCvTerm> intactCvs = new ArrayList<IntactCvTerm>(getIntactDao().getCvTermDao().getByObjClass(objClass));
+            Collections.sort(intactCvs, new CvObjectComparator());
+
             refreshMaps(intactCvs, items);
             if (items != null){
                 items.clear();
@@ -661,8 +666,6 @@ public class CvObjectService extends AbstractEditorService {
                     items.addAll(createSelectItems(intactCvs, select, filter));
                 }
             }
-
-            Collections.sort(items, new CvSelectItemComparator());
         }
     }
 
