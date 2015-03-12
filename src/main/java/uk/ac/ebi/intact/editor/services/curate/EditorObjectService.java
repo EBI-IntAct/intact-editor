@@ -186,6 +186,7 @@ public class EditorObjectService extends AbstractEditorService {
 
         if (intactObject instanceof Protein){
             attachDaoToTransactionManager();
+            getIntactDao().getEntityManager().clear();
 
             Protein proteinTranscript = (Protein) intactObject;
             Collection<psidev.psi.mi.jami.model.Xref> xrefsToDelete = new ArrayList<psidev.psi.mi.jami.model.Xref>(proteinTranscript.getXrefs().size());
@@ -205,11 +206,31 @@ public class EditorObjectService extends AbstractEditorService {
 
                             IntactConfiguration intactConfig = ApplicationContextProvider.getBean("intactJamiConfiguration");
                             for (Protein prot : proteins){
-                                IntactInteractor intactprotein = synchronizeIntactObject(prot,
-                                        getIntactDao().getSynchronizerContext().getProteinSynchronizer(),
-                                        true);
-                                ((Protein) intactObject).getXrefs().add(new InteractorXref(IntactUtils.createMIDatabase(intactConfig.getDefaultInstitution().getShortName(),
-                                        intactConfig.getDefaultInstitution().getMIIdentifier()), intactprotein.getAc(), xref.getQualifier()));
+                                try{
+                                    IntactInteractor intactprotein = getIntactDao().getSynchronizerContext().getProteinSynchronizer().synchronize(prot, true);
+                                    ((Protein) intactObject).getXrefs().add(new InteractorXref(IntactUtils.createMIDatabase(intactConfig.getDefaultInstitution().getShortName(),
+                                            intactConfig.getDefaultInstitution().getMIIdentifier()), intactprotein.getAc(), xref.getQualifier()));
+                                }
+                                catch (SynchronizerException e){
+                                    getIntactDao().getSynchronizerContext().clearCache();
+                                    getIntactDao().getEntityManager().clear();
+                                    throw e;
+                                }
+                                catch (FinderException e){
+                                    getIntactDao().getSynchronizerContext().clearCache();
+                                    getIntactDao().getEntityManager().clear();
+                                    throw e;
+                                }
+                                catch (PersisterException e){
+                                    getIntactDao().getSynchronizerContext().clearCache();
+                                    getIntactDao().getEntityManager().clear();
+                                    throw e;
+                                }
+                                catch (Throwable e){
+                                    getIntactDao().getSynchronizerContext().clearCache();
+                                    getIntactDao().getEntityManager().clear();
+                                    throw new PersisterException(e.getMessage(), e);
+                                }
                             }
                         }
                     }
@@ -218,7 +239,29 @@ public class EditorObjectService extends AbstractEditorService {
 
             proteinTranscript.getXrefs().removeAll(xrefsToDelete);
 
-            updateIntactObject((IntactProtein)intactObject, getIntactDao().getProteinDao());
+            try{
+                getIntactDao().getProteinDao().update((IntactProtein)intactObject);
+            }
+            catch (SynchronizerException e){
+                getIntactDao().getSynchronizerContext().clearCache();
+                getIntactDao().getEntityManager().clear();
+                throw e;
+            }
+            catch (FinderException e){
+                getIntactDao().getSynchronizerContext().clearCache();
+                getIntactDao().getEntityManager().clear();
+                throw e;
+            }
+            catch (PersisterException e){
+                getIntactDao().getSynchronizerContext().clearCache();
+                getIntactDao().getEntityManager().clear();
+                throw e;
+            }
+            catch (Throwable e){
+                getIntactDao().getSynchronizerContext().clearCache();
+                getIntactDao().getEntityManager().clear();
+                throw new PersisterException(e.getMessage(), e);
+            }
         }
     }
 
