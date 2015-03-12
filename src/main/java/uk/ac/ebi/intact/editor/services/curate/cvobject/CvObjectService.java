@@ -417,26 +417,26 @@ public class CvObjectService extends AbstractEditorService {
             if (objClass.equals(IntactUtils.ALIAS_TYPE_OBJCLASS)){
                 // load all cvs as this alias type can be used by other cvs
                 loadData();
-                BioSourceService biosourceService = ApplicationContextProvider.getBean("BioSourceService");
+                BioSourceService biosourceService = ApplicationContextProvider.getBean("bioSourceService");
                 biosourceService.loadData();
             }
             else if (objClass.equals(IntactUtils.QUALIFIER_OBJCLASS)){
                 // load all cvs as this qualifier can be used by other cvs
                 loadData();
-                BioSourceService biosourceService = ApplicationContextProvider.getBean("BioSourceService");
+                BioSourceService biosourceService = ApplicationContextProvider.getBean("bioSourceService");
                 biosourceService.loadData();
             }
             else if (objClass.equals(IntactUtils.DATABASE_OBJCLASS)){
                 // load all cvs as this database can be used by other cvs
                 loadData();
-                BioSourceService biosourceService = ApplicationContextProvider.getBean("BioSourceService");
+                BioSourceService biosourceService = ApplicationContextProvider.getBean("bioSourceService");
                 biosourceService.loadData();
             }
             else if (objClass.equals(IntactUtils.TOPIC_OBJCLASS)){
 
                 // load all cvs as this topic can be used by other cvs
                 loadData();
-                BioSourceService biosourceService = ApplicationContextProvider.getBean("BioSourceService");
+                BioSourceService biosourceService = ApplicationContextProvider.getBean("bioSourceService");
                 biosourceService.loadData();
             }
             else if (objClass.equals(IntactUtils.BIOLOGICAL_ROLE_OBJCLASS)){
@@ -520,7 +520,7 @@ public class CvObjectService extends AbstractEditorService {
             }
             else if (objClass.equals(IntactUtils.TISSUE_OBJCLASS)){
                 refreshSelectItems(IntactUtils.TISSUE_OBJCLASS, tissueSelectItems, null, "-- Select tissue --");
-                BioSourceService biosourceService = ApplicationContextProvider.getBean("BioSourceService");
+                BioSourceService biosourceService = ApplicationContextProvider.getBean("bioSourceService");
                 biosourceService.loadData();
             }
         }
