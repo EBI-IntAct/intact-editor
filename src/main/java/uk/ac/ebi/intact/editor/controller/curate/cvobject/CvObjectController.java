@@ -243,7 +243,9 @@ public class CvObjectController extends AnnotatedObjectController {
     @Override
     public void doPostSave() {
         // refresh cv service
-        getCvService().refreshCvs(getObjClass());
+        if (cvObject.getObjClass() != null){
+            getCvService().refreshCvs(cvObject.getObjClass());
+        }
         super.doPostSave();
     }
 
@@ -542,10 +544,13 @@ public class CvObjectController extends AnnotatedObjectController {
 
     @Override
     public String doDelete() {
-        String objClass = getObjClass();
-        String value = super.doDelete();
-        getCvService().refreshCvs(objClass);
-        return value;
+        if (cvObject != null){
+            String objClass = cvObject.getObjClass();
+            String value = super.doDelete();
+            getCvService().refreshCvs(objClass);
+            return value;
+        }
+        return super.doDelete();
     }
 
     public String getObjClass(){
