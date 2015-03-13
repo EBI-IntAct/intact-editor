@@ -1417,7 +1417,7 @@ public class PublicationController extends AnnotatedObjectController {
 
     public void assignNewImex(ActionEvent evt) {
         // save publication changes first
-        doSave();
+        doSave(false);
 
         registerEditorListenerIfNotDoneYet();
 
