@@ -1451,6 +1451,7 @@ public class PublicationController extends AnnotatedObjectController {
         setPublication(null);
         loadByAc();
         getChangesController().removeFromUnsaved(publication, collectParentAcsOfCurrentAnnotatedObject());
+        imexId = this.publication.getImexId();
     }
 
     private void processImexCentralException(String publication, Exception e, IcentralFault f) {
