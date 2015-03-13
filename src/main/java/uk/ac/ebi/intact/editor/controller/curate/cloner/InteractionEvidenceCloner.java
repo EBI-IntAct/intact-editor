@@ -75,7 +75,7 @@ public class InteractionEvidenceCloner extends AbstractEditorCloner<InteractionE
         }
 
         for (VariableParameterValueSet set : evidence.getVariableParameterValues()){
-           VariableParameterValueSet setClone = new IntactVariableParameterValueSet(set);
+            VariableParameterValueSet setClone = new IntactVariableParameterValueSet(set);
             clone.getVariableParameterValues().add(setClone);
         }
 
@@ -92,7 +92,6 @@ public class InteractionEvidenceCloner extends AbstractEditorCloner<InteractionE
         target.setExperiment(source.getExperiment());
         target.setAvailability(source.getAvailability());
         target.setInferred(source.isInferred());
-        target.setNegative(source.isNegative());
 
         if (source.areXrefsInitialized()){
             target.getIdentifiers().clear();
@@ -104,6 +103,7 @@ public class InteractionEvidenceCloner extends AbstractEditorCloner<InteractionE
         if (source.areAnnotationsInitialized()){
             target.getAnnotations().clear();
             target.getAnnotations().addAll(source.getAnnotations());
+            target.setNegative(source.isNegative());
         }
 
         if (source.areParticipantsInitialized()){
