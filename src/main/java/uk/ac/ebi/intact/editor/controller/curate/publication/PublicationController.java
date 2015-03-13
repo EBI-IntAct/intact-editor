@@ -1743,7 +1743,7 @@ public class PublicationController extends AnnotatedObjectController {
 
     @Override
     public Collection<String> collectParentAcsOfCurrentAnnotatedObject() {
-        return Collections.EMPTY_LIST;
+        return new ArrayList<String>();
     }
 
     @Override
