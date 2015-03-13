@@ -66,8 +66,8 @@ public class CvTermCloner extends AbstractCvTermCloner<CvTerm, IntactCvTerm>{
         if (source.areAnnotationsInitialized()){
             target.getAnnotations().clear();
             target.getAnnotations().addAll(source.getAnnotations());
+            target.setDefinition(source.getDefinition());
         }
-        target.setDefinition(source.getDefinition());
         target.setObjClass(source.getObjClass());
         if (source.areParentsInitialized()){
             target.getParents().clear();
