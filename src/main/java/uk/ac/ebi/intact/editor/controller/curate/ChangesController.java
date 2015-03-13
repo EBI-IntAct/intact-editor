@@ -117,8 +117,8 @@ public class ChangesController extends BaseController implements UserListener {
     }
 
     public boolean markToDelete(IntactPrimaryObject object, IntactPrimaryObject parent,
-                             IntactDbSynchronizer dbSynchronizer, String description,
-                             Collection<String> parentAcs) {
+                                IntactDbSynchronizer dbSynchronizer, String description,
+                                Collection<String> parentAcs) {
         if (object.getAc() != null) {
 
             String scope;
@@ -177,7 +177,7 @@ public class ChangesController extends BaseController implements UserListener {
      * @param object
      */
     public void removeObsoleteChangesOnSave(IntactPrimaryObject object, Collection<String> parentAcs){
-        if (object.getAc() != null){
+        if (object != null && object.getAc() != null){
 
             List<UnsavedChange> changes = new ArrayList(getUnsavedChangesForCurrentUser());
             for (UnsavedChange change : changes){
