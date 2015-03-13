@@ -1446,9 +1446,9 @@ public class PublicationController extends AnnotatedObjectController {
         } catch (Exception e) {
             addErrorMessage("Impossible to assign new IMEx id", e.getMessage());
         }
-
+        String ac = this.publication.getAc();
         setPublication(null);
-        setAc(this.publication.getAc());
+        setAc(ac);
         loadByAc();
         getChangesController().removeFromUnsaved(publication, collectParentAcsOfCurrentAnnotatedObject());
         imexId = this.publication.getImexId();
