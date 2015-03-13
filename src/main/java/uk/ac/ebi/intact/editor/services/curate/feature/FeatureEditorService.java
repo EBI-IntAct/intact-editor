@@ -82,9 +82,9 @@ public class FeatureEditorService extends AbstractEditorService {
             initialiseAliases(feature.getAliases());
             // initialise parameters and detection methods
             if (feature instanceof IntactFeatureEvidence){
-               initialiseCv(((IntactFeatureEvidence) feature).getFeatureIdentification());
-               initialiseParameters(((IntactFeatureEvidence) feature).getParameters());
-               initialiseDetectionMethods(((IntactFeatureEvidence) feature).getDbDetectionMethods());
+                initialiseCv(((IntactFeatureEvidence) feature).getFeatureIdentification());
+                initialiseParameters(((IntactFeatureEvidence) feature).getParameters());
+                initialiseDetectionMethods(((IntactFeatureEvidence) feature).getDbDetectionMethods());
             }
 
             // load base types
@@ -98,6 +98,10 @@ public class FeatureEditorService extends AbstractEditorService {
             // load participant interactor
             if (feature.getParticipant() != null){
                 initialiseParticipant(feature.getParticipant());
+            }
+
+            for (Object linked : feature.getLinkedFeatures()){
+                ((Feature)linked).getLinkedFeatures().size();
             }
 
             // load feature ranges
@@ -168,6 +172,10 @@ public class FeatureEditorService extends AbstractEditorService {
         // load feature ranges
         initialiseRanges(feature.getRanges());
 
+        for (Object linked : feature.getLinkedFeatures()){
+            ((Feature)linked).getLinkedFeatures().size();
+        }
+
         return feature;
     }
 
@@ -190,6 +198,7 @@ public class FeatureEditorService extends AbstractEditorService {
     private boolean areFeatureCollectionsLazy(AbstractIntactFeature feature) {
         return !feature.areAnnotationsInitialized()
                 || !feature.areXrefsInitialized()
+                || !feature.areLinkedFeaturesInitialized()
                 || (feature instanceof IntactFeatureEvidence
                 && (!((IntactFeatureEvidence) feature).areDetectionMethodsInitialized()
                 || !((IntactFeatureEvidence) feature).areParametersInitialized()));
@@ -206,9 +215,9 @@ public class FeatureEditorService extends AbstractEditorService {
     }
 
     private boolean isParticipantInitialised(Entity participant){
-         if (!isInteractorInitialised(participant.getInteractor())){
-             return false;
-         }
+        if (!isInteractorInitialised(participant.getInteractor())){
+            return false;
+        }
         return true;
     }
 
