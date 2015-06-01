@@ -450,10 +450,10 @@ public class CvObjectController extends AnnotatedObjectController {
             return getEditorService().getIntactDao().getSynchronizerContext().getRangeStatusSynchronizer();
         }
         else if (this.cvClassName.equals(IntactUtils.UNIT_OBJCLASS)){
-            return getEditorService().getIntactDao().getSynchronizerContext().getRangeStatusSynchronizer();
+            return getEditorService().getIntactDao().getSynchronizerContext().getUnitSynchronizer();
         }
         else if (this.cvClassName.equals(IntactUtils.TISSUE_OBJCLASS)){
-            return getEditorService().getIntactDao().getSynchronizerContext().getRangeStatusSynchronizer();
+            return getEditorService().getIntactDao().getSynchronizerContext().getTissueSynchronizer();
         }
         else{
             return getEditorService().getIntactDao().getSynchronizerContext().getCvSynchronizer(null);
