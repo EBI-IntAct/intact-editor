@@ -45,6 +45,7 @@ import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 import uk.ac.ebi.intact.jami.lifecycle.ComplexBCLifecycleEventListener;
 import uk.ac.ebi.intact.jami.lifecycle.IllegalTransitionException;
 import uk.ac.ebi.intact.jami.lifecycle.LifeCycleManager;
+import uk.ac.ebi.intact.jami.lifecycle.LifecycleEventListener;
 import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
 import uk.ac.ebi.intact.jami.model.extension.*;
 import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleEvent;
@@ -78,31 +79,23 @@ import java.util.*;
 public class ComplexController extends AnnotatedObjectController {
 
     private static final Log log = LogFactory.getLog( ComplexController.class );
-
+    private final LifecycleEventListener lifecycleEventListener = new ComplexBCLifecycleEventListener();
     private IntactComplex complex;
     private String ac;
-
     private LinkedList<ParticipantWrapper> participantWrappers;
-
     @Autowired
     private UserSessionController userSessionController;
-
     private boolean isParticipantDisabled;
     private boolean isParameterDisabled;
     private boolean isConfidenceDisabled;
     private boolean isLifeCycleDisabled;
-
     private boolean assignToMe = true;
-
     @Resource(name = "jamiLifeCycleManager")
     private transient LifeCycleManager lifecycleManager;
-
     @Resource(name = "complexEditorService")
     private transient ComplexEditorService complexEditorService;
-
     @Resource(name = "bioSourceService")
     private transient BioSourceService bioSourceService;
-
     private String name = null;
     private String toBeReviewed = null;
     private String onHold = null;
@@ -113,13 +106,10 @@ public class ComplexController extends AnnotatedObjectController {
     private String systematicName = null;
     private String description = null;
     private String complexProperties = null;
-
     private String newXrefPubmed;
     private CvTerm newXrefEvidenceCode;
-
     private CvTerm newConfidenceType;
     private String newConfidenceValue;
-
     private CvTerm newParameterType;
     private Double newParameterFactor;
     private CvTerm newParameterUnit;
@@ -153,6 +143,10 @@ public class ComplexController extends AnnotatedObjectController {
 
         refreshParticipants();
         refreshName();
+
+        //Registering listerners
+        getLifecycleManager().registerListener(lifecycleEventListener);
+
     }
 
     public String getOrganism(){
@@ -175,8 +169,8 @@ public class ComplexController extends AnnotatedObjectController {
 
             if (assignToMe) {
                 User user = getCurrentUser();
-                lifecycleManager.getNewStatus().claimOwnership(complex, user);
-                lifecycleManager.getAssignedStatus().startCuration(complex, user);
+                getLifecycleManager().getNewStatus().claimOwnership(complex, user);
+                getLifecycleManager().getAssignedStatus().startCuration(complex, user);
             }
         }
         catch (IllegalTransitionException e){
@@ -220,7 +214,15 @@ public class ComplexController extends AnnotatedObjectController {
         return onHold != null ? onHold : "";
     }
 
+    public void setOnHold(String reason) {
+        this.onHold = reason;
+    }
+
     public String getCorrectionComment(){return correctionComment != null ? correctionComment : null;}
+
+    public void setCorrectionComment(String reason) {
+        this.correctionComment = reason;
+    }
 
     public void loadData( ComponentSystemEvent event ) {
         if (!FacesContext.getCurrentInstance().isPostback()) {
@@ -312,7 +314,7 @@ public class ComplexController extends AnnotatedObjectController {
                 parents.add(this.complex.getAc());
             }
             getChangesController().markToDelete(component, this.complex, getEditorService().getIntactDao().getSynchronizerContext().getModelledParticipantSynchronizer(),
-                    "participant "+component.getAc(), parents);
+                    "participant " + component.getAc(), parents);
         }
     }
 
@@ -348,6 +350,10 @@ public class ComplexController extends AnnotatedObjectController {
         return ac;
     }
 
+    public void setAc(String ac) {
+        this.ac = ac;
+    }
+
     public void cloneParticipant(ParticipantWrapper participantWrapper) {
         ModelledParticipantCloner cloner = new ModelledParticipantCloner();
 
@@ -370,15 +376,14 @@ public class ComplexController extends AnnotatedObjectController {
         int selectedSize = selected.size();
 
         Iterator<AbstractIntactFeature> fIterator1 = selected.iterator();
-        while (fIterator1.hasNext()){
+        while (fIterator1.hasNext()) {
             AbstractIntactFeature f1 = fIterator1.next();
 
-            for (AbstractIntactFeature f2 : selected){
-                if (f1.getAc() == null && f1 != f2){
+            for (AbstractIntactFeature f2 : selected) {
+                if (f1.getAc() == null && f1 != f2) {
                     f1.getLinkedFeatures().add(f2);
                     f2.getLinkedFeatures().add(f1);
-                }
-                else if (f1.getAc() != null && !f1.getAc().equals(f2.getAc())){
+                } else if (f1.getAc() != null && !f1.getAc().equals(f2.getAc())) {
                     f1.getLinkedFeatures().add(f2);
                     f2.getLinkedFeatures().add(f1);
                 }
@@ -387,7 +392,7 @@ public class ComplexController extends AnnotatedObjectController {
         }
 
 
-        addInfoMessage("Features linked", "Size of linked features : "+selectedSize);
+        addInfoMessage("Features linked", "Size of linked features : " + selectedSize);
         setUnsavedChanges(true);
         refreshParticipants();
     }
@@ -395,24 +400,22 @@ public class ComplexController extends AnnotatedObjectController {
     public void unlinkFeature(FeatureWrapper wrapper) {
         AbstractIntactFeature feature1 = wrapper.getFeature();
         AbstractIntactFeature feature2 = wrapper.getSelectedLinkedFeature();
-        if (feature2 != null){
+        if (feature2 != null) {
             Iterator<Feature> featureIterator = feature1.getLinkedFeatures().iterator();
             Iterator<Feature> feature2Iterator = feature2.getLinkedFeatures().iterator();
-            while (featureIterator.hasNext()){
-                AbstractIntactFeature f1 = (AbstractIntactFeature)featureIterator.next();
-                if (f1.getAc() == null && f1 == feature2){
+            while (featureIterator.hasNext()) {
+                AbstractIntactFeature f1 = (AbstractIntactFeature) featureIterator.next();
+                if (f1.getAc() == null && f1 == feature2) {
                     featureIterator.remove();
-                }
-                else if (f1.getAc() != null && f1.getAc().equals(feature2.getAc())){
+                } else if (f1.getAc() != null && f1.getAc().equals(feature2.getAc())) {
                     featureIterator.remove();
                 }
             }
-            while (feature2Iterator.hasNext()){
-                AbstractIntactFeature f2 = (AbstractIntactFeature)feature2Iterator.next();
-                if (f2.getAc() == null && f2 == feature1){
+            while (feature2Iterator.hasNext()) {
+                AbstractIntactFeature f2 = (AbstractIntactFeature) feature2Iterator.next();
+                if (f2.getAc() == null && f2 == feature1) {
                     feature2Iterator.remove();
-                }
-                else if (f2.getAc() != null && f2.getAc().equals(feature1.getAc())){
+                } else if (f2.getAc() != null && f2.getAc().equals(feature1.getAc())) {
                     feature2Iterator.remove();
                 }
             }
@@ -423,12 +426,8 @@ public class ComplexController extends AnnotatedObjectController {
         }
     }
 
-    public void selectLinkedFeature(FeatureWrapper wrapper, IntactModelledFeature linked){
+    public void selectLinkedFeature(FeatureWrapper wrapper, IntactModelledFeature linked) {
         wrapper.setSelectedLinkedFeature(linked);
-    }
-
-    public void setAc( String ac ) {
-        this.ac = ac;
     }
 
     public IntactComplex getComplex() {
@@ -483,6 +482,10 @@ public class ComplexController extends AnnotatedObjectController {
         return complexProperties;
     }
 
+
+    // Confidence
+    ///////////////////////////////////////////////
+
     public void setComplexProperties(String complexProperties) {
         this.complex.setPhysicalProperties(complexProperties);
         this.complexProperties = complexProperties;
@@ -491,10 +494,6 @@ public class ComplexController extends AnnotatedObjectController {
     public LinkedList<ParticipantWrapper> getParticipants() {
         return participantWrappers;
     }
-
-
-    // Confidence
-    ///////////////////////////////////////////////
 
     public void newConfidence(ActionEvent evet) {
         if (this.newConfidenceType != null && this.newConfidenceValue != null){
@@ -645,7 +644,6 @@ public class ComplexController extends AnnotatedObjectController {
                 id, secondaryId, getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
     }
 
-
     @Override
     protected void addNewAnnotation(AbstractIntactAnnotation newAnnot) {
         this.complex.getAnnotations().add(newAnnot);
@@ -665,7 +663,6 @@ public class ComplexController extends AnnotatedObjectController {
     public void removeAnnotation(Annotation annotation) {
         this.complex.getAnnotations().remove(annotation);
     }
-
 
     @Override
     public InteractorAlias newAlias(String alias, String aliasMI, String name) {
@@ -717,13 +714,8 @@ public class ComplexController extends AnnotatedObjectController {
     public boolean isAliasNotEditable(Alias alias){
         if (AliasUtils.doesAliasHaveType(alias, Alias.COMPLEX_RECOMMENDED_NAME_MI, Alias.COMPLEX_RECOMMENDED_NAME)){
             return true;
-        }
-        else if (AliasUtils.doesAliasHaveType(alias, Alias.COMPLEX_SYSTEMATIC_NAME_MI, Alias.COMPLEX_SYSTEMATIC_NAME)){
-            return true;
-        }
-        else {
-            return false;
-        }
+        } else
+            return AliasUtils.doesAliasHaveType(alias, Alias.COMPLEX_SYSTEMATIC_NAME_MI, Alias.COMPLEX_SYSTEMATIC_NAME);
     }
 
     public boolean isAnnotationNotEditable(Annotation annot){
@@ -738,13 +730,7 @@ public class ComplexController extends AnnotatedObjectController {
         }
         else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.CORRECTION_COMMENT)){
             return true;
-        }
-        else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, "curated-complex")){
-            return true;
-        }
-        else {
-            return false;
-        }
+        } else return AnnotationUtils.doesAnnotationHaveTopic(annot, null, "curated-complex");
     }
 
     @Override
@@ -774,8 +760,7 @@ public class ComplexController extends AnnotatedObjectController {
                 if (xref == next){
                     hasRemoved = true;
                     refIterator.remove();
-                }
-                else if (next.getAc() != null && next.getAc().equals((InteractorXref)xref)){
+                } else if (next.getAc() != null && next.getAc().equals(xref)) {
                     hasRemoved = true;
                     refIterator.remove();
                 }
@@ -787,8 +772,7 @@ public class ComplexController extends AnnotatedObjectController {
                     if (xref == next){
                         hasRemoved = true;
                         refIterator.remove();
-                    }
-                    else if (next.getAc() != null && next.getAc().equals((InteractorXref)xref)){
+                    } else if (next.getAc() != null && next.getAc().equals(xref)) {
                         hasRemoved = true;
                         refIterator.remove();
                     }
@@ -922,7 +906,7 @@ public class ComplexController extends AnnotatedObjectController {
 
     public void putOnHold(ActionEvent evt) {
         try{
-            getEditorService().putOnHold(complex, getCurrentUser(), onHold, isReadyForChecking(), isReleased());
+            getEditorService().putOnHold(complex, getCurrentUser(), onHold, isReadyForRelease(), isReleased());
 
             if (isReadyForRelease()) {
                 addInfoMessage("On-hold added to complex", "Complex won't be released until the 'on hold' is removed");
@@ -931,36 +915,23 @@ public class ComplexController extends AnnotatedObjectController {
             }
         }
         catch (IllegalTransitionException e){
-            addErrorMessage("Cannot put on-hold: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+            addErrorMessage("Cannot put on-hold: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
     public void readyForReleaseFromOnHold(ActionEvent evt) {
         setOnHold(null);
-        try{
+        try {
             getEditorService().readyForReleaseFromOnHold(complex, getCurrentUser());
 
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot mark as ready for release: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot mark as ready for release: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
-        }
-    }
-
-    public void setOnHold(String reason) {
-        this.onHold = reason;
-    }
-
-    public void setCorrectionComment(String reason) {
-        this.correctionComment = reason;
-    }
-
-    public void setToBeReviewed(String reason) {
-        this.toBeReviewed = reason;
     }
 
     public void onHoldChanged(ValueChangeEvent evt) {
         String newValue = (String) evt.getNewValue();
-        if (newValue != null && newValue.length() > 0){
+        if (newValue != null && newValue.length() > 0) {
             setUnsavedChanges(true);
             this.complex.onHold(newValue);
             this.onHold = newValue;
@@ -1149,6 +1120,10 @@ public class ComplexController extends AnnotatedObjectController {
         return toBeReviewed != null ? toBeReviewed : "";
     }
 
+    public void setToBeReviewed(String reason) {
+        this.toBeReviewed = reason;
+    }
+
     public void clearToBeReviewed(ActionEvent evt) {
         this.complex.removeToBeReviewed();
         toBeReviewed = null;
@@ -1191,14 +1166,11 @@ public class ComplexController extends AnnotatedObjectController {
         this.complex.setInteractorType(type);
 
         try{
-            getLifecycleManager().getStartStatus().create(this.complex, "Created in Editor",
-                    user);
+            getLifecycleManager().getStartStatus().create(this.complex, "Created in Editor", user);
 
             if (assignToMe) {
-                lifecycleManager.getNewStatus().claimOwnership(this.complex,
-                        user);
-                lifecycleManager.getAssignedStatus().startCuration(this.complex,
-                        user);
+                getLifecycleManager().getNewStatus().claimOwnership(this.complex, user);
+                getLifecycleManager().getAssignedStatus().startCuration(this.complex, user);
             }
         }catch (IllegalTransitionException e){
             addErrorMessage("Cannot create new complex: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
@@ -1224,8 +1196,8 @@ public class ComplexController extends AnnotatedObjectController {
             getLifecycleManager().getStartStatus().create(this.complex, "Created in Editor", user);
 
             if (assignToMe) {
-                lifecycleManager.getNewStatus().claimOwnership(this.complex, user);
-                lifecycleManager.getAssignedStatus().startCuration(this.complex, user);
+                getLifecycleManager().getNewStatus().claimOwnership(this.complex, user);
+                getLifecycleManager().getAssignedStatus().startCuration(this.complex, user);
             }
         }
         catch (IllegalTransitionException e){
@@ -1324,10 +1296,9 @@ public class ComplexController extends AnnotatedObjectController {
     }
 
     public LifeCycleManager getLifecycleManager() {
-        if (this.lifecycleManager == null){
-            this.lifecycleManager = ApplicationContextProvider.getBean("jamiLifeCycleManager");
+        if (lifecycleManager == null) {
+            lifecycleManager = ApplicationContextProvider.getBean("jamiLifeCycleManager");
         }
-        this.lifecycleManager.registerListener(new ComplexBCLifecycleEventListener());
         return lifecycleManager;
     }
 
