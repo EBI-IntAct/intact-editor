@@ -1,12 +1,12 @@
 /**
  * Copyright 2010 The European Bioinformatics Institute, and others.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -74,11 +74,11 @@ import java.util.*;
  * @version $Id$
  */
 @Controller
-@Scope( "conversation.access" )
-@ConversationName( "general" )
+@Scope("conversation.access")
+@ConversationName("general")
 public class ComplexController extends AnnotatedObjectController {
 
-    private static final Log log = LogFactory.getLog( ComplexController.class );
+    private static final Log log = LogFactory.getLog(ComplexController.class);
     private final LifecycleEventListener lifecycleEventListener = new ComplexBCLifecycleEventListener();
     private IntactComplex complex;
     private String ac;
@@ -127,17 +127,17 @@ public class ComplexController extends AnnotatedObjectController {
 
     @Override
     public void setAnnotatedObject(IntactPrimaryObject annotatedObject) {
-        setComplex((IntactComplex)annotatedObject);
+        setComplex((IntactComplex) annotatedObject);
     }
 
-    public String getName(){
+    public String getName() {
         return this.name;
     }
 
     @Override
     protected void initialiseDefaultProperties(IntactPrimaryObject annotatedObject) {
-        IntactComplex interaction = (IntactComplex)annotatedObject;
-        if (!getComplexEditorService().isComplexFullyLoaded(interaction)){
+        IntactComplex interaction = (IntactComplex) annotatedObject;
+        if (!getComplexEditorService().isComplexFullyLoaded(interaction)) {
             this.complex = getComplexEditorService().reloadFullyInitialisedComplex(interaction);
         }
 
@@ -149,8 +149,8 @@ public class ComplexController extends AnnotatedObjectController {
 
     }
 
-    public String getOrganism(){
-        return this.complex.getOrganism() != null ? this.complex.getOrganism().getCommonName():"organism unknown";
+    public String getOrganism() {
+        return this.complex.getOrganism() != null ? this.complex.getOrganism().getCommonName() : "organism unknown";
     }
 
     @Override
@@ -163,7 +163,7 @@ public class ComplexController extends AnnotatedObjectController {
         super.modifyClone(clone);
         // to be overrided
         IntactComplex complex = (IntactComplex) clone;
-        try{
+        try {
             getLifecycleManager().getStartStatus().create(complex, "Created in Editor",
                     getCurrentUser());
 
@@ -172,14 +172,13 @@ public class ComplexController extends AnnotatedObjectController {
                 getLifecycleManager().getNewStatus().claimOwnership(complex, user);
                 getLifecycleManager().getAssignedStatus().startCuration(complex, user);
             }
-        }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot create complex: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot create complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
     @Override
-    public void refreshTabs(){
+    public void refreshTabs() {
         super.refreshTabs();
         isParticipantDisabled = false;
         isParameterDisabled = true;
@@ -210,7 +209,7 @@ public class ComplexController extends AnnotatedObjectController {
         }
     }
 
-    public String getOnHold(){
+    public String getOnHold() {
         return onHold != null ? onHold : "";
     }
 
@@ -218,21 +217,23 @@ public class ComplexController extends AnnotatedObjectController {
         this.onHold = reason;
     }
 
-    public String getCorrectionComment(){return correctionComment != null ? correctionComment : null;}
+    public String getCorrectionComment() {
+        return correctionComment != null ? correctionComment : null;
+    }
 
     public void setCorrectionComment(String reason) {
         this.correctionComment = reason;
     }
 
-    public void loadData( ComponentSystemEvent event ) {
+    public void loadData(ComponentSystemEvent event) {
         if (!FacesContext.getCurrentInstance().isPostback()) {
 
-            if ( ac != null ) {
-                if ( complex == null || !ac.equals( complex.getAc() ) ) {
+            if (ac != null) {
+                if (complex == null || !ac.equals(complex.getAc())) {
                     setComplex(getComplexEditorService().loadComplexByAc(ac));
                 }
             } else {
-                if ( complex != null ) ac = complex.getAc();
+                if (complex != null) ac = complex.getAc();
             }
 
             if (complex == null) {
@@ -248,7 +249,7 @@ public class ComplexController extends AnnotatedObjectController {
     @Override
     protected void postProcessDeletedEvent(UnsavedChange unsaved) {
         super.postProcessDeletedEvent(unsaved);
-        if (unsaved.getUnsavedObject() instanceof IntactModelledParticipant){
+        if (unsaved.getUnsavedObject() instanceof IntactModelledParticipant) {
             removeParticipant((IntactModelledParticipant) unsaved.getUnsavedObject());
         }
     }
@@ -260,12 +261,12 @@ public class ComplexController extends AnnotatedObjectController {
         String currentAc = complex != null ? complex.getAc() : null;
 
         for (UnsavedChange unsaved : transcriptCreated) {
-            IntactInteractor transcript = (IntactInteractor)unsaved.getUnsavedObject();
+            IntactInteractor transcript = (IntactInteractor) unsaved.getUnsavedObject();
 
             // the object to save is different from the current object. Checks that the scope of this object to save is the ac of the current object being saved
             // if the scope is null or different, the object should not be saved at this stage because we only save the current object and changes associated with it
             // if current ac is null, no unsaved event should be associated with it as this object has not been saved yet
-            if (unsaved.getScope() != null && unsaved.getScope().equals(currentAc)){
+            if (unsaved.getScope() != null && unsaved.getScope().equals(currentAc)) {
                 try {
                     getEditorService().doSaveMasterProteins(transcript);
                 } catch (BridgeFailedException e) {
@@ -282,8 +283,7 @@ public class ComplexController extends AnnotatedObjectController {
 
                 getChangesController().removeFromHiddenChanges(unsaved);
 
-            }
-            else if (unsaved.getScope() == null && currentAc == null){
+            } else if (unsaved.getScope() == null && currentAc == null) {
                 try {
                     getEditorService().doSaveMasterProteins(transcript);
                 } catch (BridgeFailedException e) {
@@ -310,7 +310,7 @@ public class ComplexController extends AnnotatedObjectController {
             refreshParticipants();
         } else {
             Collection<String> parents = collectParentAcsOfCurrentAnnotatedObject();
-            if (this.complex.getAc() != null){
+            if (this.complex.getAc() != null) {
                 parents.add(this.complex.getAc());
             }
             getChangesController().markToDelete(component, this.complex, getEditorService().getIntactDao().getSynchronizerContext().getModelledParticipantSynchronizer(),
@@ -323,8 +323,8 @@ public class ComplexController extends AnnotatedObjectController {
 
         final Collection<ModelledParticipant> components = complex.getParticipants();
 
-        for ( ModelledParticipant component : components ) {
-            participantWrappers.add( new ParticipantWrapper( (IntactModelledParticipant)component) );
+        for (ModelledParticipant component : components) {
+            participantWrappers.add(new ParticipantWrapper((IntactModelledParticipant) component));
         }
 
         if (participantWrappers.size() > 0) {
@@ -357,7 +357,7 @@ public class ComplexController extends AnnotatedObjectController {
     public void cloneParticipant(ParticipantWrapper participantWrapper) {
         ModelledParticipantCloner cloner = new ModelledParticipantCloner();
 
-        IntactModelledParticipant clone = getEditorService().cloneAnnotatedObject((IntactModelledParticipant)participantWrapper.getParticipant(), cloner);
+        IntactModelledParticipant clone = getEditorService().cloneAnnotatedObject((IntactModelledParticipant) participantWrapper.getParticipant(), cloner);
         addParticipant(clone);
         doSave(false);
     }
@@ -440,21 +440,18 @@ public class ComplexController extends AnnotatedObjectController {
             this.ac = complex.getAc();
 
             initialiseDefaultProperties(complex);
-        }
-        else{
+        } else {
             this.ac = null;
         }
     }
 
     private void refreshName() {
         this.name = this.complex.getShortName();
-        if (this.complex.getRecommendedName() != null){
+        if (this.complex.getRecommendedName() != null) {
             this.name = this.complex.getRecommendedName();
-        }
-        else if (this.complex.getSystematicName() != null){
+        } else if (this.complex.getSystematicName() != null) {
             this.name = this.complex.getSystematicName();
-        }
-        else if (!this.complex.getAliases().isEmpty()){
+        } else if (!this.complex.getAliases().isEmpty()) {
             this.name = this.complex.getAliases().iterator().next().getName();
         }
 
@@ -496,25 +493,24 @@ public class ComplexController extends AnnotatedObjectController {
     }
 
     public void newConfidence(ActionEvent evet) {
-        if (this.newConfidenceType != null && this.newConfidenceValue != null){
+        if (this.newConfidenceType != null && this.newConfidenceValue != null) {
             ComplexConfidence confidence = new ComplexConfidence(this.newConfidenceType, this.newConfidenceValue);
             complex.getModelledConfidences().add(confidence);
             doSave(false);
 
             this.newConfidenceValue = null;
             this.newConfidenceType = null;
-        }
-        else{
+        } else {
             addErrorMessage("Cannot add new confidence as it does not have any type/value", "Missing confidence type/value");
         }
     }
 
     public void newParameter(ActionEvent evt) {
         if (this.newParameterType != null && this.newParameterFactor != null
-                && this.newParameterBase != null && this.newParameterExponent != null){
+                && this.newParameterBase != null && this.newParameterExponent != null) {
             ComplexParameter param = new ComplexParameter(this.newParameterType, new ParameterValue(new BigDecimal(this.newParameterFactor), this.newParameterBase.shortValue(),
                     this.newParameterExponent.shortValue()));
-            if (this.newParameterUncertainty != null){
+            if (this.newParameterUncertainty != null) {
                 param.setUncertainty(new BigDecimal(this.newParameterUncertainty));
             }
             param.setUnit(this.newParameterUnit);
@@ -527,8 +523,7 @@ public class ComplexController extends AnnotatedObjectController {
             this.newParameterUncertainty = null;
             this.newParameterUnit = null;
             this.newParameterExponent = null;
-        }
-        else{
+        } else {
             addErrorMessage("Cannot add new parameter as it does not have any type/value", "Missing parameter type/value");
         }
     }
@@ -571,33 +566,29 @@ public class ComplexController extends AnnotatedObjectController {
         super.onTabChanged(e);
 
         // all the tabs selectOneMenu are disabled, we can process the tabs specific to interaction
-        if (isAliasDisabled() && isXrefDisabled() && isAnnotationTopicDisabled()){
-            if (e.getTab().getId().equals("participantsTab")){
+        if (isAliasDisabled() && isXrefDisabled() && isAnnotationTopicDisabled()) {
+            if (e.getTab().getId().equals("participantsTab")) {
                 isParticipantDisabled = false;
                 isParameterDisabled = true;
                 isConfidenceDisabled = true;
                 isLifeCycleDisabled = true;
-            }
-            else if (e.getTab().getId().equals("parametersTab")){
+            } else if (e.getTab().getId().equals("parametersTab")) {
                 isParticipantDisabled = true;
                 isParameterDisabled = false;
                 isConfidenceDisabled = true;
                 isLifeCycleDisabled = true;
-            }
-            else if (e.getTab().getId().equals("confidencesTab")){
+            } else if (e.getTab().getId().equals("confidencesTab")) {
                 isParticipantDisabled = true;
                 isParameterDisabled = true;
                 isConfidenceDisabled = false;
                 isLifeCycleDisabled = true;
-            }
-            else {
+            } else {
                 isParticipantDisabled = true;
                 isParameterDisabled = true;
                 isConfidenceDisabled = true;
                 isLifeCycleDisabled = false;
             }
-        }
-        else {
+        } else {
             isParticipantDisabled = true;
             isParameterDisabled = true;
             isConfidenceDisabled = true;
@@ -607,10 +598,9 @@ public class ComplexController extends AnnotatedObjectController {
 
     @Override
     protected void addNewXref(AbstractIntactXref newRef) {
-        if (XrefUtils.isXrefAnIdentifier(newRef) || XrefUtils.doesXrefHaveQualifier(newRef, null, "intact-secondary")){
+        if (XrefUtils.isXrefAnIdentifier(newRef) || XrefUtils.doesXrefHaveQualifier(newRef, null, "intact-secondary")) {
             this.complex.getIdentifiers().add(newRef);
-        }
-        else{
+        } else {
             this.complex.getXrefs().add(newRef);
         }
         this.newXrefPubmed = null;
@@ -619,19 +609,18 @@ public class ComplexController extends AnnotatedObjectController {
 
     @Override
     protected InteractorXref newXref(CvTerm db, String id, String secondaryId, String version, CvTerm qualifier) {
-        if (CvTermUtils.isCvTerm(db, Xref.GO_MI, Xref.GO)){
+        if (CvTermUtils.isCvTerm(db, Xref.GO_MI, Xref.GO)) {
             ComplexGOXref goRef = new ComplexGOXref(id, version, qualifier);
             goRef.setSecondaryId(secondaryId);
             goRef.setPubmed(this.newXrefPubmed);
             goRef.setEvidenceType(this.newXrefEvidenceCode);
             goRef.setDatabase(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, Xref.GO_MI));
             return goRef;
-        }
-        else{
+        } else {
             InteractorXref ref = new InteractorXref(db, id, version, qualifier);
             ref.setSecondaryId(secondaryId);
 
-            if (this.newXrefPubmed != null || this.newXrefEvidenceCode != null){
+            if (this.newXrefPubmed != null || this.newXrefEvidenceCode != null) {
                 addWarningMessage("Ignored pubmed id and evidence code as they are only added to go references", "Ignored pubmed id and evidence code");
             }
             return ref;
@@ -656,7 +645,7 @@ public class ComplexController extends AnnotatedObjectController {
 
     @Override
     public InteractorAnnotation newAnnotation(String topic, String topicMI, String text) {
-        return new InteractorAnnotation(getCvService().findCvObject(IntactUtils.TOPIC_OBJCLASS, topicMI != null ? topicMI: topic), text);
+        return new InteractorAnnotation(getCvService().findCvObject(IntactUtils.TOPIC_OBJCLASS, topicMI != null ? topicMI : topic), text);
     }
 
     @Override
@@ -711,24 +700,21 @@ public class ComplexController extends AnnotatedObjectController {
         return aliases;
     }
 
-    public boolean isAliasNotEditable(Alias alias){
-        if (AliasUtils.doesAliasHaveType(alias, Alias.COMPLEX_RECOMMENDED_NAME_MI, Alias.COMPLEX_RECOMMENDED_NAME)){
+    public boolean isAliasNotEditable(Alias alias) {
+        if (AliasUtils.doesAliasHaveType(alias, Alias.COMPLEX_RECOMMENDED_NAME_MI, Alias.COMPLEX_RECOMMENDED_NAME)) {
             return true;
         } else
             return AliasUtils.doesAliasHaveType(alias, Alias.COMPLEX_SYSTEMATIC_NAME_MI, Alias.COMPLEX_SYSTEMATIC_NAME);
     }
 
-    public boolean isAnnotationNotEditable(Annotation annot){
-        if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.ON_HOLD)){
+    public boolean isAnnotationNotEditable(Annotation annot) {
+        if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.ON_HOLD)) {
             return true;
-        }
-        else if (AnnotationUtils.doesAnnotationHaveTopic(annot, Annotation.COMPLEX_PROPERTIES_MI, Annotation.COMPLEX_PROPERTIES)){
+        } else if (AnnotationUtils.doesAnnotationHaveTopic(annot, Annotation.COMPLEX_PROPERTIES_MI, Annotation.COMPLEX_PROPERTIES)) {
             return true;
-        }
-        else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.TO_BE_REVIEWED)){
+        } else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.TO_BE_REVIEWED)) {
             return true;
-        }
-        else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.CORRECTION_COMMENT)){
+        } else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.CORRECTION_COMMENT)) {
             return true;
         } else return AnnotationUtils.doesAnnotationHaveTopic(annot, null, "curated-complex");
     }
@@ -752,12 +738,12 @@ public class ComplexController extends AnnotatedObjectController {
     @Override
     public void removeXref(Xref xref) {
         // we need to be careful as curators can add complexGoRef which can be identical to other normal refs
-        if (XrefUtils.isXrefFromDatabase(xref, Xref.GO_MI, Xref.GO)){
+        if (XrefUtils.isXrefFromDatabase(xref, Xref.GO_MI, Xref.GO)) {
             Iterator<Xref> refIterator = complex.getXrefs().iterator();
             boolean hasRemoved = false;
-            while (refIterator.hasNext()){
-                InteractorXref next = (InteractorXref)refIterator.next();
-                if (xref == next){
+            while (refIterator.hasNext()) {
+                InteractorXref next = (InteractorXref) refIterator.next();
+                if (xref == next) {
                     hasRemoved = true;
                     refIterator.remove();
                 } else if (next.getAc() != null && next.getAc().equals(xref)) {
@@ -765,11 +751,11 @@ public class ComplexController extends AnnotatedObjectController {
                     refIterator.remove();
                 }
             }
-            if (!hasRemoved){
+            if (!hasRemoved) {
                 refIterator = complex.getIdentifiers().iterator();
-                while (refIterator.hasNext()){
-                    InteractorXref next = (InteractorXref)refIterator.next();
-                    if (xref == next){
+                while (refIterator.hasNext()) {
+                    InteractorXref next = (InteractorXref) refIterator.next();
+                    if (xref == next) {
                         hasRemoved = true;
                         refIterator.remove();
                     } else if (next.getAc() != null && next.getAc().equals(xref)) {
@@ -778,8 +764,7 @@ public class ComplexController extends AnnotatedObjectController {
                     }
                 }
             }
-        }
-        else{
+        } else {
             this.complex.getXrefs().remove(xref);
             this.complex.getIdentifiers().remove(xref);
         }
@@ -815,7 +800,7 @@ public class ComplexController extends AnnotatedObjectController {
 
     public void claimOwnership(ActionEvent evt) {
 
-        try{
+        try {
             getEditorService().claimOwnership(complex, getCurrentUser(), isAssigned());
 
             // automatically set as curation in progress if no one was assigned before
@@ -824,23 +809,21 @@ public class ComplexController extends AnnotatedObjectController {
             }
 
             addInfoMessage("Claimed complex ownership", "You are now the owner of this complex");
-        }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot claim ownership: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot claim ownership: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
     public void markAsAssignedToMe(ActionEvent evt) {
-        try{
+        try {
             getEditorService().markAsAssignedToMe(complex, getCurrentUser());
 
             addInfoMessage("Ownership claimed", "The complex has been assigned to you");
 
             addInfoMessage("Curation started", "Curation is now in progress");
 
-        }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot assign complex: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot assign complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
@@ -850,13 +833,12 @@ public class ComplexController extends AnnotatedObjectController {
             addErrorMessage("Cannot mark as curation in progress", "You are not the owner of this complex");
             return;
         }
-        try{
+        try {
             getEditorService().markAsCurationInProgress(complex, getCurrentUser());
 
             addInfoMessage("Curation started", "Curation is now in progress");
-        }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot mark as curation in progress: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot mark as curation in progress: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
@@ -866,31 +848,28 @@ public class ComplexController extends AnnotatedObjectController {
             return;
         }
 
-        try{
+        try {
             getEditorService().markAsReadyForChecking(complex, getCurrentUser(), correctionComment);
 
             addInfoMessage("Complex ready for checking", "Assigned to reviewer: " + complex.getCurrentReviewer().getLogin());
-        }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot mark as ready for checking: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot mark as ready for checking: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
     public void revertReadyForChecking(ActionEvent evt) {
-        try{
+        try {
             getEditorService().revertReadyForChecking(this.complex, getCurrentUser());
-        }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot revert ready for checking: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot revert ready for checking: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
     public void revertAccepted(ActionEvent evt) {
-        try{
+        try {
             getEditorService().revertAccepted(complex, getCurrentUser(), isReadyForRelease());
-        }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot revert accepted: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot revert accepted: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
@@ -905,7 +884,7 @@ public class ComplexController extends AnnotatedObjectController {
     }
 
     public void putOnHold(ActionEvent evt) {
-        try{
+        try {
             getEditorService().putOnHold(complex, getCurrentUser(), onHold, isReadyForRelease(), isReleased());
 
             if (isReadyForRelease()) {
@@ -913,8 +892,7 @@ public class ComplexController extends AnnotatedObjectController {
             } else if (isReleased()) {
                 addInfoMessage("On-hold added to released complex", "Data will be publicly visible until the next release");
             }
-        }
-        catch (IllegalTransitionException e){
+        } catch (IllegalTransitionException e) {
             addErrorMessage("Cannot put on-hold: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
@@ -940,7 +918,7 @@ public class ComplexController extends AnnotatedObjectController {
 
     public void onToBeReviewedChanged(ValueChangeEvent evt) {
         String newValue = (String) evt.getNewValue();
-        if (newValue != null && newValue.length() > 0){
+        if (newValue != null && newValue.length() > 0) {
             setUnsavedChanges(true);
             this.complex.onToBeReviewed(newValue);
             this.toBeReviewed = newValue;
@@ -949,7 +927,7 @@ public class ComplexController extends AnnotatedObjectController {
 
     public void onCorrectionCommentChanged(ValueChangeEvent evt) {
         String newValue = (String) evt.getNewValue();
-        if (newValue != null && newValue.length() > 0){
+        if (newValue != null && newValue.length() > 0) {
             setUnsavedChanges(true);
             this.complex.onCorrectionComment(newValue);
             this.correctionComment = newValue;
@@ -982,12 +960,11 @@ public class ComplexController extends AnnotatedObjectController {
 
     public void onRecommendedNameChanged(ValueChangeEvent evt) {
         String newValue = (String) evt.getNewValue();
-        if (newValue == null || newValue.length() == 0){
+        if (newValue == null || newValue.length() == 0) {
             this.complex.setRecommendedName(null);
             this.recommendedName = null;
             setUnsavedChanges(true);
-        }
-        else{
+        } else {
             this.complex.setRecommendedName(newValue);
             this.recommendedName = newValue;
             setUnsavedChanges(true);
@@ -997,12 +974,11 @@ public class ComplexController extends AnnotatedObjectController {
     public void onSystematicNameChanged(ValueChangeEvent evt) {
 
         String newValue = (String) evt.getNewValue();
-        if (newValue == null || newValue.length() == 0){
+        if (newValue == null || newValue.length() == 0) {
             this.complex.setSystematicName(null);
             this.systematicName = null;
             setUnsavedChanges(true);
-        }
-        else{
+        } else {
             this.complex.setSystematicName(newValue);
             this.systematicName = newValue;
             setUnsavedChanges(true);
@@ -1015,10 +991,9 @@ public class ComplexController extends AnnotatedObjectController {
         this.description = (String) evt.getNewValue();
 
         Annotation curatedComplex = AnnotationUtils.collectFirstAnnotationWithTopic(this.complex.getAnnotations(), null, "curated-complex");
-        if (curatedComplex != null){
+        if (curatedComplex != null) {
             curatedComplex.setValue(this.description);
-        }
-        else{
+        } else {
             this.complex.getAnnotations().add(new InteractorAnnotation(IntactUtils.createMITopic("curated-complex", null), this.description));
         }
     }
@@ -1026,12 +1001,11 @@ public class ComplexController extends AnnotatedObjectController {
     public void onComplexPropertiesChanged(ValueChangeEvent evt) {
 
         String newValue = (String) evt.getNewValue();
-        if (newValue == null || newValue.length() == 0){
+        if (newValue == null || newValue.length() == 0) {
             this.complex.setPhysicalProperties(null);
             this.complexProperties = null;
             setUnsavedChanges(true);
-        }
-        else{
+        } else {
             this.complex.setPhysicalProperties(newValue);
             this.complexProperties = newValue;
             setUnsavedChanges(true);
@@ -1074,14 +1048,13 @@ public class ComplexController extends AnnotatedObjectController {
     }
 
     public void acceptComplex(ActionEvent evt) {
-        try{
+        try {
             String accepted = "Accepted " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
 
             getEditorService().accept(complex, userSessionController.getCurrentUser(), accepted);
 
-        }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot accept complex: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot accept complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
@@ -1094,15 +1067,14 @@ public class ComplexController extends AnnotatedObjectController {
     public void rejectComplex(String reasonForRejection) {
         String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
 
-        try{
+        try {
             getEditorService().reject(complex, getCurrentUser(), date + ". " + reasonForRejection);
 
             addInfoMessage("Complex rejected", "");
 
             this.toBeReviewed = this.complex.getToBeReviewedComment();
-        }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot reject complex: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot reject complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 
@@ -1150,30 +1122,30 @@ public class ComplexController extends AnnotatedObjectController {
         CvTerm type = getCvService().findCvObject(IntactUtils.INTERACTOR_TYPE_OBJCLASS, Complex.COMPLEX_MI);
         User user = getCurrentUser();
         // the interaction evidence is loaded with jami
-        if (interactionEvidence != null){
+        if (interactionEvidence != null) {
             try {
                 IntactComplex complex = getComplexEditorService().cloneInteractionEvidence(interactionEvidence, new ComplexCloner());
                 setComplex(complex);
             } catch (SynchronizerException e) {
-                addErrorMessage("Cannot clone the interaction evidence as a complex: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+                addErrorMessage("Cannot clone the interaction evidence as a complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
             } catch (FinderException e) {
-                addErrorMessage("Cannot clone the interaction evidence as a complex: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+                addErrorMessage("Cannot clone the interaction evidence as a complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
             } catch (PersisterException e) {
-                addErrorMessage("Cannot clone the interaction evidence as a complex: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+                addErrorMessage("Cannot clone the interaction evidence as a complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
             }
         }
 
         this.complex.setInteractorType(type);
 
-        try{
+        try {
             getLifecycleManager().getStartStatus().create(this.complex, "Created in Editor", user);
 
             if (assignToMe) {
                 getLifecycleManager().getNewStatus().claimOwnership(this.complex, user);
                 getLifecycleManager().getAssignedStatus().startCuration(this.complex, user);
             }
-        }catch (IllegalTransitionException e){
-            addErrorMessage("Cannot create new complex: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot create new complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
 
         return "/curate/complex?faces-redirect=true";
@@ -1192,16 +1164,15 @@ public class ComplexController extends AnnotatedObjectController {
         this.complex.setCreator(user.getLogin());
         this.complex.setUpdator(user.getLogin());
         this.complex.setInteractorType(type);
-        try{
+        try {
             getLifecycleManager().getStartStatus().create(this.complex, "Created in Editor", user);
 
             if (assignToMe) {
                 getLifecycleManager().getNewStatus().claimOwnership(this.complex, user);
                 getLifecycleManager().getAssignedStatus().startCuration(this.complex, user);
             }
-        }
-        catch (IllegalTransitionException e){
-            addErrorMessage("Cannot create new complex: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot create new complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
 
         return "/curate/complex?faces-redirect=true";
@@ -1219,54 +1190,51 @@ public class ComplexController extends AnnotatedObjectController {
 
     /**
      * No transactional as it should always be initialised when loaded recommended name and systematic name when loading the page
+     *
      * @return
      */
     public int getAliasesSize() {
-        if (this.complex == null){
+        if (this.complex == null) {
             return 0;
-        }
-        else{
+        } else {
             return this.complex.getAliases().size();
         }
     }
 
     /**
      * No transactional as it should always be initialised when loaded recommended name and systematic name when loading the page
+     *
      * @return
      */
     public int getAnnotationsSize() {
-        if (this.complex == null){
+        if (this.complex == null) {
             return 0;
-        }
-        else{
+        } else {
             return this.complex.getAnnotations().size();
         }
     }
 
     public int getConfidencesSize() {
-        if (this.complex == null){
+        if (this.complex == null) {
             return 0;
-        }
-        else {
+        } else {
             return this.complex.getModelledConfidences().size();
         }
     }
 
     public int getParametersSize() {
-        if (this.complex == null){
+        if (this.complex == null) {
             return 0;
-        }
-        else{
+        } else {
             return this.complex.getModelledParameters().size();
         }
     }
 
 
     public int getXrefsSize() {
-        if (this.complex == null){
+        if (this.complex == null) {
             return 0;
-        }
-        else{
+        } else {
             return this.complex.getDbXrefs().size();
         }
     }
@@ -1283,11 +1251,11 @@ public class ComplexController extends AnnotatedObjectController {
         return params;
     }
 
-    public void removeConfidence(ModelledConfidence conf){
+    public void removeConfidence(ModelledConfidence conf) {
         this.complex.getModelledConfidences().remove(conf);
     }
 
-    public void removeParameter(ModelledParameter param){
+    public void removeParameter(ModelledParameter param) {
         this.complex.getModelledParameters().remove(param);
     }
 
@@ -1312,34 +1280,32 @@ public class ComplexController extends AnnotatedObjectController {
         this.complex.removeCorrectionComment();
     }
 
-    public void reloadSingleParticipant(IntactModelledParticipant f){
+    public void reloadSingleParticipant(IntactModelledParticipant f) {
         Iterator<ModelledParticipant> evIterator = complex.getParticipants().iterator();
         boolean add = true;
-        while (evIterator.hasNext()){
-            IntactModelledParticipant intactEv = (IntactModelledParticipant)evIterator.next();
-            if (intactEv.getAc() == null && f == intactEv){
+        while (evIterator.hasNext()) {
+            IntactModelledParticipant intactEv = (IntactModelledParticipant) evIterator.next();
+            if (intactEv.getAc() == null && f == intactEv) {
                 add = false;
-            }
-            else if (intactEv.getAc() != null && intactEv.getAc().equals(f.getAc())){
+            } else if (intactEv.getAc() != null && intactEv.getAc().equals(f.getAc())) {
                 evIterator.remove();
             }
         }
 
-        if (add){
+        if (add) {
             complex.getParticipants().add(f);
         }
 
         refreshParticipants();
     }
 
-    public void removeParticipant(IntactModelledParticipant f){
+    public void removeParticipant(IntactModelledParticipant f) {
         Iterator<ModelledParticipant> evIterator = complex.getParticipants().iterator();
-        while (evIterator.hasNext()){
-            IntactModelledParticipant intactEv = (IntactModelledParticipant)evIterator.next();
-            if (intactEv.getAc() == null && f == intactEv){
+        while (evIterator.hasNext()) {
+            IntactModelledParticipant intactEv = (IntactModelledParticipant) evIterator.next();
+            if (intactEv.getAc() == null && f == intactEv) {
                 evIterator.remove();
-            }
-            else if (intactEv.getAc() != null && intactEv.getAc().equals(f.getAc())){
+            } else if (intactEv.getAc() != null && intactEv.getAc().equals(f.getAc())) {
                 evIterator.remove();
             }
         }
@@ -1374,14 +1340,14 @@ public class ComplexController extends AnnotatedObjectController {
     }
 
     public ComplexEditorService getComplexEditorService() {
-        if (this.complexEditorService == null){
+        if (this.complexEditorService == null) {
             this.complexEditorService = ApplicationContextProvider.getBean("complexEditorService");
         }
         return complexEditorService;
     }
 
     public BioSourceService getBioSourceService() {
-        if (this.bioSourceService == null){
+        if (this.bioSourceService == null) {
             this.bioSourceService = ApplicationContextProvider.getBean("bioSourceService");
         }
         return bioSourceService;
@@ -1467,11 +1433,11 @@ public class ComplexController extends AnnotatedObjectController {
         this.newParameterType = newParameterType;
     }
 
-    public String getShortName(){
-        return complex !=null && !"name to specify".equals(complex.getShortName()) ? complex.getShortName() : null;
+    public String getShortName() {
+        return complex != null && !"name to specify".equals(complex.getShortName()) ? complex.getShortName() : null;
     }
 
-    public void setShortName(String name){
+    public void setShortName(String name) {
         this.complex.setShortName(name);
     }
 }
