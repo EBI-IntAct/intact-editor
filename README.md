@@ -1,1 +1,2 @@
+### Purpose ###
 The editor is a tool for importing data into intact, exporting data in psi-xml 25, mitab and other formats. This tool is also helping with general database management and aims at facilitating the curation job in Intact. The editor can be used by external curators as well (Molceular Connections, InnateDB, etc.)
