@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -12,7 +11,7 @@
     <artifactId>editor</artifactId>
     <packaging>war</packaging>
 
-    <version>3.0.2-SNAPSHOT</version>
+    <version>3.0.2</version>
 
     <name>Service :: IntAct Editor</name>
 
@@ -75,8 +74,8 @@
         <!-- other property defaults -->
         <webapp.logo.url>http://www.ebi.ac.uk/~intact/images/intact_logo.png</webapp.logo.url>
         <intact.instance.name>Not Set</intact.instance.name>
-        <google.username></google.username>
-        <google.password></google.password>
+        <google.username />
+        <google.password />
         <editor.theme>ui-lightness</editor.theme>
         <maintainer.emails>intact-dev@ebi.ac.uk</maintainer.emails>
 
@@ -174,6 +173,16 @@
                 </configuration>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5</version>
+                <configuration>
+                    <remoteTagging>true</remoteTagging>
+                    <goals>deploy</goals>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 
@@ -194,11 +203,11 @@
                 <db.driver>org.h2.Driver</db.driver>
                 <db.dialect>org.hibernate.dialect.H2Dialect</db.dialect>
                 <db.user>sa</db.user>
-                <db.password></db.password>
+                <db.password />
                 <db.hbm2ddl>update</db.hbm2ddl>
-                <ic.username></ic.username>
-                <ic.password></ic.password>
-                <ic.endpoint></ic.endpoint>
+                <ic.username />
+                <ic.password />
+                <ic.endpoint />
                 <update.log.directory>target/imex-report</update.log.directory>
             </properties>
 
@@ -555,7 +564,7 @@
         <dependency>
             <groupId>org.primefaces</groupId>
             <artifactId>primefaces</artifactId>
-            <version>3.1.1-intact-SNAPSHOT</version>
+            <version>3.1.1-intact</version>
         </dependency>
         <dependency>
             <groupId>commons-fileupload</groupId>
