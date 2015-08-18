@@ -501,6 +501,12 @@ public class EditorObjectService extends AbstractEditorService {
                 lifecycleManager.getReadyForReleaseStatus().putOnHold(releasable, reasonForOnHold, user);
             } else if (isReleased) {
                 lifecycleManager.getReleasedStatus().putOnHold(releasable, reasonForOnHold, user);
+            } else {
+                //if it is not isReadyForReleased or is isReleased we don't want to change the lifecycle, but we want to have the annotation.
+                //TODO: This is a hack for stabilising the Editor. 
+                // Once we have a breather, we should maybe rethink this procedure. We could remove the "onHold" (CV-Term) 
+                // and create a new one called "private". In the best case we do not need to mess around with the lifecycle.
+                releasable.onHold(reasonForOnHold);
             }
         }
     }
