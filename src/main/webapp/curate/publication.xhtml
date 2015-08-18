@@ -69,13 +69,13 @@
                      action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Put on hold" type="button"
                      styleClass="important-button-bad"
-                     rendered="#{(publicationController.readyForRelease or publicationController.released) and
+                     rendered="#{publicationController.onHold == null and
                      (userSessionController.isItMe(publicationController.publication.currentOwner)
                      or userSessionController.isItMe(publicationController.publication.currentReviewer))}"
                      onclick="putOnHoldDialog.show()"/>
     <p:commandButton value="Remove on hold"
                      styleClass="important-button-bad"
-                     rendered="#{publicationController.onHold != null and
+                     rendered="#{publicationController.onHold != null and (!publicationController.acceptedOnHold) and
                      (userSessionController.isItMe(publicationController.publication.currentOwner)
                      or userSessionController.isItMe(publicationController.publication.currentReviewer))}"
                      actionListener="#{publicationController.removeOnHold}"
