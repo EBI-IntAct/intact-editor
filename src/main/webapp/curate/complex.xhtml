@@ -69,12 +69,13 @@
                      and (userSessionController.isItMe(complexController.complex.currentOwner)
                      or userSessionController.isItMe(complexController.complex.currentReviewer))}"
                      onclick="putOnHoldDialog.show()"/>
-    <p:commandButton value="Remove on hold"
-                     styleClass="important-button-bad"
-                     rendered="#{complexController.complexOnHold and (userSessionController.isItMe(complexController.complex.currentOwner)
-                     or userSessionController.isItMe(complexController.complex.currentReviewer))}"
-                     actionListener="#{complexController.removeOnHold}"
-                     action="#{complexController.doSave}" ajax="false"/>
+    <!--THERE IS RIGHT NOW NO NEED OF HAVING THIS HERE. MAYBE ON SOME POINT IN THE FUTUTRE.-->
+    <!--<p:commandButton value="Remove on hold"-->
+                     <!--styleClass="important-button-bad"-->
+                     <!--rendered="#{complexController.complexOnHold and (userSessionController.isItMe(complexController.complex.currentOwner)-->
+                     <!--or userSessionController.isItMe(complexController.complex.currentReviewer))}"-->
+                     <!--actionListener="#{complexController.removeOnHold}"-->
+                     <!--action="#{complexController.doSave}" ajax="false"/>-->
     <p:commandButton value="Remove to be reviewed"
                      styleClass="important-button-bad"
                      rendered="#{complexController.complexToBeReviewed and userSessionController.isItMe(complexController.complex.currentReviewer)}"
