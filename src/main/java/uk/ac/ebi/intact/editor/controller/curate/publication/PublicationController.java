@@ -53,7 +53,10 @@ import uk.ac.ebi.intact.jami.lifecycle.IllegalTransitionException;
 import uk.ac.ebi.intact.jami.lifecycle.LifeCycleManager;
 import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
 import uk.ac.ebi.intact.jami.model.extension.*;
-import uk.ac.ebi.intact.jami.model.lifecycle.*;
+import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleEvent;
+import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleEventType;
+import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleStatus;
+import uk.ac.ebi.intact.jami.model.lifecycle.Releasable;
 import uk.ac.ebi.intact.jami.model.user.Preference;
 import uk.ac.ebi.intact.jami.sequence.SequenceManager;
 import uk.ac.ebi.intact.jami.service.PublicationService;
@@ -83,14 +86,12 @@ import java.util.regex.Pattern;
 @ConversationName("general")
 public class PublicationController extends AnnotatedObjectController {
 
-    private static final Log log = LogFactory.getLog(PublicationController.class);
-
     public static final String SUBMITTED = "MI:0878";
     public static final String CURATION_REQUEST = "MI:0873";
-    private static final String CURATION_DEPTH = "MI:0955";
     public static final String DATASET = "dataset";
     public static final String DATASET_MI_REF = "MI:0875";
-
+    private static final Log log = LogFactory.getLog(PublicationController.class);
+    private static final String CURATION_DEPTH = "MI:0955";
     private IntactPublication publication;
     private String ac;
 
@@ -707,7 +708,7 @@ public class PublicationController extends AnnotatedObjectController {
 
     public void putOnHold(ActionEvent evt) {
         try{
-            getEditorService().putOnHold(publication, getCurrentUser(), reasonForOnHoldFromDialog, isReadyForChecking(), isReleased());
+            getEditorService().putOnHold(publication, getCurrentUser(), onHold, isReadyForRelease(), isReleased());
 
             if (isReadyForRelease()) {
                 addInfoMessage("On-hold added to publication", "Publication won't be released until the 'on hold' is removed");
@@ -715,7 +716,7 @@ public class PublicationController extends AnnotatedObjectController {
                 addInfoMessage("On-hold added to released publication", "Data will be publicly visible until the next release");
             }
 
-            reasonForOnHoldFromDialog = null;
+            //reasonForOnHoldFromDialog = null;
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
             if (publication.getAc() != null && getImexId() == null){
                 try {
@@ -987,6 +988,10 @@ public class PublicationController extends AnnotatedObjectController {
         return ac;
     }
 
+    public void setAc(String ac) {
+        this.ac = ac;
+    }
+
     @Override
     public int getXrefsSize() {
         if (publication == null){
@@ -1021,12 +1026,20 @@ public class PublicationController extends AnnotatedObjectController {
         }
     }
 
-    public void setAc(String ac) {
-        this.ac = ac;
-    }
-
     public IntactPublication getPublication() {
         return publication;
+    }
+
+    public void setPublication(IntactPublication publication) {
+        this.publication = publication;
+
+        if (publication != null) {
+            this.ac = publication.getAc();
+
+            initialiseDefaultProperties(this.publication);
+        } else {
+            this.ac = null;
+        }
     }
 
     @Override
@@ -1067,19 +1080,6 @@ public class PublicationController extends AnnotatedObjectController {
             isExperimentTabDisabled = true;
             isInteractionTabDisabled = true;
             isLifeCycleDisabled = true;
-        }
-    }
-
-    public void setPublication(IntactPublication publication) {
-        this.publication = publication;
-
-        if (publication != null) {
-            this.ac = publication.getAc();
-
-            initialiseDefaultProperties(this.publication);
-        }
-        else{
-            this.ac = null;
         }
     }
 
@@ -1268,6 +1268,10 @@ public class PublicationController extends AnnotatedObjectController {
         return accepted;
     }
 
+    public void setAcceptedMessage(String message) {
+        this.accepted = message;
+    }
+
     public void onAcceptedChanged(ValueChangeEvent evt) {
         setUnsavedChanges(true);
 
@@ -1279,15 +1283,15 @@ public class PublicationController extends AnnotatedObjectController {
         return this.curationDepth;
     }
 
+    public void setCurationDepth(String curationDepth) {
+        this.curationDepth = curationDepth;
+    }
+
     public String getShowCurationDepth() {
         if (publication.getCurationDepth() == CurationDepth.undefined) {
             return "curation depth undefined";
         }
         return publication.getCurationDepth().toString();
-    }
-
-    public void setCurationDepth(String curationDepth) {
-        this.curationDepth = curationDepth;
     }
 
     public void setCurationDepthAnnot(String curationDepth) {
@@ -1313,10 +1317,6 @@ public class PublicationController extends AnnotatedObjectController {
                 pub.getStatus() == LifeCycleStatus.ACCEPTED_ON_HOLD ||
                 pub.getStatus() == LifeCycleStatus.READY_FOR_RELEASE ||
                 pub.getStatus() == LifeCycleStatus.RELEASED;
-    }
-
-    public void setAcceptedMessage(String message) {
-        this.accepted = message;
     }
 
     public boolean isToBeReviewed(IntactPublication pub) {
@@ -1357,8 +1357,11 @@ public class PublicationController extends AnnotatedObjectController {
 
     public void removeOnHold(ActionEvent evt){
         publication.removeOnHold();
-        this.onHold = null;
+        setOnHold(null);
+
         Collection<String> parentAcs = new ArrayList<String>();
+        getCurrentUser();
+                
         if (publication.getAc() != null) {
             parentAcs.add(publication.getAc());
         }
@@ -1545,10 +1548,6 @@ public class PublicationController extends AnnotatedObjectController {
         return false;
     }
 
-    public void setToBeReviewed(String toBeReviewed) {
-        this.toBeReviewed = toBeReviewed;
-    }
-
     public void onToBeReviewedChanged(ValueChangeEvent evt) {
         setUnsavedChanges(true);
         String newValue = (String) evt.getNewValue();
@@ -1558,6 +1557,10 @@ public class PublicationController extends AnnotatedObjectController {
 
     public String getToBeReviewed() {
         return this.toBeReviewed;
+    }
+
+    public void setToBeReviewed(String toBeReviewed) {
+        this.toBeReviewed = toBeReviewed;
     }
 
     public void copyAnnotationsToExperiments(ActionEvent evt) {
@@ -1766,24 +1769,13 @@ public class PublicationController extends AnnotatedObjectController {
         }
         else if (AnnotationUtils.doesAnnotationHaveTopic(annot, Annotation.CONTACT_EMAIL_MI, Annotation.CONTACT_EMAIL)){
             return true;
-        }
-        else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.ACCEPTED)){
-            return true;
-        }
-        else {
-            return false;
-        }
+        } else return AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.ACCEPTED);
     }
 
     @Override
     public boolean isXrefNotEditable(Xref ref) {
-        if (XrefUtils.isXrefFromDatabase(ref, Xref.PUBMED_MI, Xref.PUBMED)
-                && XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY)){
-            return true;
-        }
-        else{
-            return false;
-        }
+        return XrefUtils.isXrefFromDatabase(ref, Xref.PUBMED_MI, Xref.PUBMED)
+                && XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY);
     }
 
     public List<Annotation> collectAnnotations() {
