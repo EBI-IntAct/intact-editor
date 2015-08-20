@@ -146,7 +146,7 @@
                 <div class="intact-notSavedPanel">
                     Changes not yet saved &#160;
 
-                    <p:commandButton type="button" id="unsavedSaveButton"
+                    <p:commandButton ajax="false" type="button" id="unsavedSaveButton"
                                      styleClass="important-button"
                                      style="opacity: 1.0; font-weight: bold"
                                      value="Save" onclick="save(); return false">
@@ -154,14 +154,14 @@
 
 
                     &#160;-&#160;
-                    <p:commandLink id="unsavedRevertLink" value="Revert" style="opacity: 1.0; font-weight: bold"
+                    <p:commandLink ajax="false" id="unsavedRevertLink" value="Revert" style="opacity: 1.0; font-weight: bold"
                                    rendered="#{annotatedObjectController.ac != null}"
                                    process="@this"
                                    update=":editorForm:centralUnit,:editorForm:topSection,:editorForm:messagesComponent"
                                    actionListener="#{annotatedObjectController.doRevertChanges}"
                                    onclick="revertDialog.show()" oncomplete="revertDialog.hide()"/>
 
-                    <p:commandLink id="unsavedCancelLink" value="Cancel" style="opacity: 1.0; font-weight: bold"
+                    <p:commandLink ajax="false" id="unsavedCancelLink" value="Cancel" style="opacity: 1.0; font-weight: bold"
                                    rendered="#{annotatedObjectController.ac == null}"
                                    immediate="true"
                                    action="#{annotatedObjectController.doCancelEdition}"
