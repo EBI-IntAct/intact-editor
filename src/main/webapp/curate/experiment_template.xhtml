@@ -16,7 +16,7 @@
     <ui:define name="topActionsPanel">
         <p:commandButton value="Accept Experiment"
                          styleClass="important-button-good"
-                         rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)
+                         rendered="#{publicationController.readyForChecking and !experimentController.rejected and userSessionController.isItMe(publicationController.publication.currentReviewer)
                          and !experimentController.accepted}"
                          actionListener="#{experimentController.acceptExperiment}"
                          action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true" 
@@ -30,7 +30,17 @@
                          ajax="false"/>
         <p:commandButton value="Reject Experiment" type="button"
                          styleClass="important-button-bad"
-                         rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                         rendered="#{publicationController.readyForChecking and !experimentController.rejected and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                         onclick="rejectExperimentDialog.show()"
+                         ajax="false"/>
+        <p:commandButton value="Edit Rejection Command" type="button"
+                         styleClass="important-button-bad"
+                         rendered="#{publicationController.readyForChecking and experimentController.rejected and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                         onclick="rejectExperimentDialog.show()"
+                         ajax="false"/>
+        <p:commandButton value="Add Rejection Command" type="button"
+                         styleClass="important-button-bad"
+                         rendered="#{publicationController.readyForChecking and experimentController.rejected and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                          onclick="rejectExperimentDialog.show()"
                          ajax="false"/>
         <p:commandButton value="Remove to be reviewed"
