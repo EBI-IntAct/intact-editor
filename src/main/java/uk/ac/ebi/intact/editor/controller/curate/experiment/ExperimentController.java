@@ -436,9 +436,13 @@ public class ExperimentController extends AnnotatedObjectController {
         String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() +
                 " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
 
-        setToBeReviewed(date + ". " + reasonForRejection);
+        if(reasonForRejection != null){
+            setToBeReviewed(reasonForRejection + " " + date + ". " + newValue);
+        } else {
+            setToBeReviewed(date + ". " + newValue);
+        }
         this.accepted = null;
-
+        this.newValue = null;
         updateAnnotation(Releasable.TO_BE_REVIEWED, null, date + ". " + reasonForRejection, experiment.getAnnotations());
         removeAnnotation(Releasable.ACCEPTED, null, experiment.getAnnotations());
         removeAnnotation(Releasable.CORRECTION_COMMENT, null, experiment.getAnnotations());
