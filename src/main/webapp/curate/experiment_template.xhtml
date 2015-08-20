@@ -19,31 +19,37 @@
                          rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)
                          and !experimentController.accepted}"
                          actionListener="#{experimentController.acceptExperiment}"
-                         action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true"/>
+                         action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true" 
+                         ajax="false"/>
         <p:commandButton value="Revert Accepted"
                          styleClass="important-button-alt"
                          rendered="#{experimentController.accepted
                          and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                          actionListener="#{experimentController.revertAccepted}"
-                         action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true"/>
+                         action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true"
+                         ajax="false"/>
         <p:commandButton value="Reject Experiment" type="button"
                          styleClass="important-button-bad"
                          rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
-                         onclick="rejectExperimentDialog.show()"/>
+                         onclick="rejectExperimentDialog.show()"
+                         ajax="false"/>
         <p:commandButton value="Remove to be reviewed"
                          styleClass="important-button-bad"
                          rendered="#{experimentController.rejected and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                          actionListener="#{experimentController.removeToBeReviewed}"
-                         action="#{experimentController.doSave}" ajax="false"/>
+                         action="#{experimentController.doSave}" 
+                         ajax="false"/>
         <p:commandButton value="Correction Comment" type="button"
                          styleClass="important-button-alt"
                          rendered="#{publicationController.curationInProgress and userSessionController.isItMe(publicationController.publication.currentOwner)}"
-                         onclick="correctionCommentDialog.show()"/>
+                         onclick="correctionCommentDialog.show()"
+                         ajax="false"/>
         <p:commandButton value="Remove Correction Comment" actionListener="#{experimentController.removeCorrectionComment}"
                          styleClass="important-button-alt"
                          rendered="#{experimentController.corrected and (userSessionController.isItMe(publicationController.publication.currentOwner)
                          or userSessionController.isItMe(publicationController.publication.currentReviewer))}"
-                         action="#{experimentController.doSave}" ajax="false"/>
+                         action="#{experimentController.doSave}" 
+                         ajax="false"/>
     </ui:define>
 
     <ui:define name="breadcrumbs">
