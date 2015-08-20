@@ -72,7 +72,7 @@
                      rendered="#{publicationController.onHold == null and
                      (userSessionController.isItMe(publicationController.publication.currentOwner)
                      or userSessionController.isItMe(publicationController.publication.currentReviewer))}"
-                     onclick="putOnHoldDialog.show()"/>
+                     onclick="putOnHoldDialog.show()" ajax="false"/>
     <p:commandButton value="Remove on hold"
                      styleClass="important-button-bad"
                      rendered="#{publicationController.onHold != null and (!publicationController.acceptedOnHold) and
