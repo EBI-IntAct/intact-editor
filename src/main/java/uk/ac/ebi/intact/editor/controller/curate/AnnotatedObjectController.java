@@ -445,15 +445,15 @@ public abstract class AnnotatedObjectController extends BaseController implement
     protected void refreshCurrentViewIntactObject(CurateController curateController, IntactPrimaryObject currentAo) {
         // we have to refresh because the current annotated object is different from the annotated object of this controller
         if (getAnnotatedObject() != null && !currentAo.getAc().equals(getAnnotatedObject().getAc())) {
-            if (log.isDebugEnabled())
+            if (log.isDebugEnabled()) {
                 log.debug("Refreshing object in view: " + getAnnotatedObject().toString());
-
+            }
             IntactPrimaryObject refreshedAo = curateController.getCurrentAnnotatedObjectController().refresh(currentAo);
             curateController.getCurrentAnnotatedObjectController().setAnnotatedObject(refreshedAo);
         } else if (getAnnotatedObject() == null && currentAo != null) {
-            if (log.isDebugEnabled())
+            if (log.isDebugEnabled()) {
                 log.debug("Refreshing object in view: " + getAnnotatedObject().toString());
-
+            }
             IntactPrimaryObject refreshedAo = refresh(currentAo);
             curateController.getCurrentAnnotatedObjectController().setAnnotatedObject(refreshedAo);
         }
