@@ -1,12 +1,12 @@
 /**
  * Copyright 2010 The European Bioinformatics Institute, and others.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -60,8 +60,8 @@ import java.util.*;
  * @version $Id$
  */
 @Controller
-@Scope( "conversation.access" )
-@ConversationName( "general" )
+@Scope("conversation.access")
+@ConversationName("general")
 public class ExperimentController extends AnnotatedObjectController {
 
     private IntactExperiment experiment;
@@ -127,7 +127,7 @@ public class ExperimentController extends AnnotatedObjectController {
 
     @Override
     protected void loadCautionMessages() {
-        if (this.experiment != null){
+        if (this.experiment != null) {
 
             Annotation caution = AnnotationUtils.collectFirstAnnotationWithTopic(this.experiment.getAnnotations(), Annotation.CAUTION_MI, Annotation.CAUTION);
             setCautionMessage(caution != null ? caution.getValue() : null);
@@ -145,13 +145,13 @@ public class ExperimentController extends AnnotatedObjectController {
         }
     }
 
-    public void loadData( ComponentSystemEvent event ) {
+    public void loadData(ComponentSystemEvent event) {
         if (!FacesContext.getCurrentInstance().isPostback()) {
-            if ( ac != null ) {
-                if ( experiment == null || !ac.equals( experiment.getAc() ) ) {
+            if (ac != null) {
+                if (experiment == null || !ac.equals(experiment.getAc())) {
                     setExperiment(getExperimentService().loadExperimentByAc(ac));
                 }
-            } else if ( experiment != null ) {
+            } else if (experiment != null) {
                 ac = experiment.getAc();
             }
 
@@ -183,21 +183,18 @@ public class ExperimentController extends AnnotatedObjectController {
         super.onTabChanged(e);
 
         // all the tabs selectOneMenu are disabled, we can process the tabs specific to experiment
-        if (isAliasDisabled() && isXrefDisabled() && isAnnotationTopicDisabled()){
-            if (e.getTab().getId().equals("interactionsTab")){
+        if (isAliasDisabled() && isXrefDisabled() && isAnnotationTopicDisabled()) {
+            if (e.getTab().getId().equals("interactionsTab")) {
                 isInteractionTab = true;
                 isVariableParameterTab = false;
-            }
-            else if (e.getTab().getId().equals("vParametersTab")){
+            } else if (e.getTab().getId().equals("vParametersTab")) {
                 isVariableParameterTab = true;
                 isInteractionTab = false;
-            }
-            else {
+            } else {
                 isInteractionTab = false;
                 isVariableParameterTab = false;
             }
-        }
-        else {
+        } else {
             isInteractionTab = false;
             isVariableParameterTab = false;
         }
@@ -211,61 +208,57 @@ public class ExperimentController extends AnnotatedObjectController {
 
     protected void refreshParentControllers() {
         // different loaded publication
-        if (publicationController.getPublication() != experiment.getPublication()){
+        if (publicationController.getPublication() != experiment.getPublication()) {
             // different publication to load
             if (publicationController.getAc() == null ||
                     (experiment.getPublication() instanceof IntactPublication
-                            && !publicationController.getAc().equals(((IntactPublication)experiment.getPublication()).getAc()))){
-                publicationController.setPublication((IntactPublication)experiment.getPublication());
+                            && !publicationController.getAc().equals(((IntactPublication) experiment.getPublication()).getAc()))) {
+                publicationController.setPublication((IntactPublication) experiment.getPublication());
             }
             // replace old experiment instance with new one in experiment tables of publication
-            else{
+            else {
                 experiment.setPublication(publicationController.getPublication());
                 publicationController.reloadSingleExperiment(experiment);
             }
         }
     }
 
-    public void reloadSingleInteractionEvidence(IntactInteractionEvidence ev){
+    public void reloadSingleInteractionEvidence(IntactInteractionEvidence ev) {
         // only update if not lazy loaded
-        if (experiment.areInteractionEvidencesInitialized()){
+        if (experiment.areInteractionEvidencesInitialized()) {
             Iterator<InteractionEvidence> evIterator = experiment.getInteractionEvidences().iterator();
             boolean add = true;
-            while (evIterator.hasNext()){
-                IntactInteractionEvidence intactEv = (IntactInteractionEvidence)evIterator.next();
-                if (intactEv.getAc() == null && ev == intactEv){
+            while (evIterator.hasNext()) {
+                IntactInteractionEvidence intactEv = (IntactInteractionEvidence) evIterator.next();
+                if (intactEv.getAc() == null && ev == intactEv) {
                     add = false;
-                }
-                else if (intactEv.getAc() != null && intactEv.getAc().equals(ev.getAc())){
+                } else if (intactEv.getAc() != null && intactEv.getAc().equals(ev.getAc())) {
                     evIterator.remove();
                 }
             }
-            if (add){
+            if (add) {
                 experiment.getInteractionEvidences().add(ev);
             }
-        }
-        else{
+        } else {
             refreshInteractions();
         }
 
         publicationController.reloadSingleExperiment(experiment);
     }
 
-    public void removeInteractionEvidence(IntactInteractionEvidence ev){
+    public void removeInteractionEvidence(IntactInteractionEvidence ev) {
         // only update if not lazy loaded
-        if (experiment.areInteractionEvidencesInitialized()){
+        if (experiment.areInteractionEvidencesInitialized()) {
             Iterator<InteractionEvidence> evIterator = experiment.getInteractionEvidences().iterator();
-            while (evIterator.hasNext()){
-                IntactInteractionEvidence intactEv = (IntactInteractionEvidence)evIterator.next();
-                if (intactEv.getAc() == null && ev == intactEv){
+            while (evIterator.hasNext()) {
+                IntactInteractionEvidence intactEv = (IntactInteractionEvidence) evIterator.next();
+                if (intactEv.getAc() == null && ev == intactEv) {
                     evIterator.remove();
-                }
-                else if (intactEv.getAc() != null && intactEv.getAc().equals(ev.getAc())){
+                } else if (intactEv.getAc() != null && intactEv.getAc().equals(ev.getAc())) {
                     evIterator.remove();
                 }
             }
-        }
-        else{
+        } else {
             refreshInteractions();
         }
 
@@ -306,14 +299,13 @@ public class ExperimentController extends AnnotatedObjectController {
     private void refreshInteractions() {
         if (experiment == null) return;
 
-        if (experiment.areInteractionEvidencesInitialized()){
+        if (experiment.areInteractionEvidencesInitialized()) {
             List<InteractionSummary> evidences = new ArrayList<InteractionSummary>(experiment.getInteractionEvidences().size());
-            for (InteractionEvidence ev : experiment.getInteractionEvidences()){
-                evidences.add(getInteractionSummaryService().createSummaryFrom((IntactInteractionEvidence)ev));
+            for (InteractionEvidence ev : experiment.getInteractionEvidences()) {
+                evidences.add(getInteractionSummaryService().createSummaryFrom((IntactInteractionEvidence) ev));
             }
             interactionDataModel = LazyDataModelFactory.createLazyDataModel(evidences);
-        }
-        else{
+        } else {
             interactionDataModel = LazyDataModelFactory.createLazyDataModel(getInteractionSummaryService(), "interactionSummaryService",
                     "select distinct i from IntactInteractionEvidence i join i.dbExperiments as exp where exp.ac = '" + experiment.getAc() + "'",
                     "select count(distinct i.ac) from IntactInteractionEvidence i join i.dbExperiments as exp where exp.ac = '" + experiment.getAc() + "'",
@@ -323,18 +315,18 @@ public class ExperimentController extends AnnotatedObjectController {
 
     @Override
     protected void initialiseDefaultProperties(IntactPrimaryObject annotatedObject) {
-        IntactExperiment experiment = (IntactExperiment)annotatedObject;
-        if (!getExperimentService().isExperimentFullyLoaded(experiment)){
+        IntactExperiment experiment = (IntactExperiment) annotatedObject;
+        if (!getExperimentService().isExperimentFullyLoaded(experiment)) {
             this.experiment = getExperimentService().reloadFullyInitialisedExperiment(experiment);
         }
 
         refreshInteractions();
 
-        setDescription("Experiment: "+experiment.getShortLabel());
+        setDescription("Experiment: " + experiment.getShortLabel());
     }
 
     @Override
-    public void doPostSave(){
+    public void doPostSave() {
         // new object, add it to the list of experiments of its publication before saving
         if (experiment.getPublication() != null) {
             publicationController.reloadSingleExperiment(experiment);
@@ -364,8 +356,8 @@ public class ExperimentController extends AnnotatedObjectController {
         experiment.setShortLabel(IntactUtils.generateAutomaticExperimentShortlabelFor(experiment, IntactUtils.MAX_SHORT_LABEL_LEN));
         // synchronize with db
         getEditorService().synchronizeExperimentShortLabel(experiment);
-        if (publicationController.getPublication() != publication){
-            publicationController.setPublication((IntactPublication)publication);
+        if (publicationController.getPublication() != publication) {
+            publicationController.setPublication((IntactPublication) publication);
         }
 
         if (publication.getPubmedId() != null) {
@@ -385,10 +377,10 @@ public class ExperimentController extends AnnotatedObjectController {
     public void acceptExperiment(ActionEvent actionEvent) {
 
         UserSessionController userSessionController = (UserSessionController) getSpringContext().getBean("userSessionController");
-        this.accepted = "Accepted "+new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase()
-                +" by "+userSessionController.getCurrentUser().getLogin().toUpperCase();
+        this.accepted = "Accepted " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase()
+                + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
 
-        updateAnnotation(Releasable.ACCEPTED, null,accepted, experiment.getAnnotations());
+        updateAnnotation(Releasable.ACCEPTED, null, accepted, experiment.getAnnotations());
 
         // remove other annotations
         removeAnnotation(Releasable.TO_BE_REVIEWED, null, experiment.getAnnotations());
@@ -411,52 +403,49 @@ public class ExperimentController extends AnnotatedObjectController {
         addInfoMessage("Experiment accepted annotation has been removed, publication reverted as well", experiment.getShortLabel());
 
         // only if publication ready for release
-        if (publicationController.isReadyForRelease()){
-            try{
+        if (publicationController.isReadyForRelease()) {
+            try {
                 getPublicationService().putReleasableOnHoldFromReadyForRelease(publicationController.getAc(),
                         "Reverted accepted annotation of experiment " + experiment.getShortLabel(), ((UserManagerController) ApplicationContextProvider.getBean("userManagerController")).getCurrentUser().getLogin());
                 // refresh publication
                 setExperiment(getExperimentService().reloadFullyInitialisedExperiment(experiment));
                 publicationController.setPublication((IntactPublication) experiment.getPublication());
-            }
-            catch (IllegalTransitionException e){
-                addErrorMessage("Cannot put publication on-hold: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+            } catch (IllegalTransitionException e) {
+                addErrorMessage("Cannot put publication on-hold: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
             }
         }
         // also if released, revert from release
-        else if (publicationController.isReleased()){
-            try{
+        else if (publicationController.isReleased()) {
+            try {
                 getPublicationService().moveReleasableFromReleasedToOnHold(publicationController.getAc(),
                         "Reverted accepted annotation of experiment " + experiment.getShortLabel(), ((UserManagerController) ApplicationContextProvider.getBean("userManagerController")).getCurrentUser().getLogin());
                 // refresh publication
                 setExperiment(getExperimentService().reloadFullyInitialisedExperiment(experiment));
-                publicationController.setPublication((IntactPublication)experiment.getPublication());
-            }
-            catch (IllegalTransitionException e){
-                addErrorMessage("Cannot put publication on-hold: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+                publicationController.setPublication((IntactPublication) experiment.getPublication());
+            } catch (IllegalTransitionException e) {
+                addErrorMessage("Cannot put publication on-hold: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
             }
         }
     }
 
     public void rejectExperiment(ActionEvent actionEvent) {
-
         UserSessionController userSessionController = (UserSessionController) getSpringContext().getBean("userSessionController");
         if (reasonForRejection != null && reasonForRejection.startsWith("Rejected")) {
-            reasonForRejection = reasonForRejection.substring(reasonForRejection.indexOf(".")+2);
+            reasonForRejection = reasonForRejection.substring(reasonForRejection.indexOf(".") + 2);
         }
-        String date = "Rejected " +new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase()+
-                " by "+userSessionController.getCurrentUser().getLogin().toUpperCase();
+        String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() +
+                " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
 
-        setToBeReviewed(date+". "+reasonForRejection);
+        setToBeReviewed(date + ". " + reasonForRejection);
         this.accepted = null;
 
-        updateAnnotation(Releasable.TO_BE_REVIEWED, null, date+". "+reasonForRejection, experiment.getAnnotations());
+        updateAnnotation(Releasable.TO_BE_REVIEWED, null, date + ". " + reasonForRejection, experiment.getAnnotations());
         removeAnnotation(Releasable.ACCEPTED, null, experiment.getAnnotations());
         removeAnnotation(Releasable.CORRECTION_COMMENT, null, experiment.getAnnotations());
 
         doSave(actionEvent);
 
-        addInfoMessage("Experiment rejected", experiment.getShortLabel()+": "+reasonForRejection);
+        addInfoMessage("Experiment rejected", experiment.getShortLabel() + ": " + reasonForRejection);
 
         globalPublicationDecision();
     }
@@ -466,18 +455,18 @@ public class ExperimentController extends AnnotatedObjectController {
         int expRejected = getExperimentService().countRejectedExperiments(publicationController.getAc());
         int expSize = publicationController.getExperimentsSize();
 
-        boolean allActedUpon = ((expRejected+expAccepted) == expSize);
+        boolean allActedUpon = ((expRejected + expAccepted) == expSize);
         boolean allAccepted = expAccepted == expSize;
 
         if (allAccepted) {
-            try{
+            try {
                 // accept publication
                 getPublicationService().acceptReleasable(publicationController.getAc(), "Accepted " + new SimpleDateFormat("yyyy-MMM-dd").
                                 format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase(),
                         userSessionController.getCurrentUser().getLogin());
 
                 // ready for relase publication if not already on-hold
-                if (((Releasable)experiment.getPublication()).getStatus() != LifeCycleStatus.ACCEPTED_ON_HOLD) {
+                if (((Releasable) experiment.getPublication()).getStatus() != LifeCycleStatus.ACCEPTED_ON_HOLD) {
                     getPublicationService().readyForRelease(publicationController.getAc(), "Accepted and not on-hold",
                             userSessionController.getCurrentUser().getLogin());
                 }
@@ -485,14 +474,13 @@ public class ExperimentController extends AnnotatedObjectController {
 
                 // refresh publication
                 setExperiment(getExperimentService().reloadFullyInitialisedExperiment(experiment));
-                publicationController.setPublication((IntactPublication)experiment.getPublication());
+                publicationController.setPublication((IntactPublication) experiment.getPublication());
 
                 // refresh experiments with possible changes in publication title, annotations and publication identifier
                 publicationController.copyAnnotationsToExperiments(null);
                 publicationController.copyPrimaryIdentifierToExperiments();
-            }
-            catch (IllegalTransitionException e){
-                addErrorMessage("Cannot accept publication: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+            } catch (IllegalTransitionException e) {
+                addErrorMessage("Cannot accept publication: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
             }
 
         } else if (allActedUpon) {
@@ -510,11 +498,10 @@ public class ExperimentController extends AnnotatedObjectController {
 
     public void onToBeReviewedChanged(ValueChangeEvent evt) {
         String newValue = (String) evt.getNewValue();
-        if (newValue != null && newValue.length() > 0){
+        if (newValue != null && newValue.length() > 0) {
             updateAnnotation(Releasable.TO_BE_REVIEWED, null, newValue, experiment.getAnnotations());
             setUnsavedChanges(true);
-        }
-        else{
+        } else {
             removeAnnotation(Releasable.TO_BE_REVIEWED, null, experiment.getAnnotations());
             setUnsavedChanges(true);
         }
@@ -523,24 +510,23 @@ public class ExperimentController extends AnnotatedObjectController {
 
     public void onCorrectionCommentChanged(ValueChangeEvent evt) {
         String newValue = (String) evt.getNewValue();
-        if (newValue != null && newValue.length() > 0){
+        if (newValue != null && newValue.length() > 0) {
             updateAnnotation(Releasable.CORRECTION_COMMENT, null, newValue, experiment.getAnnotations());
             setUnsavedChanges(true);
-        }
-        else{
+        } else {
             removeAnnotation(Releasable.CORRECTION_COMMENT, null, experiment.getAnnotations());
             setUnsavedChanges(true);
         }
         this.correctedComment = newValue;
     }
 
-    public void removeToBeReviewed(ActionEvent evt){
+    public void removeToBeReviewed(ActionEvent evt) {
         addInfoMessage("Removed to-be-reviewed annotation", reasonForRejection);
         // annotations are always loaded
         removeAnnotation(Releasable.TO_BE_REVIEWED, null, experiment.getAnnotations());
     }
 
-    public void removeCorrectionComment(ActionEvent evt){
+    public void removeCorrectionComment(ActionEvent evt) {
         addInfoMessage("Removed correction annotation", correctedComment);
         // annotations are always loaded
         removeAnnotation(Releasable.CORRECTION_COMMENT, null, experiment.getAnnotations());
@@ -571,14 +557,13 @@ public class ExperimentController extends AnnotatedObjectController {
     }
 
     public void copyPublicationAnnotations(ActionEvent evt) {
-        if (experiment.getPublication() instanceof IntactPublication){
-            for (Annotation annot : ((IntactPublication)experiment.getPublication()).getDbAnnotations()){
+        if (experiment.getPublication() instanceof IntactPublication) {
+            for (Annotation annot : ((IntactPublication) experiment.getPublication()).getDbAnnotations()) {
                 Annotation existingAnnot = AnnotationUtils.collectFirstAnnotationWithTopic(experiment.getAnnotations(),
                         annot.getTopic().getMIIdentifier(), annot.getTopic().getShortName());
-                if (existingAnnot != null){
+                if (existingAnnot != null) {
                     existingAnnot.setValue(annot.getValue());
-                }
-                else{
+                } else {
                     experiment.getAnnotations().add(new ExperimentAnnotation(annot.getTopic(), annot.getValue()));
                 }
             }
@@ -593,7 +578,7 @@ public class ExperimentController extends AnnotatedObjectController {
             IntactPublication publication = getExperimentService().loadPublicationByAcOrPubmedId(publicationToMoveTo);
 
             if (publication == null) {
-                addErrorMessage("Cannot move", "No publication found with this AC or PMID: "+publicationToMoveTo);
+                addErrorMessage("Cannot move", "No publication found with this AC or PMID: " + publicationToMoveTo);
                 return null;
             }
 
@@ -613,16 +598,14 @@ public class ExperimentController extends AnnotatedObjectController {
             // update the primary reference when moving the experiment
             if (publicationController.getPublication().getPubmedId() != null) {
                 updateXref(Xref.PUBMED, Xref.PUBMED_MI, publicationController.getPublication().getPubmedId(), Xref.PRIMARY, Xref.PRIMARY_MI, experiment.getXrefs());
-            }
-            else{
+            } else {
                 removeXref(Xref.PUBMED, Xref.PUBMED_MI, Xref.PRIMARY, Xref.PRIMARY_MI, experiment.getXrefs());
             }
 
             // update the imex reference when moving the experiment
             if (publicationController.getPublication().getImexId() != null) {
-                updateXref(Xref.IMEX, Xref.IMEX_MI,  publicationController.getPublication().getImexId(), Xref.IMEX_PRIMARY, Xref.IMEX_PRIMARY_MI, experiment.getXrefs());
-            }
-            else{
+                updateXref(Xref.IMEX, Xref.IMEX_MI, publicationController.getPublication().getImexId(), Xref.IMEX_PRIMARY, Xref.IMEX_PRIMARY_MI, experiment.getXrefs());
+            } else {
                 removeXref(Xref.IMEX, Xref.IMEX_MI, Xref.IMEX, Xref.IMEX_PRIMARY_MI, experiment.getXrefs());
             }
 
@@ -633,7 +616,7 @@ public class ExperimentController extends AnnotatedObjectController {
         refreshParentControllers();
         setUnsavedChanges(true);
 
-        addInfoMessage("Moved experiment", "To publication: "+publicationToMoveTo);
+        addInfoMessage("Moved experiment", "To publication: " + publicationToMoveTo);
 
         return null;
     }
@@ -644,19 +627,17 @@ public class ExperimentController extends AnnotatedObjectController {
 
     @Override
     public int getXrefsSize() {
-        if (experiment == null){
+        if (experiment == null) {
             return 0;
-        }
-        else {
+        } else {
             return experiment.getXrefs().size();
         }
     }
 
     public int getVariableParametersSize() {
-        if (experiment == null){
+        if (experiment == null) {
             return 0;
-        }
-        else{
+        } else {
             return experiment.getVariableParameters().size();
         }
     }
@@ -668,15 +649,14 @@ public class ExperimentController extends AnnotatedObjectController {
 
     @Override
     public int getAnnotationsSize() {
-        if (experiment == null){
+        if (experiment == null) {
             return 0;
-        }
-        else {
+        } else {
             return experiment.getAnnotations().size();
         }
     }
 
-    public void setAc( String ac ) {
+    public void setAc(String ac) {
         this.ac = ac;
     }
 
@@ -684,15 +664,14 @@ public class ExperimentController extends AnnotatedObjectController {
         return experiment;
     }
 
-    public void setExperiment( IntactExperiment experiment ) {
+    public void setExperiment(IntactExperiment experiment) {
         this.experiment = experiment;
 
         if (experiment != null) {
             this.ac = experiment.getAc();
 
             initialiseDefaultProperties(this.experiment);
-        }
-        else{
+        } else {
             this.ac = null;
         }
     }
@@ -718,7 +697,7 @@ public class ExperimentController extends AnnotatedObjectController {
     }
 
     @Override
-    public Collection<String> collectParentAcsOfCurrentAnnotatedObject(){
+    public Collection<String> collectParentAcsOfCurrentAnnotatedObject() {
         Collection<String> parentAcs = new ArrayList<String>(1);
 
         addPublicationAcToParentAcs(parentAcs, experiment);
@@ -738,16 +717,13 @@ public class ExperimentController extends AnnotatedObjectController {
 
     @Override
     public boolean isAnnotationNotEditable(Annotation annot) {
-        if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.TO_BE_REVIEWED)){
+        if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.TO_BE_REVIEWED)) {
             return true;
-        }
-        else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.CORRECTION_COMMENT)){
+        } else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.CORRECTION_COMMENT)) {
             return true;
-        }
-        else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.ACCEPTED)){
+        } else if (AnnotationUtils.doesAnnotationHaveTopic(annot, null, Releasable.ACCEPTED)) {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -820,7 +796,7 @@ public class ExperimentController extends AnnotatedObjectController {
     }
 
     public List<VariableParameter> collectVariableParameters() {
-        if (experiment == null){
+        if (experiment == null) {
             return Collections.EMPTY_LIST;
         }
         List<VariableParameter> variableParameters = new ArrayList<VariableParameter>(this.experiment.getVariableParameters());
@@ -828,37 +804,35 @@ public class ExperimentController extends AnnotatedObjectController {
         return variableParameters;
     }
 
-    public void newVariableParameter(ActionEvent evt){
-        if (this.newParameterDescription != null){
+    public void newVariableParameter(ActionEvent evt) {
+        if (this.newParameterDescription != null) {
             experiment.addVariableParameter(new IntactVariableParameter(this.newParameterDescription, this.newParameterUnit));
             doSave(false);
 
             this.newParameterDescription = null;
             this.newParameterUnit = null;
-        }
-        else{
-            addErrorMessage("The variable parameter description cannot be null","Missing parameter description");
+        } else {
+            addErrorMessage("The variable parameter description cannot be null", "Missing parameter description");
         }
     }
 
-    public void newVariableParameterValue(VariableParameter param){
-        if (this.newValue != null){
+    public void newVariableParameterValue(VariableParameter param) {
+        if (this.newValue != null) {
             param.getVariableValues().add(new IntactVariableParameterValue(newValue, param, newValueOrder));
             doSave(false);
 
             this.newValue = null;
             this.newValueOrder = null;
-        }
-        else{
-            addErrorMessage("The value is required and cannot be null","Missing parameter value");
+        } else {
+            addErrorMessage("The value is required and cannot be null", "Missing parameter value");
         }
     }
 
-    public void removeVariableParameter(VariableParameter param){
+    public void removeVariableParameter(VariableParameter param) {
         experiment.removeVariableParameter(param);
     }
 
-    public void removeVariableParameterValue(IntactVariableParameterValue value, IntactVariableParameter param){
+    public void removeVariableParameterValue(IntactVariableParameterValue value, IntactVariableParameter param) {
         param.getVariableValues().remove(value);
     }
 
@@ -879,7 +853,7 @@ public class ExperimentController extends AnnotatedObjectController {
 
     @Override
     public ExperimentAnnotation newAnnotation(String topic, String topicMI, String text) {
-        return new ExperimentAnnotation(getCvService().findCvObject(IntactUtils.TOPIC_OBJCLASS, topicMI != null ? topicMI: topic), text);
+        return new ExperimentAnnotation(getCvService().findCvObject(IntactUtils.TOPIC_OBJCLASS, topicMI != null ? topicMI : topic), text);
     }
 
     @Override
@@ -888,28 +862,28 @@ public class ExperimentController extends AnnotatedObjectController {
     }
 
     public ExperimentEditorService getExperimentService() {
-        if (this.experimentService == null){
+        if (this.experimentService == null) {
             this.experimentService = ApplicationContextProvider.getBean("experimentEditorService");
         }
         return experimentService;
     }
 
     public PublicationService getPublicationService() {
-        if (this.publicationService == null){
+        if (this.publicationService == null) {
             this.publicationService = ApplicationContextProvider.getBean("publicationService");
         }
         return publicationService;
     }
 
     public BioSourceService getBiosourceService() {
-        if (this.biosourceService == null){
+        if (this.biosourceService == null) {
             this.biosourceService = ApplicationContextProvider.getBean("bioSourceService");
         }
         return biosourceService;
     }
 
     public InteractionSummaryService getInteractionSummaryService() {
-        if (this.interactionSummaryService == null){
+        if (this.interactionSummaryService == null) {
             this.interactionSummaryService = ApplicationContextProvider.getBean("interactionSummaryService");
         }
         return interactionSummaryService;
@@ -926,8 +900,8 @@ public class ExperimentController extends AnnotatedObjectController {
     @Override
     protected void postProcessDeletedEvent(UnsavedChange unsaved) {
         super.postProcessDeletedEvent(unsaved);
-        if (unsaved.getUnsavedObject() instanceof IntactInteractionEvidence){
-            removeInteractionEvidence((IntactInteractionEvidence)unsaved.getUnsavedObject());
+        if (unsaved.getUnsavedObject() instanceof IntactInteractionEvidence) {
+            removeInteractionEvidence((IntactInteractionEvidence) unsaved.getUnsavedObject());
         }
     }
 
@@ -963,10 +937,10 @@ public class ExperimentController extends AnnotatedObjectController {
         this.newValue = newValue;
     }
 
-    public void markExperimentToDelete(IntactExperiment exp){
+    public void markExperimentToDelete(IntactExperiment exp) {
         Collection<String> parentAcs = new ArrayList<String>(1);
         addPublicationAcToParentAcs(parentAcs, exp);
-        getChangesController().markToDelete(exp, (IntactPublication)exp.getPublication(),
+        getChangesController().markToDelete(exp, (IntactPublication) exp.getPublication(),
                 getDbSynchronizer(), exp.getShortLabel(), parentAcs);
     }
 }
