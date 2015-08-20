@@ -11,7 +11,9 @@
     <ui:define name="topActionsPanel">
         <p:commandButton value="Accept Experiment"
                          styleClass="important-button-good"
-                         rendered="#{publicationController.readyForChecking and !experimentController.rejected and userSessionController.isItMe(publicationController.publication.currentReviewer)
+                         rendered="#{publicationController.readyForChecking 
+                         and !experimentController.rejected 
+                         and userSessionController.isItMe(publicationController.publication.currentReviewer)
                          and !experimentController.accepted}"
                          actionListener="#{experimentController.acceptExperiment}"
                          action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true"
@@ -25,29 +27,35 @@
                          ajax="false"/>
         <p:commandButton value="Reject Experiment" type="button"
                          styleClass="important-button-bad"
-                         rendered="#{publicationController.readyForChecking and !experimentController.rejected and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                         rendered="#{publicationController.readyForChecking 
+                         and !experimentController.rejected 
+                         and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                          onclick="rejectExperimentDialog.show()"
                          ajax="false"/>
         <p:commandButton value="Add Rejection Command" type="button"
                          styleClass="important-button-bad"
-                         rendered="#{publicationController.readyForChecking and experimentController.rejected and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                         rendered="#{publicationController.readyForChecking 
+                         and experimentController.rejected 
+                         and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                          onclick="rejectExperimentDialog.show()"
                          ajax="false"/>
         <p:commandButton value="Remove to be reviewed"
                          styleClass="important-button-bad"
-                         rendered="#{experimentController.rejected and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                         rendered="#{experimentController.rejected 
+                         and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                          actionListener="#{experimentController.removeToBeReviewed}"
-                         action="#{experimentController.doSave}"
                          ajax="false"/>
         <p:commandButton value="Correction Comment" type="button"
                          styleClass="important-button-alt"
-                         rendered="#{publicationController.curationInProgress and userSessionController.isItMe(publicationController.publication.currentOwner)}"
+                         rendered="#{publicationController.curationInProgress 
+                         and userSessionController.isItMe(publicationController.publication.currentOwner)}"
                          onclick="correctionCommentDialog.show()"
                          ajax="false"/>
         <p:commandButton value="Remove Correction Comment"
                          actionListener="#{experimentController.removeCorrectionComment}"
                          styleClass="important-button-alt"
-                         rendered="#{experimentController.corrected and (userSessionController.isItMe(publicationController.publication.currentOwner)
+                         rendered="#{experimentController.corrected 
+                         and (userSessionController.isItMe(publicationController.publication.currentOwner)
                          or userSessionController.isItMe(publicationController.publication.currentReviewer))}"
                          action="#{experimentController.doSave}"
                          ajax="false"/>
