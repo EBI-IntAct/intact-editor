@@ -430,9 +430,9 @@ public class ExperimentController extends AnnotatedObjectController {
 
     public void rejectExperiment(ActionEvent actionEvent) {
         UserSessionController userSessionController = (UserSessionController) getSpringContext().getBean("userSessionController");
-        if (reasonForRejection != null && reasonForRejection.startsWith("Rejected")) {
-            reasonForRejection = reasonForRejection.substring(reasonForRejection.indexOf(".") + 2);
-        }
+//        if (reasonForRejection != null && reasonForRejection.startsWith("Rejected")) {
+//            reasonForRejection = reasonForRejection.substring(reasonForRejection.indexOf(".") + 2);
+//        }
         String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() +
                 " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
 
@@ -443,7 +443,7 @@ public class ExperimentController extends AnnotatedObjectController {
         }
         this.accepted = null;
         this.newValue = null;
-        updateAnnotation(Releasable.TO_BE_REVIEWED, null, date + ". " + reasonForRejection, experiment.getAnnotations());
+        updateAnnotation(Releasable.TO_BE_REVIEWED, null, this.reasonForRejection, experiment.getAnnotations());
         removeAnnotation(Releasable.ACCEPTED, null, experiment.getAnnotations());
         removeAnnotation(Releasable.CORRECTION_COMMENT, null, experiment.getAnnotations());
 
