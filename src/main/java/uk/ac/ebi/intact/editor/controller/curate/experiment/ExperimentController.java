@@ -447,8 +447,6 @@ public class ExperimentController extends AnnotatedObjectController {
         removeAnnotation(Releasable.ACCEPTED, null, experiment.getAnnotations());
         removeAnnotation(Releasable.CORRECTION_COMMENT, null, experiment.getAnnotations());
 
-        doSave(actionEvent);
-
         addInfoMessage("Experiment rejected", experiment.getShortLabel() + ": " + reasonForRejection);
 
         globalPublicationDecision();
