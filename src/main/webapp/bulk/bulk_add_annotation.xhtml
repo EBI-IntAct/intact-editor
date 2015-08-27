@@ -3,10 +3,8 @@
                 xmlns:ui="http://java.sun.com/jsf/facelets"
                 xmlns:h="http://java.sun.com/jsf/html"
                 xmlns:f="http://java.sun.com/jsf/core"
-                xmlns:c="http://java.sun.com/jsp/jstl/core"
-                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
                 xmlns:p="http://primefaces.org/ui"
-
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 template="/bulk/bulk_template.xhtml">
 
     <ui:define name="topNavigation">
@@ -55,17 +53,26 @@
                             update=":editorForm:annotType,:editorForm:messagesComponent" process="@this"/>
 
                     <f:selectItem itemLabel="-- Select object type --" itemValue="#{null}"/>
-                    <f:selectItem itemLabel="Publication" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactPublication"/>
-                    <f:selectItem itemLabel="Experiment" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactExperiment"/>
-                    <f:selectItem itemLabel="Interaction" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactInteractionEvidence"/>
+                    <f:selectItem itemLabel="Publication"
+                                  itemValue="uk.ac.ebi.intact.jami.model.extension.IntactPublication"/>
+                    <f:selectItem itemLabel="Experiment"
+                                  itemValue="uk.ac.ebi.intact.jami.model.extension.IntactExperiment"/>
+                    <f:selectItem itemLabel="Interaction"
+                                  itemValue="uk.ac.ebi.intact.jami.model.extension.IntactInteractionEvidence"/>
                     <f:selectItem itemLabel="Complex" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactComplex"/>
-                    <f:selectItem itemLabel="Interactor" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactInteractor"/>
-                    <f:selectItem itemLabel="Participant of interaction evidence" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactParticipantEvidence"/>
-                    <f:selectItem itemLabel="Participant of complex" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactModelledParticipant"/>
-                    <f:selectItem itemLabel="Feature of interaction evidence" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactFeatureEvidence"/>
-                    <f:selectItem itemLabel="Feature of complex" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactModelledFeature"/>
+                    <f:selectItem itemLabel="Interactor"
+                                  itemValue="uk.ac.ebi.intact.jami.model.extension.IntactInteractor"/>
+                    <f:selectItem itemLabel="Participant of interaction evidence"
+                                  itemValue="uk.ac.ebi.intact.jami.model.extension.IntactParticipantEvidence"/>
+                    <f:selectItem itemLabel="Participant of complex"
+                                  itemValue="uk.ac.ebi.intact.jami.model.extension.IntactModelledParticipant"/>
+                    <f:selectItem itemLabel="Feature of interaction evidence"
+                                  itemValue="uk.ac.ebi.intact.jami.model.extension.IntactFeatureEvidence"/>
+                    <f:selectItem itemLabel="Feature of complex"
+                                  itemValue="uk.ac.ebi.intact.jami.model.extension.IntactModelledFeature"/>
                     <f:selectItem itemLabel="CV Object" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactCvTerm"/>
-                    <f:selectItem itemLabel="Institution" itemValue="uk.ac.ebi.intact.jami.model.extension.IntactSource"/>
+                    <f:selectItem itemLabel="Institution"
+                                  itemValue="uk.ac.ebi.intact.jami.model.extension.IntactSource"/>
                 </h:selectOneMenu>
 
 
@@ -92,10 +99,11 @@
             </h:panelGrid>
 
             <p:commandButton value="Execute bulk update" actionListener="#{bulkAnnotationController.addBulkAnnotation}"
-                             update=":editorForm:executionInfo,:editorForm:messagesComponent"/>
+                             update=":editorForm:executionInfo,:editorForm:messagesComponent" ajax="true"
+                             onstart="process_bulk_update.show()" oncomplete="process_bulk_update.hide()"/>
 
         </p:panel>
-
+        <ia:loadingDialog widgetVar="process_bulk_update" message="Process bulk update..."/>
     </ui:define>
 
 </ui:composition>
