@@ -17,6 +17,9 @@
                  paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
                  rowsPerPageTemplate="10,25,50"
                  rowStyleClass="#{publication.rowStyle}">
+
+        <p:ajax event="page" onstart="load_publication.show()" oncomplete="load_publication.hide()"/>
+        
         <p:column headerText="Pub. ID " sortBy="#{publication.pubmedId}">
             <ot:separateConversationContext>
                 <h:link outcome="/curate/publication" value="#{publication.pubmedId}" includeViewParams="true">
@@ -63,5 +66,7 @@
         <div class="ia-corrected" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>&#160;Rejections addressed
         <div class="ia-not-accepted" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>&#160;No Action
     </div>
+
+    <ia:loadingDialog widgetVar="load_publication" message="Loading publication..."/>
 
 </ui:composition>
