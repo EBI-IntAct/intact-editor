@@ -100,6 +100,25 @@ public class ExperimentController extends AnnotatedObjectController {
 
     private String newValue;
     private Integer newValueOrder;
+    private boolean showSummaryView = false;
+    private List<Annotation> annotationsForExpOverview;
+    private ExperimentWrapper experimentWrapper;
+
+    private List<String> annotationTopicsForExpOverview =
+            Arrays.asList(
+//                    Releasable.ACCEPTED,
+//                    Releasable.TO_BE_REVIEWED,
+//                    Releasable.ON_HOLD,
+                    "hidden",
+                    Annotation.COMMENT_MI,
+                    "remark-internal",
+//                    Releasable.CORRECTION_COMMENT,
+                    Annotation.COMMENT,
+                    "MI:0591", //experiment description
+                    "MI:0627", //experiment modification
+                    "MI:0633" //data-processing
+            );
+
 
     public ExperimentController() {
 
@@ -150,22 +169,26 @@ public class ExperimentController extends AnnotatedObjectController {
             if (ac != null) {
                 if (experiment == null || !ac.equals(experiment.getAc())) {
                     setExperiment(getExperimentService().loadExperimentByAc(ac));
+                    this.experimentWrapper = getExperimentService().loadExperimentWrapper(experiment);
                 }
             } else if (experiment != null) {
                 ac = experiment.getAc();
+                this.experimentWrapper = getExperimentService().loadExperimentWrapperByAc(ac);
             }
 
             if (experiment == null) {
                 addErrorMessage("No Experiment with this AC", ac);
                 return;
             }
-
+            
+            annotationsForExpOverview = experimentAnnotationsByOverviewCriteria(experiment);
+            
             // load parent if not done yet
             refreshParentControllers();
 
             refreshTabs();
         }
-
+    
         generalLoadChecks();
     }
 
@@ -944,5 +967,83 @@ public class ExperimentController extends AnnotatedObjectController {
         addPublicationAcToParentAcs(parentAcs, exp);
         getChangesController().markToDelete(exp, (IntactPublication) exp.getPublication(),
                 getDbSynchronizer(), exp.getShortLabel(), parentAcs);
+    }
+    
+    public void showSummaryView(ActionEvent actionEvent){
+        showSummaryView = true;
+    }
+
+
+    public void hideSummaryView(ActionEvent actionEvent){
+        this.showSummaryView = false;
+    }
+    
+    public boolean isShowSummaryView() {
+        return showSummaryView;
+    }
+
+    public void setShowSummaryView(boolean showSummaryView) {
+        this.showSummaryView = showSummaryView;
+    }
+
+    private List<Annotation> experimentAnnotationsByOverviewCriteria(IntactExperiment experiment) {
+
+        if (experiment == null) return null;
+
+        List<Annotation> annotations = new ArrayList<Annotation>(experiment.getAnnotations().size());
+        for (Annotation annot : experiment.getAnnotations()) {
+            for (String topics : annotationTopicsForExpOverview) {
+                if (AnnotationUtils.doesAnnotationHaveTopic(annot, topics, topics)) {
+                    annotations.add(annot);
+                    break;
+                }
+            }
+        }
+        return annotations;
+    }
+
+    public List<Annotation> getAnnotationsForExpOverview() {
+        return annotationsForExpOverview;
+    }
+
+    public ExperimentWrapper getExperimentWrapper() {
+        return this.experimentWrapper;
+    }
+
+    public String stoichiometryAsString(Stoichiometry st) {
+        if (st == null) {
+            return null;
+        }
+
+        String value;
+
+        if (st.getMaxValue() == st.getMinValue()) {
+            value = Integer.toString(st.getMinValue());
+        } else {
+            value = Integer.toString(st.getMinValue()) + "-" + Integer.toString(st.getMaxValue());
+        }
+        return value;
+    }
+
+    public String parameterAsString(Parameter param) {
+        if (param == null) {
+            return null;
+        }
+
+        String value = null;
+
+        if (param.getValue().getFactor() != null) {
+            value = String.format("%.02f", param.getValue().getFactor().doubleValue());
+
+            if ((param.getValue().getExponent() != 0)
+                    || (param.getValue().getBase() != 10)) {
+                value = value + "x" + param.getValue().getBase() + "^" + param.getValue().getExponent();
+            }
+            if (param.getUncertainty() != null && param.getUncertainty().doubleValue() != 0.0) {
+                value = value + " ~" + String.format("%.02f", param.getUncertainty().doubleValue());
+            }
+        }
+
+        return value;
     }
 }
