@@ -3,41 +3,15 @@
                 xmlns:ui="http://java.sun.com/jsf/facelets"
                 xmlns:h="http://java.sun.com/jsf/html"
                 xmlns:f="http://java.sun.com/jsf/core"
-                xmlns:c="http://java.sun.com/jsp/jstl/core"
-                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
                 xmlns:p="http://primefaces.org/ui"
-                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
-                xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
-
-                template="/curate/experiment_template.xhtml">
-
-<ui:param name="title"
-          value="#{experimentController.experiment != null? 'Experiment Details: ' : ''}#{experimentController.experiment != null? experimentController.experiment.shortLabel : ''} | Curate | Editor"/>
-
-<ui:define name="metadata">
-    <f:metadata>
-        <f:viewParam name="ac" value="#{experimentDetailedViewController.ac}"/>
-        <f:event type="preRenderView" listener="#{experimentDetailedViewController.loadData}"/>
-    </f:metadata>
-</ui:define>
-
-
-<ui:define name="experimentContent">
+                xmlns:ia="http://java.sun.com/jsf/composite/intact-components">
     <br/>
     <p:fieldset>
-        <f:facet name="legend">
-            <h:outputText>Experiment: </h:outputText>
-            <p:commandLink id="goBackExp"
-                           value="#{experimentDetailedViewController.experimentWrapper.experiment.shortLabel}  (#{experimentDetailedViewController.experimentWrapper.experiment.ac})"
-                           action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true"
-                           ajax="false"/>
-            <h:outputText value=""/>
-        </f:facet>
 
 
         <p:accordionPanel id="experimentAccPanel" autoHeight="false" multiple="true">
             <ui:param name="filteredExperimentAnnotations"
-                      value="#{experimentDetailedViewController.annotations}"/>
+                      value="#{experimentController.annotationsForExpOverview}"/>
             <p:tab title="Relevant annotations for the experiment: #{filteredExperimentAnnotations != null ? filteredExperimentAnnotations.size(): ''}"
                    rendered="#{filteredExperimentAnnotations != null ? filteredExperimentAnnotations.size() gt 0 : 'false'}">
 
@@ -57,14 +31,16 @@
         </p:accordionPanel>
         <br/>
 
-        <p:dataList id="interactionReviewTable" var="interaction" itemType="none"
-                    value="#{experimentDetailedViewController.experimentWrapper.interactions}"
-                    paginator="true" paginatorAlwaysVisible="false" rows="10"
-                    paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
-                    rowsPerPageTemplate="10,20,50,100">
+        <p:dataTable id="interactionReviewTable" var="interaction" itemType="none"
+                     value="#{experimentController.experimentWrapper.interactions}"
+                     paginator="true" paginatorAlwaysVisible="false" rows="10"
+                     paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
+                     rowsPerPageTemplate="10,20,50,100">
+
+            <p:ajax event="page" onstart="load_interaction.show()" oncomplete="load_interaction.hide()"/>
 
             <f:facet name="header">
-                <h:outputText>Interactions: #{experimentDetailedViewController.experimentWrapper.interactions.size()}</h:outputText>
+                <h:outputText>Interactions: #{experimentController.experimentWrapper.interactions.size()}</h:outputText>
             </f:facet>
 
             <!--Div created for Selenium Test-->
@@ -87,10 +63,10 @@
 
                         <p:accordionPanel id="interactionsAccPanel" autoHeight="false" multiple="true"
                                           activeIndex="0,1">
-                            <p:tab title="Participants: #{experimentDetailedViewController.experimentWrapper.getParticipants(interaction).size()}">
+                            <p:tab title="Participants: #{experimentController.experimentWrapper.getParticipants(interaction).size()}">
 
                                 <p:dataTable var="participant"
-                                             value="#{experimentDetailedViewController.experimentWrapper.getParticipants(interaction)}">
+                                             value="#{experimentController.experimentWrapper.getParticipants(interaction)}">
                                     <p:column headerText="Identity">
                                         <h:outputLink value="#{request.contextPath}/participant/#{participant.ac}">
                                             <h:outputText
@@ -111,7 +87,9 @@
                                     </p:column>
 
                                     <p:column headerText="Features">
-                                        <ui:repeat value="#{experimentDetailedViewController.experimentWrapper.getFeatures(participant)}" var="feature">
+                                        <ui:repeat
+                                                value="#{experimentController.experimentWrapper.getFeatures(participant)}"
+                                                var="feature">
                                             <h:outputText
                                                     value="#{feature.feature}"
                                                     styleClass="feature-for-#{participantController.participantPrimaryId(participant)}"/>
@@ -135,19 +113,21 @@
                                                 value="#{(participant.expressedInOrganism != null)? participant.expressedInOrganism.commonName : ''}"/>
                                     </p:column>
 
-                                    <p:column headerText="Stoichiometry" rendered="#{participant.stoichiometry != null}">
-                                        <h:outputText value="S: #{experimentDetailedViewController.stoichiometryAsString(participant.stoichiometry)}"/>
+                                    <p:column headerText="Stoichiometry"
+                                              rendered="#{participant.stoichiometry != null}">
+                                        <h:outputText
+                                                value="S: #{experimentController.stoichiometryAsString(participant.stoichiometry)}"/>
                                     </p:column>
 
                                 </p:dataTable>
 
                             </p:tab>
 
-                            <p:tab title="Annotations: #{experimentDetailedViewController.experimentWrapper.getInteractionAnnotations(interaction).size()}"
-                                   rendered="#{experimentDetailedViewController.experimentWrapper.getInteractionAnnotations(interaction).size() gt 0}">
+                            <p:tab title="Annotations: #{experimentController.experimentWrapper.getInteractionAnnotations(interaction).size()}"
+                                   rendered="#{experimentController.experimentWrapper.getInteractionAnnotations(interaction).size() gt 0}">
 
                                 <p:dataTable id="sumViewAnnotations" var="annotation"
-                                             value="#{experimentDetailedViewController.experimentWrapper.getInteractionAnnotations(interaction)}">
+                                             value="#{experimentController.experimentWrapper.getInteractionAnnotations(interaction)}">
 
                                     <p:column headerText="Topic" style="width: 20%">
                                         <h:outputText id="annotation-topic"
@@ -160,10 +140,11 @@
                                 </p:dataTable>
                             </p:tab>
 
-                            <p:tab title="Xrefs: #{experimentDetailedViewController.experimentWrapper.getInteractionXrefs(interaction).size()}"
-                                   rendered="#{experimentDetailedViewController.experimentWrapper.getInteractionXrefs(interaction).size() gt 0}">
+                            <p:tab title="Xrefs: #{experimentController.experimentWrapper.getInteractionXrefs(interaction).size()}"
+                                   rendered="#{experimentController.experimentWrapper.getInteractionXrefs(interaction).size() gt 0}">
 
-                                <p:dataTable id="xrefsTable" var="xref" value="#{experimentDetailedViewController.experimentWrapper.getInteractionXrefs(interaction)}"
+                                <p:dataTable id="xrefsTable" var="xref"
+                                             value="#{experimentController.experimentWrapper.getInteractionXrefs(interaction)}"
                                              rowIndexVar="xrefIndex"
                                              style="width:100%">
                                     <p:column headerText="Database">
@@ -183,16 +164,18 @@
                                 </p:dataTable>
                             </p:tab>
 
-                            <p:tab title="Parameters: #{experimentDetailedViewController.experimentWrapper.getInteractionParameters(interaction).size()}"
-                                   rendered="#{experimentDetailedViewController.experimentWrapper.getInteractionParameters(interaction).size() > 0}">
+                            <p:tab title="Parameters: #{experimentController.experimentWrapper.getInteractionParameters(interaction).size()}"
+                                   rendered="#{experimentController.experimentWrapper.getInteractionParameters(interaction).size() > 0}">
                                 <p:column headerText="Parameters">
-                                    <ui:repeat value="#{experimentDetailedViewController.experimentWrapper.getInteractionParameters(interaction)}" var="parameter">
+                                    <ui:repeat
+                                            value="#{experimentController.experimentWrapper.getInteractionParameters(interaction)}"
+                                            var="parameter">
                                         <h:panelGroup>
                                             <strong><h:outputText
                                                     value="#{parameter.type.shortName}"
                                                     style="white-space:nowrap"/></strong>
                                             <h:outputText
-                                                    value=": #{experimentDetailedViewController.parameterAsString(parameter)}  #{parameter.unit != null ?  parameter.unit.shortName : '' }"
+                                                    value=": #{experimentController.parameterAsString(parameter)}  #{parameter.unit != null ?  parameter.unit.shortName : '' }"
                                                     style="white-space:nowrap"/>
                                         </h:panelGroup>
                                     </ui:repeat>
@@ -207,11 +190,9 @@
 
                 </p:column>
             </div>
-        </p:dataList>
+        </p:dataTable>
     </p:fieldset>
 
-    <ia:loadingDialog widgetVar="load_int" message="Loading interaction..."/>
-</ui:define>
-
+    <ia:loadingDialog widgetVar="load_interaction" message="Loading interaction..."/>
 
 </ui:composition>
