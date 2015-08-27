@@ -29,6 +29,8 @@
                      paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
                      rowsPerPageTemplate="10,20,50,100">
 
+            <p:ajax event="page" onstart="load_interaction_list.show()" oncomplete="load_interaction_list.hide()"/>
+
             <p:column id="ac" headerText="AC" sortBy="#{interaction.ac}">
                     <h:outputText value="#{interaction.ac}" styleClass="#{changesController.isDeletedAc(interaction.ac)? 'intact-deleted' : ''}"/>
             </p:column>
@@ -71,6 +73,6 @@
 
         </h:panelGroup>
 
-        <ia:loadingDialog widgetVar="load_int" message="Loading interaction..."/>
+        <ia:loadingDialog widgetVar="load_interaction_list" message="Loading interaction..."/>
 
 </ui:composition>
