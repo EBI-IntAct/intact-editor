@@ -17,6 +17,9 @@
                  paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
                  rowsPerPageTemplate="10,25,50"
                  rowStyleClass="#{complex.rowStyle}">
+
+        <p:ajax event="page" onstart="load_complex.show()" oncomplete="load_complex.hide()"/>
+
         <p:column id="name" headerText="Name" sortBy="#{complex.name}">
             <ot:separateConversationContext>
                 <h:link outcome="/curate/complex" value="#{complex.name}" includeViewParams="true">
@@ -63,5 +66,7 @@
         <div class="ia-corrected" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>&#160;Rejections addressed
         <div class="ia-not-accepted" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>&#160;No Action
     </div>
+
+    <ia:loadingDialog widgetVar="load_complex" message="Loading complex..."/>
 
 </ui:composition>
