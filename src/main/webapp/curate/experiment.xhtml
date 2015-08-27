@@ -5,7 +5,7 @@
                 xmlns:f="http://java.sun.com/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
-                xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
+                xmlns:ed="http://ebi.ac.uk/intact/editor/ui" xmlns:c="http://java.sun.com/jsp/jstl/core"
 
                 template="/curate/experiment_template.xhtml">
 
@@ -165,17 +165,35 @@
                                      ajax="false"/>
 
                     |&#160;
-
-                    <h:link outcome="/curate/experiment_overview" value="Summary view"
-                            includeViewParams="true">
-                        <f:param name="ac" value="#{experimentController.ac}"/>
-                    </h:link>
+                    <h:panelGroup id="interactionsSwitch">
+                        <c:if test="#{!experimentController.showSummaryView}">
+                            <p:commandLink value="Change to summary view"
+                                           actionListener="#{experimentController.showSummaryView}"
+                                           update="interactionsSwitch, interactionDisplay" onstart="loadDialog.show()"
+                                           oncomplete="loadDialog.hide()"/>
+                        </c:if>
+                        <c:if test="#{experimentController.showSummaryView}">
+                            <p:commandLink value="Change to default view"
+                                           actionListener="#{experimentController.hideSummaryView}"
+                                           update="interactionsSwitch, interactionDisplay" onstart="loadDialog.show()"
+                                           oncomplete="loadDialog.hide()"/>
+                        </c:if>
+                    </h:panelGroup>
                 </div>
-
-                <ui:include src="interactions_table.xhtml">
-                    <ui:param name="value" value="#{experimentController.interactionDataModel}"/>
-                    <ui:param name="readonly" value="#{false}"/>
-                </ui:include>
+                <h:panelGroup id="interactionDisplay">
+                    <c:if test="#{!experimentController.showSummaryView}">
+                        <ui:include src="interactions_table.xhtml">
+                            <ui:param name="value" value="#{experimentController.interactionDataModel}"/>
+                            <ui:param name="readonly" value="#{false}"/>
+                        </ui:include>
+                    </c:if>
+                    <c:if test="#{experimentController.showSummaryView}">
+                        <ui:include src="experiment_overview.xhtml">
+                            <ui:param name="value" value="#{experimentController.interactionDataModel}"/>
+                            <ui:param name="readonly" value="#{false}"/>
+                        </ui:include>
+                    </c:if>
+                </h:panelGroup>
             </p:tab>
 
             <ui:decorate template="basicPropertiesTabs.xhtml">
@@ -205,8 +223,5 @@
             </p:tab>
 
         </p:tabView>
-
-
     </ui:define>
-
 </ui:composition>
