@@ -3,8 +3,6 @@
                 xmlns:ui="http://java.sun.com/jsf/facelets"
                 xmlns:h="http://java.sun.com/jsf/html"
                 xmlns:f="http://java.sun.com/jsf/core"
-                xmlns:c="http://java.sun.com/jsp/jstl/core"
-                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ot="http://myfaces.apache.org/orchestra">
@@ -61,10 +59,15 @@
 
     <div class="legend" style="margin-top: 5px; margin-left: 15px">
         <b>Legend:</b>
-        <div class="ia-accepted" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>&#160;Accepted
-        <div class="ia-rejected" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>&#160;Rejected
-        <div class="ia-corrected" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>&#160;Rejections addressed
-        <div class="ia-not-accepted" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>&#160;No Action
+
+        <div class="ia-accepted" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>
+        &#160;Accepted
+        <div class="ia-rejected" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>
+        &#160;Rejected
+        <div class="ia-corrected" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>
+        &#160;Rejections addressed
+        <div class="ia-not-accepted" style="display: inline; border: 1px solid gray;">&#160;&#160;&#160;</div>
+        &#160;No Action
     </div>
 
     <ia:loadingDialog widgetVar="load_complex" message="Loading complex..."/>
