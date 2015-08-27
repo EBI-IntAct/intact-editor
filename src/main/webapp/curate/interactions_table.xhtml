@@ -3,23 +3,21 @@
                 xmlns:ui="http://java.sun.com/jsf/facelets"
                 xmlns:h="http://java.sun.com/jsf/html"
                 xmlns:f="http://java.sun.com/jsf/core"
-                xmlns:c="http://java.sun.com/jsp/jstl/core"
-                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components">
 
 
-        <h:panelGroup id="interactionTable">
+    <h:panelGroup id="interactionTable">
 
-            <ui:param name="toDeleteCount"
-                      value="#{changesController.getDeletedAcsByClassName('uk.ac.ebi.intact.jami.model.extension.IntactInteractionEvidence',
+        <ui:param name="toDeleteCount"
+                  value="#{changesController.getDeletedAcsByClassName('uk.ac.ebi.intact.jami.model.extension.IntactInteractionEvidence',
                       experimentController.ac).size()}"/>
 
-            <h:panelGroup rendered="#{toDeleteCount gt 0}">
-                <ia:panelMessage level="info">
-                    <h:outputText value="#{toDeleteCount} interactions will be deleted on save."/>
-                </ia:panelMessage>
-            </h:panelGroup>
+        <h:panelGroup rendered="#{toDeleteCount gt 0}">
+            <ia:panelMessage level="info">
+                <h:outputText value="#{toDeleteCount} interactions will be deleted on save."/>
+            </ia:panelMessage>
+        </h:panelGroup>
 
         <p:dataTable var="interaction" value="#{value}"
                      sortBy="#{interaction.ac}"
@@ -32,7 +30,8 @@
             <p:ajax event="page" onstart="load_interaction_list.show()" oncomplete="load_interaction_list.hide()"/>
 
             <p:column id="ac" headerText="AC" sortBy="#{interaction.ac}">
-                    <h:outputText value="#{interaction.ac}" styleClass="#{changesController.isDeletedAc(interaction.ac)? 'intact-deleted' : ''}"/>
+                <h:outputText value="#{interaction.ac}"
+                              styleClass="#{changesController.isDeletedAc(interaction.ac)? 'intact-deleted' : ''}"/>
             </p:column>
             <p:column id="ao">
                 <h:panelGroup rendered="#{interaction.caution != null}">
@@ -42,10 +41,12 @@
             </p:column>
             <p:column id="shortLabel" headerText="Shortlabel" sortBy="#{interaction.shortName}">
                 <h:panelGroup rendered="#{not changesController.isDeletedAc(interaction.ac)}">
-                    <p:commandLink onclick="load_int.show()" action="/curate/interaction?faces-redirect=true&amp;includeViewParams=true"
-                               style="#{interaction.ac == null? 'color:blue' :''}"
-                               value="#{interaction.shortName}" ajax="false">
-                        <f:setPropertyActionListener value="#{interaction.interaction}" target="#{interactionController.interaction}"/>
+                    <p:commandLink onclick="load_int.show()"
+                                   action="/curate/interaction?faces-redirect=true&amp;includeViewParams=true"
+                                   style="#{interaction.ac == null? 'color:blue' :''}"
+                                   value="#{interaction.shortName}" ajax="false">
+                        <f:setPropertyActionListener value="#{interaction.interaction}"
+                                                     target="#{interactionController.interaction}"/>
                     </p:commandLink>
                 </h:panelGroup>
                 <h:panelGroup rendered="#{changesController.isDeletedAc(interaction.ac)}">
@@ -71,8 +72,8 @@
             </p:column>
         </p:dataTable>
 
-        </h:panelGroup>
+    </h:panelGroup>
 
-        <ia:loadingDialog widgetVar="load_interaction_list" message="Loading interaction..."/>
+    <ia:loadingDialog widgetVar="load_interaction_list" message="Loading interaction..."/>
 
 </ui:composition>
