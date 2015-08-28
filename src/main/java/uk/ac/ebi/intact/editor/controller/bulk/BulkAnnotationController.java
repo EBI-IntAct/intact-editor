@@ -1,12 +1,12 @@
 /**
  * Copyright 2010 The European Bioinformatics Institute, and others.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,13 +38,12 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- *
  * @author Bruno Aranda (baranda@ebi.ac.uk)
  * @version $Id$
  */
 @Controller
-@Scope( "conversation.access" )
-@ConversationName( "bulk" )
+@Scope("conversation.access")
+@ConversationName("bulk")
 public class BulkAnnotationController extends BaseController {
 
     private String acs[];
@@ -68,7 +67,6 @@ public class BulkAnnotationController extends BaseController {
     }
 
     public void addBulkAnnotation(ActionEvent evt) {
-
         Class aoClass = null;
         try {
             aoClass = Thread.currentThread().getContextClassLoader().loadClass(aoClassName);
@@ -96,14 +94,14 @@ public class BulkAnnotationController extends BaseController {
                 Collection<String> couldNotUpdateList = CollectionUtils.subtract(acsList, updatedAcsList);
                 couldNotUpdateAcs = couldNotUpdateList.toArray(new String[couldNotUpdateList.size()]);
 
-                addWarningMessage("Finished with warnings", updatedAcs.length + " objects were updated, "+
-                        couldNotUpdateAcs.length+" objects couldn't be updated (do they exist?)");
+                addWarningMessage("Finished with warnings", updatedAcs.length + " objects were updated, " +
+                        couldNotUpdateAcs.length + " objects couldn't be updated (do they exist?)");
             } else {
-                addInfoMessage("Operation successful", updatedAcs.length+" objects were updated");
+                addInfoMessage("Operation successful", updatedAcs.length + " objects were updated");
             }
 
         } catch (ClassNotFoundException e) {
-            addErrorMessage("Could not find class: "+aoClassName, e.getMessage());
+            addErrorMessage("Could not find class: " + aoClassName, e.getMessage());
         }
     }
 
@@ -119,9 +117,9 @@ public class BulkAnnotationController extends BaseController {
             topicSelectItems = getCvService().getInteractionTopicSelectItems();
         } else if (IntactInteractor.class.getName().equals(newClassname)) {
             topicSelectItems = getCvService().getInteractorTopicSelectItems();
-        }else if (IntactComplex.class.getName().equals(newClassname)) {
+        } else if (IntactComplex.class.getName().equals(newClassname)) {
             topicSelectItems = getCvService().getComplexTopicSelectItems();
-        }else if (IntactParticipantEvidence.class.getName().equals(newClassname)
+        } else if (IntactParticipantEvidence.class.getName().equals(newClassname)
                 || IntactModelledParticipant.class.getName().equals(newClassname)) {
             topicSelectItems = getCvService().getParticipantTopicSelectItems();
         } else if (IntactFeatureEvidence.class.getName().equals(newClassname)
@@ -132,7 +130,7 @@ public class BulkAnnotationController extends BaseController {
         } else if (IntactCvTerm.class.getName().equals(newClassname)) {
             topicSelectItems = getCvService().getCvObjectTopicSelectItems();
         } else {
-            addErrorMessage("Error", "No class for type: "+newClassname);
+            addErrorMessage("Error", "No class for type: " + newClassname);
         }
     }
 
@@ -197,14 +195,14 @@ public class BulkAnnotationController extends BaseController {
     }
 
     public BulkOperationsService getBulkOperations() {
-        if (this.bulkOperations == null){
+        if (this.bulkOperations == null) {
             this.bulkOperations = ApplicationContextProvider.getBean("bulkOperationsService");
         }
         return bulkOperations;
     }
 
     public CvObjectService getCvService() {
-        if (this.cvService == null){
+        if (this.cvService == null) {
             this.cvService = ApplicationContextProvider.getBean("cvObjectService");
         }
         return cvService;
