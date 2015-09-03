@@ -166,15 +166,15 @@
 
                     |&#160;
                     <h:panelGroup id="interactionsSwitch">
-                        <c:if test="#{!experimentController.showSummaryView}">
-                            <p:commandLink value="Change to summary view"
-                                           actionListener="#{experimentController.showSummaryView}"
-                                           update="interactionsSwitch, interactionDisplay" onstart="loadDialog.show()"
-                                           oncomplete="loadDialog.hide()"/>
-                        </c:if>
                         <c:if test="#{experimentController.showSummaryView}">
                             <p:commandLink value="Change to default view"
                                            actionListener="#{experimentController.hideSummaryView}"
+                                           update="interactionsSwitch, interactionDisplay" onstart="loadDialog.show()"
+                                           oncomplete="loadDialog.hide()"/>
+                        </c:if>
+                        <c:if test="#{!experimentController.showSummaryView}">
+                            <p:commandLink value="Change to summary view"
+                                           actionListener="#{experimentController.showSummaryView}"
                                            update="interactionsSwitch, interactionDisplay" onstart="loadDialog.show()"
                                            oncomplete="loadDialog.hide()"/>
                         </c:if>
@@ -189,7 +189,7 @@
                     </c:if>
                     <c:if test="#{experimentController.showSummaryView}">
                         <ui:include src="experiment_overview.xhtml">
-                            <ui:param name="value" value="#{experimentController.interactionDataModel}"/>
+                            <ui:param name="value" value="#{experimentController.experimentWrapper}"/>
                             <ui:param name="readonly" value="#{false}"/>
                         </ui:include>
                     </c:if>
