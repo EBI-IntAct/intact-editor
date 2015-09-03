@@ -16,6 +16,7 @@
         <h2>Unsaved changes</h2>
 
         <p:dataTable id="unsavedChangesTable" var="change" value="#{changesController.unsavedChangesForCurrentUser}">
+            <p:ajax event="page" onstart="load_changes.show()" oncomplete="load_changes.hide()"/>
             <p:column>
                 <p:commandButton value="Edit" action="#{curateController.edit(change.unsavedObject)}" ajax="false"/>
                 <p:commandButton value="Save" actionListener="#{curateController.save(change.unsavedObject)}" update=":editorForm:unsavedChangesTable,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo"/>
@@ -39,7 +40,8 @@
             </p:column>
 
         </p:dataTable>
-    </ui:define>
+        <ia:loadingDialog widgetVar="load_changes" message="Loading changes..."/>
 
+    </ui:define>
 
 </ui:composition>

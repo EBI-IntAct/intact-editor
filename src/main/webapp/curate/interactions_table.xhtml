@@ -41,12 +41,10 @@
             </p:column>
             <p:column id="shortLabel" headerText="Shortlabel" sortBy="#{interaction.shortName}">
                 <h:panelGroup rendered="#{not changesController.isDeletedAc(interaction.ac)}">
-                    <p:commandLink onclick="load_int.show()"
-                                   action="/curate/interaction?faces-redirect=true&amp;includeViewParams=true"
+                    <p:commandLink action="/curate/interaction?faces-redirect=true&amp;includeViewParams=true"
                                    style="#{interaction.ac == null? 'color:blue' :''}"
                                    value="#{interaction.shortName}" ajax="false">
-                        <f:setPropertyActionListener value="#{interaction.interaction}"
-                                                     target="#{interactionController.interaction}"/>
+                        <f:setPropertyActionListener value="#{interaction.interaction}" target="#{interactionController.interaction}"/>
                     </p:commandLink>
                 </h:panelGroup>
                 <h:panelGroup rendered="#{changesController.isDeletedAc(interaction.ac)}">
@@ -74,6 +72,7 @@
 
     </h:panelGroup>
 
+    <!--<ia:loadingDialog widgetVar="load_int" message="Loading interaction..."/>-->
     <ia:loadingDialog widgetVar="load_interaction_list" message="Loading interaction..."/>
 
 </ui:composition>
