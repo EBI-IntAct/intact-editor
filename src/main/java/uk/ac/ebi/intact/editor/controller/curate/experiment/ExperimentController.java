@@ -169,12 +169,11 @@ public class ExperimentController extends AnnotatedObjectController {
             if (ac != null) {
                 if (experiment == null || !ac.equals(experiment.getAc())) {
                     setExperiment(getExperimentService().loadExperimentByAc(ac));
-                    this.experimentWrapper = getExperimentService().loadExperimentWrapper(experiment);
                 }
             } else if (experiment != null) {
                 ac = experiment.getAc();
-                this.experimentWrapper = getExperimentService().loadExperimentWrapperByAc(ac);
             }
+
 
             if (experiment == null) {
                 addErrorMessage("No Experiment with this AC", ac);
@@ -1007,7 +1006,7 @@ public class ExperimentController extends AnnotatedObjectController {
     }
 
     public ExperimentWrapper getExperimentWrapper() {
-        return this.experimentWrapper;
+        return getExperimentService().loadExperimentWrapperByAc(ac);
     }
 
     public String stoichiometryAsString(Stoichiometry st) {
