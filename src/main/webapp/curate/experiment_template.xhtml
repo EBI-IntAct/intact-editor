@@ -3,8 +3,7 @@
                 xmlns:ui="http://java.sun.com/jsf/facelets"
                 xmlns:h="http://java.sun.com/jsf/html"
                 xmlns:p="http://primefaces.org/ui"
-                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
-                
+
                 template="/curate/curate_publication_template.xhtml">
 
     <ui:param name="annotatedObjectController" value="#{experimentController}"/>
@@ -12,11 +11,12 @@
     <ui:define name="topActionsPanel">
         <p:commandButton value="Accept Experiment"
                          styleClass="important-button-good"
-                         rendered="#{publicationController.readyForChecking 
+                         rendered="#{publicationController.readyForChecking
+                         and !experimentController.rejected
                          and userSessionController.isItMe(publicationController.publication.currentReviewer)
                          and !experimentController.accepted}"
                          actionListener="#{experimentController.acceptExperiment}"
-                         action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true"
+                         action="/curate/publication?faces-redirect=true&amp;includeViewParams=true"
                          ajax="false"/>
         <p:commandButton value="Revert Accepted"
                          styleClass="important-button-alt"
@@ -24,17 +24,18 @@
                          and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                          actionListener="#{experimentController.revertAccepted}"
                          action="/curate/experiment?faces-redirect=true&amp;includeViewParams=true"
-                         ajax="false"/>
+                         ajax="true"/>
         <p:commandButton value="Reject Experiment" type="button"
                          styleClass="important-button-bad"
-                         rendered="#{publicationController.readyForChecking 
+                         rendered="#{(publicationController.readyForChecking or publicationController.acceptedOnHold)
                          and !experimentController.rejected
+                         and !experimentController.accepted
                          and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                          onclick="rejectExperimentDialog.show()"
                          ajax="false"/>
         <p:commandButton value="Add Rejection Command" type="button"
                          styleClass="important-button-bad"
-                         rendered="#{publicationController.readyForChecking 
+                         rendered="#{(publicationController.readyForChecking)
                          and experimentController.rejected 
                          and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                          onclick="rejectExperimentDialog.show()"
@@ -112,7 +113,7 @@
                                  converter="trimmingConverter"/>
 
                 <p:commandButton value="Reject" actionListener="#{experimentController.rejectExperiment}"
-                                 process="reasonRejTxt" update=":editorForm" onclick="save_comment.show()" onchange="save_comment.show()"/>
+                                 process="reasonRejTxt" update=":editorForm"/>
             </h:panelGrid>
         </p:dialog>
 
@@ -127,7 +128,7 @@
                 <p:commandButton value="Add comment" actionListener="#{experimentController.addCorrectionComment}"
                                  process="corrComTxt"
                                  action="#{experimentController.doSave}"
-                                 update=":editorForm" onclick="save_comment.show()" onchange="save_comment.show()"/>
+                                 ajax="false" update=":editorForm"/>
             </h:panelGrid>
         </p:dialog>
 
@@ -165,8 +166,6 @@
 
             </h:panelGroup>
         </p:dialog>
-
-        <ia:loadingDialog widgetVar="save_comment" message="Save comment..."/>
 
     </ui:define>
 
