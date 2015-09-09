@@ -101,9 +101,9 @@
             <p:commandButton value="Execute bulk update" actionListener="#{bulkAnnotationController.addBulkAnnotation}"
                              update=":editorForm:executionInfo,:editorForm:messagesComponent" ajax="true"
                              onstart="process_bulk_update.show()" oncomplete="process_bulk_update.hide()"/>
+            <ia:loadingDialog widgetVar="process_bulk_update" message="Process bulk update..."/>
 
         </p:panel>
     </ui:define>
-    <ia:loadingDialog widgetVar="process_bulk_update" message="Process bulk update..."/>
 
 </ui:composition>
