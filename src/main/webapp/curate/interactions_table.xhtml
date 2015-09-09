@@ -63,10 +63,14 @@
             <p:column id="actions" rendered="#{not readonly}" headerText="Actions">
                 <p:commandLink immediate="true" title="Mark to be deleted" styleClass="ui-icon ui-icon-closethick"
                                actionListener="#{interactionController.markInteractionToDelete(interaction.interaction)}"
-                               update=":editorForm" rendered="#{not changesController.isDeletedAc(interaction.ac)}"/>
+                               update=":editorForm" onstart="delete_interaction.show()"
+                               oncomplete="delete_interaction.hide()"
+                               rendered="#{not changesController.isDeletedAc(interaction.ac)}"/>
                 <p:commandLink immediate="true" title="Revert" styleClass="ui-icon ui-icon-arrowreturnthick-1-w"
                                actionListener="#{changesController.revert(interaction.interaction)}"
-                               update=":editorForm" rendered="#{changesController.isDeletedAc(interaction.ac)}"/>
+                               update=":editorForm" onstart="revert_delete_interaction.show()"
+                               onsuccess="revert_delete_interaction.hide()"
+                               rendered="#{changesController.isDeletedAc(interaction.ac)}"/>
             </p:column>
         </p:dataTable>
 
@@ -74,5 +78,8 @@
 
     <!--<ia:loadingDialog widgetVar="load_int" message="Loading interaction..."/>-->
     <ia:loadingDialog widgetVar="load_interaction_list" message="Loading interaction..."/>
+    <ia:loadingDialog widgetVar="delete_interaction" message="Delete interaction..."/>
+    <ia:loadingDialog widgetVar="revert_delete_interaction" message="Revert deletion of interaction..."/>
+
 
 </ui:composition>
