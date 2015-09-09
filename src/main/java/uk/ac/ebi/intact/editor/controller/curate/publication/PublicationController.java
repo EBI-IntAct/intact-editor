@@ -153,6 +153,7 @@ public class PublicationController extends AnnotatedObjectController {
     private String accepted;
     private String toBeReviewed = null;
     private String imexId=null;
+    private String newValue;
 
     private List<ExperimentSummary> experiments = Collections.EMPTY_LIST;
 
@@ -1387,7 +1388,7 @@ public class PublicationController extends AnnotatedObjectController {
     }
 
     public void acceptPublication(ActionEvent evt) {
-        String accepted = "Accepted " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
+        String accepted = "Accepted " + new SimpleDateFormat("yyyy-MMM-dd 'at' HH:mm z 'at' HH:mm z").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
         setAcceptedMessage(accepted);
 
         addInfoMessage("Publication accepted", "");
@@ -1503,15 +1504,21 @@ public class PublicationController extends AnnotatedObjectController {
                 rejectionComments.add("[" + ((IntactExperiment)exp).getShortLabel() + ": " + toBeReviewed.getValue() + "]");
             }
         }
+        if (newValue != null) {
+            rejectionComments.add(newValue);
+        }
 
-        rejectPublication(this.toBeReviewed + (rejectionComments.isEmpty() ? "" : " - " + StringUtils.join(rejectionComments, ", ")));
-
+        if (rejectionComments.isEmpty() && this.toBeReviewed == null) {
+            addErrorMessage("Cannot reject publication without a correction comment", "");
+        } else {
+            rejectPublication(" - " + StringUtils.join(rejectionComments, ", "));
+        }
     }
 
     public void rejectPublication(String reasonForRejection) {
-        String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
+        String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd 'at' HH:mm z").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
 
-        setToBeReviewed(date + ". " + reasonForRejection);
+        setToBeReviewed(this.toBeReviewed == null ? date + ". " + reasonForRejection : this.toBeReviewed + " " + date + ". " + reasonForRejection);
 
         try{
             getEditorService().reject(publication, getCurrentUser(), this.toBeReviewed);
@@ -1968,5 +1975,13 @@ public class PublicationController extends AnnotatedObjectController {
             refreshExperiments();
             refreshDataModels();
         }
+    }
+
+    public String getNewValue() {
+        return newValue;
+    }
+
+    public void setNewValue(String newValue) {
+        this.newValue = newValue;
     }
 }
