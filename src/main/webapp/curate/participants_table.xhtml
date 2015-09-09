@@ -3,10 +3,7 @@
                 xmlns:ui="http://java.sun.com/jsf/facelets"
                 xmlns:h="http://java.sun.com/jsf/html"
                 xmlns:f="http://java.sun.com/jsf/core"
-                xmlns:c="http://java.sun.com/jsp/jstl/core"
-                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
                 xmlns:p="http://primefaces.org/ui"
-                xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components">
 
 <h:panelGroup id="participantsTableGroup">
@@ -27,8 +24,9 @@
                  rowsPerPageTemplate="10,20,50,100"
                  rows="10" paginatorAlwaysVisible="false" paginator="true" paginatorPosition="both"
                  rowStyleClass="#{wrapper.participant.ac == null? 'intact-new' : changesController.isDeletedAc(wrapper.participant.ac)? 'intact-deleted' : null}"
-                 widgetVar="participantsTableWidget"
-            >
+                 widgetVar="participantsTableWidget">
+
+        <p:ajax event="page" onstart="load_participants.show()" oncomplete="load_participants.hide()"/>
 
         <ui:param name="participant" value="#{wrapper.participant}" />
         <ui:param name="interactor" value="#{participant.interactor}" />
@@ -176,29 +174,30 @@
             <div style="float:right">
                 <p:commandLink id="markDeletedBtn" process="markDeletedBtn" title="Mark to be deleted" styleClass="ui-icon ui-icon-closethick"
                                actionListener="#{interactionController.markParticipantToDelete(wrapper.participant)}"
-                               update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:interactionTabs:participantsTab"
+                               ajax="false" onclick="delParticipantDialog.show()"
                                rendered="#{not changesController.isDeletedAc(wrapper.participant.ac)}"/>
             </div>
             <div style="float:right">
                 <p:commandLink id="revertBtn" process="revertBtn" title="Revert" styleClass="ui-icon ui-icon-arrowreturnthick-1-w"
                                actionListener="#{changesController.revert(wrapper.participant)}"
-                               update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo,:editorForm:interactionTabs:participantsTab"
+                               ajax="false"
+                               onstart="revdelParticipantDialog.show()" oncomplete="revdelParticipantDialog.hide()"
                                rendered="#{changesController.isDeletedAc(wrapper.participant.ac)}"/>
             </div>
             <div style="float:left">
                 <p:commandLink id="duplicateBtn" process="duplicateBtn" title="Duplicate" styleClass="ui-icon ui-icon-newwin"
                                actionListener="#{interactionController.cloneParticipant(wrapper)}"
-                               update=":editorForm:unsavedChangesInfo,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:interactionTabs:participantsTab"
+                               ajax="false"
+                               onstart="clone_articipant_dialog.show()"
                                rendered="#{not changesController.isDeletedAc(wrapper.participant.ac)}"/>
             </div>
         </p:column>
     </p:dataTable>
 
+</h:panelGroup>
     <ia:loadingDialog widgetVar="load_participant" message="Loading participant..."/>
+    <ia:loadingDialog widgetVar="load_participants" message="Loading participants..."/>
     <ia:loadingDialog widgetVar="delParticipantDialog" message="Marking participant to be deleted..."/>
     <ia:loadingDialog widgetVar="revdelParticipantDialog" message="Reverting participant..."/>
     <ia:loadingDialog widgetVar="clone_articipant_dialog" message="Cloning participant..."/>
-
-</h:panelGroup>
-
 </ui:composition>
