@@ -54,7 +54,8 @@
                         <f:selectItem itemLabel="Ready for release" itemValue="ready for release"/>
                         <f:selectItem itemLabel="Released" itemValue="released"/>
                     </h:selectManyCheckbox>
-                    <p:commandButton value="Refresh" actionListener="#{dashboardController.refreshAllTables()}"
+                    <p:commandButton value="Refresh" onclick="refresh_dashboard.show()"
+                                     actionListener="#{dashboardController.refreshAllTables()}"
                                      ajax="false"/>
                 </h:panelGrid>
             </p>
@@ -126,7 +127,6 @@
         </h:panelGroup>
 
         <ia:loadingDialog widgetVar="loadDialog"/>
-
+        <ia:loadingDialog widgetVar="refresh_dashboard" message="Refresh dashboard..."/>
     </ui:define>
-
 </ui:composition>
