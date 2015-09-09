@@ -51,9 +51,6 @@ import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
 import javax.faces.event.ComponentSystemEvent;
 import javax.faces.event.ValueChangeEvent;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -414,9 +411,6 @@ public class ExperimentController extends AnnotatedObjectController {
         doSave(actionEvent);
 
         addInfoMessage("Experiment accepted", experiment.getShortLabel());
-
-        // check if all the experiments have been acted upon, be it to accept them or reject them.
-        globalPublicationDecision();
     }
 
     public void revertAccepted(ActionEvent evt) {
@@ -470,43 +464,7 @@ public class ExperimentController extends AnnotatedObjectController {
         int expSize = publicationController.getExperimentsSize();
 
         boolean allActedUpon = ((expRejected + expAccepted) == expSize);
-        boolean allAccepted = expAccepted == expSize;
-
-        if (allAccepted) {
-            HttpServletRequest request = (HttpServletRequest) FacesContext.getCurrentInstance().getExternalContext().getRequest();
-            HttpServletResponse response = (HttpServletResponse) FacesContext.getCurrentInstance().getExternalContext().getResponse();
-            try {
-                response.sendRedirect(request.getContextPath() + "/publication/" + publicationController.getAc());
-                FacesContext.getCurrentInstance().responseComplete();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            /** Because this was not working 100%, I removed it. Now you will be redirected to the publication page, **/
-            /** where you can accept the whole publication.                                                          **/
-//            try {
-//                // accept publication
-//                getPublicationService().acceptReleasable(publicationController.getAc(), "Accepted " + new SimpleDateFormat("yyyy-MMM-dd 'at' HH:mm z").
-//                                format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase(),
-//                        userSessionController.getCurrentUser().getLogin());
-//
-//                // ready for relase publication if not already on-hold
-//                if (((Releasable) experiment.getPublication()).getStatus() != LifeCycleStatus.ACCEPTED_ON_HOLD) {
-//                    getPublicationService().readyForRelease(publicationController.getAc(), "Accepted and not on-hold",
-//                            userSessionController.getCurrentUser().getLogin());
-//                }
-//                addInfoMessage("Publication accepted", "All of its experiments have been accepted");
-//
-//                // refresh publication
-//                setExperiment(getExperimentService().reloadFullyInitialisedExperiment(experiment));
-//                publicationController.setPublication((IntactPublication) experiment.getPublication());
-//
-//                // refresh experiments with possible changes in publication title, annotations and publication identifier
-//                publicationController.copyAnnotationsToExperiments(null);
-//                publicationController.copyPrimaryIdentifierToExperiments();
-//            } catch (IllegalTransitionException e) {
-//                addErrorMessage("Cannot accept publication: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
-//            }
-        } else if (allActedUpon) {
+        if (allActedUpon) {
             RequestContext requestContext = RequestContext.getCurrentInstance();
             requestContext.execute("publicationActionDlg.show()");
         }
