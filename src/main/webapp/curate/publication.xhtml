@@ -47,7 +47,7 @@
                      action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Accept Publication"
                      styleClass="important-button-good"
-                     rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                     rendered="#{publicationController.accepted and publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                      actionListener="#{publicationController.acceptPublication}"
                      action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Revert Accepted"
@@ -65,8 +65,7 @@
     <p:commandButton value="Send Back to Curation"
                      styleClass="important-button-alt"
                      rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
-                     actionListener="#{publicationController.rejectPublication}"
-                     action="#{publicationController.doSave}" ajax="false"/>
+                     onclick="putToBeReviewedDialog.show()"/>
     <p:commandButton value="Put on hold" type="button"
                      styleClass="important-button-bad"
                      rendered="#{publicationController.onHold == null and
@@ -87,7 +86,7 @@
                      action="#{publicationController.doSave}" ajax="false"/>
     <p:commandButton value="Ready for Release (removes on-hold)"
                      styleClass="important-button-alt"
-                     rendered="#{publicationController.acceptedOnHold and (userSessionController.isItMe(publicationController.publication.currentReviewer)
+                     rendered="#{publicationController.isAllExperimentsAccepted() and publicationController.acceptedOnHold and (userSessionController.isItMe(publicationController.publication.currentReviewer)
                      or userSessionController.isItMe(publicationController.publication.currentOwner))}"
                      actionListener="#{publicationController.readyForReleaseFromOnHold}"
                      action="#{publicationController.doSave}" ajax="false"/>
@@ -318,6 +317,7 @@
         </td>
     </tr>
     <tr>
+        <h:panelGroup rendered="#{publicationController.publicationOnHold}">
         <td class="firstCell">
             <h:outputLabel value="On hold: " for="onHoldTxt"/>
         </td>
@@ -329,6 +329,7 @@
                 </p:inputTextarea>
             </h:panelGroup>
         </td>
+        </h:panelGroup>
     </tr>
     <tr>
         <h:panelGroup rendered="#{publicationController.publicationToBeReviewed}">
@@ -469,6 +470,20 @@
                          ajax="false"/>
     </h:panelGrid>
 </p:dialog>
+
+    <p:dialog header="Reject publication" width="600" widgetVar="putToBeReviewedDialog" draggable="false"
+              modal="true" position="center">
+        <h:panelGrid columns="3" style="margin-bottom:10px">
+            <h:outputLabel for="putToBeReviewedTxt" value="Reason for rejection:"/>
+            <p:inputTextarea id="putToBeReviewedTxt" value="#{publicationController.newValue}" rows="4" cols="60"
+                             converter="trimmingConverter"/>
+
+            <p:commandButton value="Send Back to Curation" actionListener="#{publicationController.rejectPublication}"
+                             action="#{publicationController.doSave}"
+                             process="putToBeReviewedTxt"
+                             ajax="false"/>
+        </h:panelGrid>
+    </p:dialog>
 
 <p:dialog header="Create and add new dataset" width="800" widgetVar="createNewdatasetDlg" draggable="false"
           modal="true" position="center">
