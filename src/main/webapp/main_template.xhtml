@@ -108,12 +108,14 @@
                                          onkeyup="handleReturnKey(event, 'topSearchBtn')"/>
                             <p:commandButton id="topSearchBtn" value="Search" action="#{searchController.doQuickSearch}"
                                              ajax="false"
+                                             onclick="searchDialog.show()"
                                              process="queryTxt" global="true"/>
-                            <p:commandButton id="topClearBtn" value="Clear" actionListener="#{searchController.clearQuickSearch}"
+                            <p:commandButton id="topClearBtn" value="Clear" onstart="clearDialog.show()"
+                                             oncomplete="clearDialog.hide()"
+                                             actionListener="#{searchController.clearQuickSearch}"
                                              process="queryTxt" update=":editorForm:queryTxt"/>
-                        </h:panelGrid>
 
-                        <ia:loadingDialog widgetVar="searchDialog" message="Searching..."/>
+                        </h:panelGrid>
 
                     </div>
 
@@ -210,6 +212,7 @@
         </h:form>
 
     </h:body>
-
+    <ia:loadingDialog widgetVar="searchDialog" message="Searching..."/>
+    <ia:loadingDialog widgetVar="clearDialog" message="Clear..."/>
 </f:view>
 </html>
