@@ -6,58 +6,63 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components">
 
-<p:dialog id="ipDialog" widgetVar="importParticipantDialog" header="Import participants"
-          position="center"
-          resizable="true"
-          width="500">
+    <p:dialog id="ipDialog" widgetVar="importParticipantDialog" header="Import participants"
+              position="center"
+              resizable="true"
+              width="500">
 
-    <ia:panelDialogLayout id="ipDialogPanel">
-        <f:facet name="buttonBar">
-            <p:commandButton id="participantSearchBtn" value="Search" actionListener="#{participantImportController.importParticipants}"
-                             process="searchParticipantTxt"
-                             update=":editorForm:messagesComponent :editorForm:interactionTabs:candidatesContent"
-                             onstart="searching_load.show()"
-                             onerror="alert('Error opening candidates dialog')"
-                             oncomplete="searching_load.hide(); importParticipantDialog.hide()"
-                             onsuccess="candidatesDialogWV.show()"/>
-        </f:facet>
-
-        <h:panelGrid columns="2">
-            <p>
-                Import participants by UniprotKB accession, ChEBI accession, Ensembl accession, interactor accession, short label or xref:<br/>
-                (comma or line separated)
-            </p>
-
-            <p:inputTextarea id="searchParticipantTxt" value="#{participantImportController.participantsToImport}"
-                             converter="arrayConverter"
-                             cols="30" rows="5" autoResize="false"/>
-        </h:panelGrid>
-
-    </ia:panelDialogLayout>
-</p:dialog>
-
-<p:dialog id="candidatesDialog" widgetVar="candidatesDialogWV" header="Import participants" dynamic="true"
-          position="center" resizable="true"
-          width="1000" height="800">
-    <p:outputPanel id="candidatesContent">
-        <ia:panelDialogLayout id="candidatesDialogContent">
+        <ia:panelDialogLayout id="ipDialogPanel">
             <f:facet name="buttonBar">
-                <h:panelGroup id="candidatesButtonGroup">
-                    <p:commandButton id="importSelected" value="Import selected" rendered="#{not empty participantImportController.importCandidates}"
-                                     actionListener="#{participantImportController.importSelected}"
-                                     onstart="candidatesDialogWV.hide();adding_load.show()" onerror="adding_load.hide(); candidatesDialogWV.show();"
-                                     oncomplete="adding_load.hide(); " process=":editorForm:interactionTabs:candidatesContent"
-                                     update=":editorForm:interactionTabs:participantsPanel :editorForm:shortlabelTxt :editorForm:messagesComponent :editorForm:changesPanel"/>
-                    <p:commandButton type="button" value="Back" rendered="#{empty participantImportController.importCandidates}"
-                                     onclick="candidatesDialogWV.hide(); importParticipantDialog.show()"/>
-                </h:panelGroup>
+                <p:commandButton id="participantSearchBtn" value="Search"
+                                 actionListener="#{participantImportController.importParticipants}"
+                                 process="searchParticipantTxt"
+                                 update=":editorForm:messagesComponent :editorForm:interactionTabs:candidatesContent"
+                                 onstart="searching_load.show()"
+                                 onerror="alert('Error opening candidates dialog')"
+                                 oncomplete="searching_load.hide(); importParticipantDialog.hide()"
+                                 onsuccess="candidatesDialogWV.show()"/>
             </f:facet>
 
-            <p:scrollPanel mode="native"  style="max-height:600px; max-width: 1000px">
+            <h:panelGrid columns="2">
+                <p>
+                    Import participants by UniprotKB accession, ChEBI accession, Ensembl accession, interactor accession, short label or xref:<br/>
+                    (comma or line separated)
+                </p>
 
-                <p:dataTable id="candidatesTable" var="candidate" rendered="#{not empty participantImportController.importCandidates}"
-                             paginatorAlwaysVisible="false"
-                             value="#{participantImportController.importCandidates}" paginator="true" rows="10">
+                <p:inputTextarea id="searchParticipantTxt" value="#{participantImportController.participantsToImport}"
+                                 converter="arrayConverter"
+                                 cols="30" rows="5" autoResize="false"/>
+            </h:panelGrid>
+
+        </ia:panelDialogLayout>
+    </p:dialog>
+
+    <p:dialog id="candidatesDialog" widgetVar="candidatesDialogWV" header="Import participants" dynamic="true"
+              position="center" resizable="true"
+              width="1000" height="800">
+        <p:outputPanel id="candidatesContent">
+            <ia:panelDialogLayout id="candidatesDialogContent">
+                <f:facet name="buttonBar">
+                    <h:panelGroup id="candidatesButtonGroup">
+                        <p:commandButton id="importSelected" value="Import selected"
+                                         rendered="#{not empty participantImportController.importCandidates}"
+                                         actionListener="#{participantImportController.importSelected}"
+                                         onstart="candidatesDialogWV.hide();adding_load.show()"
+                                         onerror="adding_load.hide(); candidatesDialogWV.show();"
+                                         oncomplete="adding_load.hide(); "
+                                         process=":editorForm:interactionTabs:candidatesContent"
+                                         update=":editorForm:interactionTabs:participantsPanel :editorForm:shortlabelTxt :editorForm:messagesComponent :editorForm:changesPanel"/>
+                        <p:commandButton type="button" value="Back"
+                                         rendered="#{empty participantImportController.importCandidates}"
+                                         onclick="candidatesDialogWV.hide(); importParticipantDialog.show()"/>
+                    </h:panelGroup>
+                </f:facet>
+
+                <!--<p:scrollPanel mode="native" style="max-height:600px; max-width: 1000px">-->
+
+                <p:dataTable id="candidatesTable" var="candidate" widgetVar="candidatesTable"
+                             rendered="#{not empty participantImportController.importCandidates}"
+                             value="#{participantImportController.importCandidates}">
                     <p:column>
                         <f:facet name="header"><h:outputText value="Select"/></f:facet>
                         <h:selectBooleanCheckbox value="#{candidate.selected}"/>
@@ -90,15 +95,18 @@
                     </p:column>
                     <p:column>
                         <f:facet name="header"><h:outputText value="IntAct AC"/></f:facet>
-                        <h:outputText value="#{candidate.interactor.ac}" rendered="#{candidate.interactor != null}"/>
+                        <h:outputText value="#{candidate.interactor.ac}"
+                                      rendered="#{candidate.interactor != null}"/>
                     </p:column>
                     <p:column>
                         <f:facet name="header"><h:outputText value="IntAct label"/></f:facet>
-                        <h:outputText value="#{candidate.interactor.shortName}" rendered="#{candidate.interactor != null}"/>
+                        <h:outputText value="#{candidate.interactor.shortName}"
+                                      rendered="#{candidate.interactor != null}"/>
                     </p:column>
                     <p:column>
                         <f:facet name="header"><h:outputText value="Interactor type"/></f:facet>
-                        <h:outputText value="#{candidate.interactor.interactorType.shortName}" rendered="#{candidate.interactor != null}"/>
+                        <h:outputText value="#{candidate.interactor.interactorType.shortName}"
+                                      rendered="#{candidate.interactor != null}"/>
                     </p:column>
                     <p:column>
                         <f:facet name="header"><h:outputText value="Query"/></f:facet>
@@ -117,66 +125,76 @@
                         </ul>
                     </ia:panelMessage>
                 </h:panelGroup>
+                <!--</p:scrollPanel>-->
 
-                <br/>
-
-                <p:panel id="globalAttributesId" header="Global attributes" rendered="#{not empty participantImportController.importCandidates}">
+                <p:panel id="globalAttributesId" header="Global attributes"
+                         rendered="#{not empty participantImportController.importCandidates}">
                     <h:panelGrid columns="2">
                         <h:outputLabel value="Experimental role: " for="expRoleDialogTxt"/>
-                        <h:selectOneMenu id="expRoleDialogTxt" value="#{participantImportController.cvExperimentalRole}"
+                        <h:selectOneMenu id="expRoleDialogTxt"
+                                         value="#{participantImportController.cvExperimentalRole}"
                                          converter="cvObjectConverter">
                             <f:selectItems value="#{cvObjectService.experimentalRoleSelectItems}"/>
                         </h:selectOneMenu>
 
                         <h:outputLabel value="Biological role: " for="bioRoleDialogTxt"/>
-                        <h:selectOneMenu id="bioRoleDialogTxt" value="#{participantImportController.cvBiologicalRole}"
+                        <h:selectOneMenu id="bioRoleDialogTxt"
+                                         value="#{participantImportController.cvBiologicalRole}"
                                          converter="cvObjectConverter">
                             <f:selectItems value="#{cvObjectService.biologicalRoleSelectItems}"/>
                         </h:selectOneMenu>
 
                         <h:outputLabel value="Expressed in: " for="expressedInDialogTxt"/>
-                        <ia:inputOrganism id="expressedInDialogTxt" value="#{participantImportController.expressedIn}"
+                        <ia:inputOrganism id="expressedInDialogTxt"
+                                          value="#{participantImportController.expressedIn}"
                                           modal="false"
                                           selectItems="#{bioSourceService.bioSourceSelectItems}"/>
                         <h:outputLabel value="Min Stoichiometry: " for="minStoichiometryDialogTxt"/>
-                        <p:spinner id="minStoichiometryDialogTxt" value="#{participantImportController.minStoichiometry}" min="0" stepFactor="1" size="3"
+                        <p:spinner id="minStoichiometryDialogTxt"
+                                   value="#{participantImportController.minStoichiometry}" min="0" stepFactor="1"
+                                   size="3"
                                    maxlength="2"/>
 
                         <h:outputLabel value="Max Stoichiometry: " for="maxStoichiometryDialogTxt"/>
-                        <p:spinner id="maxStoichiometryDialogTxt" value="#{participantImportController.maxStoichiometry}" min="0" stepFactor="1" size="3"
+                        <p:spinner id="maxStoichiometryDialogTxt"
+                                   value="#{participantImportController.maxStoichiometry}" min="0" stepFactor="1"
+                                   size="3"
                                    maxlength="2"/>
 
                         <h:outputLabel value="Experimental preparation(s): " for="deliveryDescription"/>
                         <!-- WARNING : the p:column and immediate = true are required to make the button remove in the p:dataList work-->
                         <h:panelGroup id="deliveryDescription">
-                            <p:selectManyMenu id="newDeliveryTxtInDialog" value="#{participantImportController.cvExperimentalPreparations}"
-                                             converter="cvObjectConverter" style="height: 100px; width: 100%">
-                                <f:selectItems value="#{cvObjectService.participantExperimentalPreparationsSelectItems}"/>
+                            <p:selectManyMenu id="newDeliveryTxtInDialog"
+                                              value="#{participantImportController.cvExperimentalPreparations}"
+                                              converter="cvObjectConverter" style="height: 100px; width: 100%">
+                                <f:selectItems
+                                        value="#{cvObjectService.participantExperimentalPreparationsSelectItems}"/>
                             </p:selectManyMenu>
                         </h:panelGroup>
                         <!-- WARNING : the p:column and immediate = true are required to make the button remove in the p:dataList work-->
                         <h:outputLabel value="Identification method(s): " for="identificationDescription"/>
                         <h:panelGroup id="identificationDescription">
-                            <p:selectManyMenu id="newIdentificationTxtInDialog" value="#{participantImportController.cvIdentifications}"
-                                             converter="cvObjectConverter" style="height: 100px; width: 100%">
+                            <p:selectManyMenu id="newIdentificationTxtInDialog"
+                                              value="#{participantImportController.cvIdentifications}"
+                                              converter="cvObjectConverter" style="height: 100px; width: 100%">
                                 <f:selectItems value="#{cvObjectService.participantDetectionMethodSelectItems}"/>
                             </p:selectManyMenu>
                         </h:panelGroup>
                         <h:outputLabel value="Load as molecule set: " for="moleculeSetTxt"/>
-                        <h:selectBooleanCheckbox id="moleculeSetTxt" value="#{participantImportController.loadAsMoleculeSet}"/>
+                        <h:selectBooleanCheckbox id="moleculeSetTxt"
+                                                 value="#{participantImportController.loadAsMoleculeSet}"/>
                         <h:outputText value=" "/>
                         <h:outputText value=" "/>
                     </h:panelGrid>
                 </p:panel>
-            </p:scrollPanel>
+                <!--</p:scrollPanel>-->
 
-        </ia:panelDialogLayout>
+            </ia:panelDialogLayout>
 
-    </p:outputPanel>
-</p:dialog>
+        </p:outputPanel>
+    </p:dialog>
 
-<ia:loadingDialog widgetVar="searching_load" message="Searching interactors..."/>
-<ia:loadingDialog widgetVar="adding_load" message="Adding participants..." modal="false"/>
-
+    <ia:loadingDialog widgetVar="searching_load" message="Searching interactors..."/>
+    <ia:loadingDialog widgetVar="adding_load" message="Adding participants..." modal="false"/>
 
 </ui:composition>
