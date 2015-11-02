@@ -243,7 +243,7 @@
                   modal="true" position="center" resizable="false">
             <ia:panelDialogLayout>
                 <f:facet name="buttonBar">
-                    <p:commandButton id="createCv" value="Create" action="#{cvObjectController.newCvObject}"
+                    <p:commandLink id="createCv" value="Create" action="#{cvObjectController.newCvObject}"
                                      ajax="false"/>
                 </f:facet>
 
@@ -283,7 +283,7 @@
                   modal="true" position="center" resizable="false">
             <ia:panelDialogLayout>
                 <f:facet name="buttonBar">
-                    <p:commandButton value="Create" action="#{interactorController.newInteractor}" ajax="false"/>
+                    <p:commandLink value="Create" action="#{interactorController.newInteractor}" ajax="false"/>
                 </f:facet>
 
                 <h:panelGrid columns="2">
@@ -353,6 +353,7 @@
     <ui:define name="dialogs">
         <ui:include src="menu_dialogs.xhtml"/>
 
+        <ia:loadingDialog widgetVar="loadingDialog" message="Loading..."/>
         <ia:loadingDialog widgetVar="saveDialog" message="Saving #{annotatedObjectController.objectCategory}..."/>
         <ia:loadingDialog widgetVar="revertDialog" message="Reverting changes..."/>
         <ia:loadingDialog widgetVar="cloningDialog" message="Cloning #{annotatedObjectController.objectCategory}..."/>
