@@ -11,7 +11,7 @@
     <artifactId>editor</artifactId>
     <packaging>war</packaging>
 
-    <version>3.0.6-SNAPSHOT</version>
+    <version>3.0.5.2</version>
 
     <name>Service :: IntAct Editor</name>
 
@@ -25,7 +25,7 @@
         <connection>scm:git:https://bitbucket.org/intact-ebi/intact-editor.git</connection>
         <developerConnection>scm:git:https://bitbucket.org/intact-ebi/intact-editor.git</developerConnection>
         <url>https://bitbucket.org/intact-ebi/intact-editor</url>
-        <tag>HEAD</tag>
+        <tag>editor-3.0.5.2</tag>
     </scm>
 
     <properties>
