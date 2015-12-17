@@ -346,7 +346,7 @@
         <dependency>
             <groupId>uk.ac.ebi.uniprot.kraken</groupId>
             <artifactId>uniprotjapi</artifactId>
-            <version>2015.09</version>
+            <version>2015.12</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework</groupId>
