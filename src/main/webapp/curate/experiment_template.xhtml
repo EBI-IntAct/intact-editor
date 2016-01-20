@@ -2,7 +2,7 @@
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
                 xmlns:ui="http://java.sun.com/jsf/facelets"
                 xmlns:h="http://java.sun.com/jsf/html"
-                xmlns:p="http://primefaces.org/ui"
+                xmlns:p="http://primefaces.org/ui" xmlns:c="http://java.sun.com/jsp/jstl/core"
 
                 template="/curate/curate_publication_template.xhtml">
 
@@ -31,14 +31,21 @@
                          and !experimentController.rejected
                          and !experimentController.accepted
                          and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
-                         onclick="rejectExperimentDialog.show()"
+                         onclick="addNewRejectExperimentDialog.show()"
                          ajax="false"/>
         <p:commandButton value="Add Rejection Command" type="button"
                          styleClass="important-button-bad"
                          rendered="#{(publicationController.readyForChecking)
                          and experimentController.rejected 
                          and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
-                         onclick="rejectExperimentDialog.show()"
+                         onclick="addNewRejectExperimentDialog.show()"
+                         ajax="false"/>
+        <p:commandButton value="Edit Rejection Command" type="button"
+                         styleClass="important-button-bad"
+                         rendered="#{(publicationController.readyForChecking)
+                         and experimentController.rejected
+                         and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
+                         onclick="editRejectExperimentDialog.show()"
                          ajax="false"/>
         <p:commandButton value="Remove to be reviewed"
                          styleClass="important-button-bad"
@@ -104,11 +111,24 @@
         </h:panelGroup>
 
         <!-- DIALOGS -->
-        <p:dialog header="Reject experiment" width="600" widgetVar="rejectExperimentDialog" draggable="false"
+        <p:dialog header="Reject experiment" width="600" widgetVar="addNewRejectExperimentDialog" draggable="false"
+                  modal="true" position="center">
+            <h:panelGrid columns="3" style="margin-bottom:10px">
+                <h:outputLabel for="newReasonRejTxt" value="Reason for rejection:"/>
+                <p:inputTextarea id="newReasonRejTxt" value="#{experimentController.newValue}" rows="4" cols="40"
+                                 autoResize="false"
+                                 converter="trimmingConverter"/>
+
+                <p:commandButton value="Reject" actionListener="#{experimentController.rejectExperiment}"
+                                 process="newReasonRejTxt" update=":editorForm"/>
+            </h:panelGrid>
+        </p:dialog>
+
+        <p:dialog header="Reject experiment" width="600" widgetVar="editRejectExperimentDialog" draggable="false"
                   modal="true" position="center">
             <h:panelGrid columns="3" style="margin-bottom:10px">
                 <h:outputLabel for="reasonRejTxt" value="Reason for rejection:"/>
-                <p:inputTextarea id="reasonRejTxt" value="#{experimentController.newValue}" rows="4" cols="40"
+                <p:inputTextarea id="reasonRejTxt" value="#{experimentController.reasonForRejection}" rows="4" cols="40"
                                  autoResize="false"
                                  converter="trimmingConverter"/>
 
