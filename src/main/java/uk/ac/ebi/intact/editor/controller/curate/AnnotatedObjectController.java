@@ -302,6 +302,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
 
         String currentAc = getAnnotatedObject().getAc();
         boolean currentAnnotatedObjectDeleted = false;
+        boolean bypassSavingMessageForRange=false;
 
         try{
             Collection<String> duplicatedAcs = getEditorService().findObjectDuplicates(getAnnotatedObject(), getDbSynchronizer());
@@ -334,6 +335,9 @@ public abstract class AnnotatedObjectController extends BaseController implement
                 }
                 else{
                     if (!currentAnnotatedObjectDeleted) {
+                        if(annotatedObject!=null&& annotatedObject instanceof IntactFeatureEvidence && annotatedObject.getAc()==null){// this is done to
+                            bypassSavingMessageForRange=true;
+                        }
                         annotatedObject = getEditorService().doSave(annotatedObject, getDbSynchronizer());
 
                         if (annotatedObject != null) {
@@ -352,7 +356,9 @@ public abstract class AnnotatedObjectController extends BaseController implement
                 // we refresh the object if it has been saved
                 if (annotatedObject != null){
                     setAnnotatedObject(annotatedObject);
-                    addInfoMessage("Saved", getDescription());
+                    if(!bypassSavingMessageForRange) {
+                        addInfoMessage("Saved", getDescription());
+                    }
                     doPostSave();
                 }
 

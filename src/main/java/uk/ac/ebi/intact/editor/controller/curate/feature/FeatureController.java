@@ -35,12 +35,11 @@ import uk.ac.ebi.intact.jami.model.extension.*;
 import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
 import uk.ac.ebi.intact.jami.utils.IntactUtils;
 
+import javax.faces.application.FacesMessage;
+import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Feature controller.
@@ -412,8 +411,21 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
     @Override
     public void newRange(ActionEvent evt) {
         super.newRange(evt);
+        changed();
         participantController.reloadSingleFeature(getFeature());
     }
+
+    /*public void unloadFacesMessages(){
+        FacesContext context = FacesContext.getCurrentInstance();
+        Iterator<FacesMessage> it = context.getMessages();
+        while (it.hasNext()) {
+            FacesMessage message = it.next();
+            if (message.getSeverity() == FacesMessage.SEVERITY_INFO) {
+                it.remove();
+            }
+
+        }
+    }*/
 
     public Double getNewParameterUncertainty() {
         return newParameterUncertainty;
