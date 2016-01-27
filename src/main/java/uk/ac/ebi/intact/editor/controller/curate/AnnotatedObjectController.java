@@ -335,7 +335,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
                 }
                 else{
                     if (!currentAnnotatedObjectDeleted) {
-                        if(annotatedObject!=null&& annotatedObject instanceof IntactFeatureEvidence && annotatedObject.getAc()==null){// this is done to
+                        if(annotatedObject!=null&& annotatedObject instanceof IntactFeatureEvidence && checkIfRangeReq(((IntactFeatureEvidence) annotatedObject).getRanges())){// this is done not to display save messages for range saving
                             bypassSavingMessageForRange=true;
                         }
                         annotatedObject = getEditorService().doSave(annotatedObject, getDbSynchronizer());
@@ -370,6 +370,20 @@ public abstract class AnnotatedObjectController extends BaseController implement
         catch (Throwable t) {
             handleException(t);
         }
+    }
+
+    private boolean checkIfRangeReq(Collection<Range> ranges){
+
+       Iterator<Range> iterator=ranges.iterator();
+        while(iterator.hasNext()){
+            ExperimentalRange range=(ExperimentalRange)iterator.next();
+                  if(range.getAc()==null){
+                      return true;
+                  }
+        }
+
+        return false;
+
     }
 
     protected boolean processDeleteEvents(String currentAc){
