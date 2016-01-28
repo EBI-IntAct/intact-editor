@@ -180,6 +180,57 @@
                                 </p:column>
                             </p:tab>
 
+                            <p:tab title="Variable Experimental Conditions: #{value.getVariableParameterValueSets(interaction).size()}"
+                                   rendered="#{value.getVariableParameterValueSets(interaction).size() gt 0}">
+
+
+
+                                <p:dataTable id="vexpCond_table" var="varParamSet"
+                                             value="#{value.getVariableParameterValueSets(interaction)}">
+
+
+                                    <p:column  style="width: 20%">
+                                    <f:facet name="header">
+                                        <h:outputText value="Experimental conditions"/>
+                                    </f:facet>
+
+                                    <ui:repeat value="#{varParamSet.toArray()}" var="variableValue">
+                                        <h:panelGrid columns="3"  style="width: auto" styleClass="intact-variable-table">
+
+
+                                            <h:outputText id="vexpCond-unit" value="#{variableValue.variableParameter.description}"
+                                                          rendered="#{variableValue.variableParameter != null}"/>
+                                            <h:outputText id="vexpCond-order" value="#{variableValue.variableParameter.unit.shortName}"
+                                                          rendered="#{variableValue.variableParameter != null and
+                                                          variableValue.variableParameter.unit != null}"/>
+                                            <h:outputText value="-" rendered="#{variableValue.variableParameter != null and
+                                                          variableValue.variableParameter.unit == null}"/>
+                                            <h:outputText id="vexpCond-value" value="#{variableValue.value}"
+                                                          readonly="true"/>
+                                        </h:panelGrid>
+
+                                    </ui:repeat>
+                                    </p:column>
+
+
+
+                                    <!--<p:column headerText="Description" style="width: 20%">
+                                        <h:outputText id="vexpCond-desc"
+                                                      value="#{annotation.topic.shortName}"
+                                                      style="white-space: nowrap"/>
+                                    </p:column>
+                                    <p:column headerText="Unit">
+                                        <h:outputText id="vexpCond-unit" value="#{annotation.value}"/>
+                                    </p:column>
+                                    <p:column headerText="Parameter Order">
+                                        <h:outputText id="vexpCond-order" value="#{annotation.value}"/>
+                                    </p:column>
+                                    <p:column headerText="Parameter Value">
+                                        <h:outputText id="vexpCond-value" value="#{annotation.value}"/>
+                                    </p:column>-->
+                                </p:dataTable>
+                            </p:tab>
+
                         </p:accordionPanel>
 
                     </p:fieldset>

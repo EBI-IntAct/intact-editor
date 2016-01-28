@@ -34,6 +34,7 @@ public class ExperimentWrapper {
     private Map<String, List<Annotation>> interactionAnnotations;
     private Map<String, List<Xref>> interactionXrefs;
     private Map<String, List<Parameter>> interactionsParameters;
+    private Map<String, List<VariableParameterValueSet>> variableParameterValueSets;
 
     private Map<String, List<IntactParticipantEvidence>> componentsMap;
     private Map<String, List<FeatureSummary>> componentFeatures;
@@ -46,6 +47,7 @@ public class ExperimentWrapper {
         interactionAnnotations = new HashMap<String, List<Annotation>>(interactions.size());
         interactionXrefs = new HashMap<String, List<Xref>>(interactions.size());
         interactionsParameters = new HashMap<String, List<Parameter>>(interactions.size());
+        setVariableParameterValueSets(new HashMap<String, List<VariableParameterValueSet>>(interactions.size()));
         componentsMap = new HashMap<String, List<IntactParticipantEvidence>>(interactions.size());
         componentFeatures = new HashMap<String, List<FeatureSummary>>(interactions.size() * 2);
 
@@ -55,6 +57,7 @@ public class ExperimentWrapper {
             String ac = intactEv.getAc() != null ? intactEv.getAc() : Integer.toString(intactEv.hashCode());
             interactionAnnotations.put(ac, new ArrayList<Annotation>(intactEv.getDbAnnotations()));
             interactionsParameters.put(ac, new ArrayList<Parameter>(intactEv.getParameters()));
+            variableParameterValueSets.put(ac,new ArrayList<VariableParameterValueSet>(intactEv.getVariableParameterValues()));
             interactionXrefs.put(ac, new ArrayList<Xref>(intactEv.getDbXrefs()));
             componentsMap.put(ac, new ArrayList<IntactParticipantEvidence>(sortedParticipants(intactEv)));
         }
@@ -150,6 +153,16 @@ public class ExperimentWrapper {
 
         return componentFeatures.get(ac);
     }
+
+    public  List<VariableParameterValueSet> getVariableParameterValueSets(IntactInteractionEvidence interaction) {
+        String ac = interaction.getAc() != null ? interaction.getAc() : Integer.toString(interaction.hashCode());
+        return variableParameterValueSets.get(ac);
+    }
+
+    public void setVariableParameterValueSets(Map<String, List<VariableParameterValueSet>> variableParameterValueSets) {
+        this.variableParameterValueSets = variableParameterValueSets;
+    }
+
 
     private class InteractionAlphabeticalOrder implements Comparator<IntactInteractionEvidence> {
 
