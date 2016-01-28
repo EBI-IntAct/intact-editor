@@ -335,7 +335,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
                 }
                 else{
                     if (!currentAnnotatedObjectDeleted) {
-                        if(annotatedObject!=null&& annotatedObject instanceof IntactFeatureEvidence && checkIfRangeReq(((IntactFeatureEvidence) annotatedObject).getRanges())){// this is done not to display save messages for range saving
+                        if(annotatedObject!=null&&checkIfRangeReq(annotatedObject)){// this is done not to display save messages for range saving
                             bypassSavingMessageForRange=true;
                         }
                         annotatedObject = getEditorService().doSave(annotatedObject, getDbSynchronizer());
@@ -372,14 +372,25 @@ public abstract class AnnotatedObjectController extends BaseController implement
         }
     }
 
-    private boolean checkIfRangeReq(Collection<Range> ranges){
-
-       Iterator<Range> iterator=ranges.iterator();
-        while(iterator.hasNext()){
-            ExperimentalRange range=(ExperimentalRange)iterator.next();
-                  if(range.getAc()==null){
-                      return true;
-                  }
+    private boolean checkIfRangeReq(IntactPrimaryObject annotatedObject){
+        if(annotatedObject instanceof IntactFeatureEvidence) {
+            IntactFeatureEvidence intactFeatureEvidence=(IntactFeatureEvidence)annotatedObject;
+            Iterator<Range> iterator = intactFeatureEvidence.getRanges().iterator();
+            while (iterator.hasNext()) {
+                ExperimentalRange range = (ExperimentalRange) iterator.next();
+                if (range.getAc() == null) {
+                    return true;
+                }
+            }
+        }else if(annotatedObject instanceof  IntactModelledFeature){
+            IntactModelledFeature intactModelledFeature=(IntactModelledFeature)annotatedObject;
+            Iterator<Range> iterator = intactModelledFeature.getRanges().iterator();
+            while (iterator.hasNext()) {
+                ModelledRange range = (ModelledRange) iterator.next();
+                if (range.getAc() == null) {
+                    return true;
+                }
+            }
         }
 
         return false;

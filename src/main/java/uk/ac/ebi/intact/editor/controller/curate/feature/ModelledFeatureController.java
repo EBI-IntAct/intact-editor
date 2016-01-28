@@ -235,6 +235,7 @@ public class ModelledFeatureController extends AbstractFeatureController<IntactM
     @Override
     public void newRange(ActionEvent evt) {
         super.newRange(evt);
+        changed();
         modelledParticipantController.reloadSingleFeature(getFeature());
     }
 }
