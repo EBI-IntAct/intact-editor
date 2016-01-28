@@ -20,6 +20,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.myfaces.orchestra.conversation.annotations.ConversationName;
 import org.joda.time.DateTime;
+import org.primefaces.context.RequestContext;
 import org.primefaces.event.TabChangeEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -98,6 +99,7 @@ public class ComplexController extends AnnotatedObjectController {
     private transient BioSourceService bioSourceService;
     private String name = null;
     private String toBeReviewed = null;
+    private String newToBeReviewed = null;
     private String onHold = null;
     private String correctionComment = null;
     private String cautionMessage = null;
@@ -1058,24 +1060,47 @@ public class ComplexController extends AnnotatedObjectController {
         }
     }
 
+//    public void rejectComplex(ActionEvent evt) {
+//
+//        rejectComplex(toBeReviewed);
+//
+//    }
+
     public void rejectComplex(ActionEvent evt) {
-
-        rejectComplex(toBeReviewed);
-
-    }
-
-    public void rejectComplex(String reasonForRejection) {
         String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
 
-        try {
-            getEditorService().reject(complex, getCurrentUser(), date + ". " + reasonForRejection);
-
-            addInfoMessage("Complex rejected", "");
-
-            this.toBeReviewed = this.complex.getToBeReviewedComment();
-        } catch (IllegalTransitionException e) {
-            addErrorMessage("Cannot reject complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        if(toBeReviewed == null){
+            setToBeReviewed(date + ". " + newToBeReviewed);
+        } else if (newToBeReviewed != null){
+            setToBeReviewed(toBeReviewed + " " + date + ". " + newToBeReviewed);
+        } else {
+            setToBeReviewed(toBeReviewed);
         }
+
+        this.newToBeReviewed = null;
+        updateAnnotation(Releasable.TO_BE_REVIEWED, null, this.toBeReviewed, complex.getAnnotations());
+        removeAnnotation(Releasable.ACCEPTED, null, complex.getAnnotations());
+        removeAnnotation(Releasable.CORRECTION_COMMENT, null, complex.getAnnotations());
+
+        addInfoMessage("Added review message", complex.getShortName() + ": " + toBeReviewed);
+
+
+//        if (allActedUpon) {
+//            RequestContext requestContext = RequestContext.getCurrentInstance();
+//            requestContext.execute("publicationActionDlg.show()");
+//        }
+
+//        try {
+////            getEditorService().reject(complex, getCurrentUser(), date + ". " + reasonForRejection);
+//
+//            addInfoMessage("Complex rejected", "");
+//
+//            this.toBeReviewed = this.complex.getToBeReviewedComment();
+//        } catch (IllegalTransitionException e) {
+//            addErrorMessage("Cannot reject complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+//        }
+        
+        
     }
 
     public boolean isBeenRejectedBefore() {

@@ -546,18 +546,45 @@
             </h:panelGrid>
         </p:dialog>
 
-        <p:dialog header="Reject complex" width="600" widgetVar="rejectComplexDialog" draggable="false"
+        <!--<p:dialog header="Reject complex" width="600" widgetVar="rejectComplexDialog" draggable="false"-->
+                  <!--modal="true" position="center">-->
+            <!--<h:panelGrid columns="3" style="margin-bottom:10px">-->
+                <!--<h:outputLabel for="reasonRejTxt" value="Reason for rejection:"/>-->
+                <!--<p:inputTextarea id="reasonRejTxt" value="#{complexController.toBeReviewed}" rows="4" cols="40"-->
+                                 <!--autoResize="false"-->
+                                 <!--converter="trimmingConverter"/>-->
+
+                <!--<p:commandButton value="Reject" actionListener="#{complexController.rejectComplex}"-->
+                                 <!--process="reasonRejTxt"-->
+                                 <!--action="#{complexController.doSave}"-->
+                                 <!--ajax="false"/>-->
+            <!--</h:panelGrid>-->
+        <!--</p:dialog>-->
+
+        <!-- DIALOGS -->
+        <p:dialog header="Reject experiment" width="600" widgetVar="addNewRejectExperimentDialog" draggable="false"
                   modal="true" position="center">
             <h:panelGrid columns="3" style="margin-bottom:10px">
-                <h:outputLabel for="reasonRejTxt" value="Reason for rejection:"/>
-                <p:inputTextarea id="reasonRejTxt" value="#{complexController.toBeReviewed}" rows="4" cols="40"
+                <h:outputLabel for="newReasonRejTxt" value="Reason for rejection:"/>
+                <p:inputTextarea id="newReasonRejTxt" value="#{experimentController.newValue}" rows="4" cols="40"
                                  autoResize="false"
                                  converter="trimmingConverter"/>
 
-                <p:commandButton value="Reject" actionListener="#{complexController.rejectComplex}"
-                                 process="reasonRejTxt"
-                                 action="#{complexController.doSave}"
-                                 ajax="false"/>
+                <p:commandButton value="Reject" actionListener="#{experimentController.rejectExperiment}"
+                                 process="newReasonRejTxt" update=":editorForm"/>
+            </h:panelGrid>
+        </p:dialog>
+
+        <p:dialog header="Reject experiment" width="600" widgetVar="editRejectExperimentDialog" draggable="false"
+                  modal="true" position="center">
+            <h:panelGrid columns="3" style="margin-bottom:10px">
+                <h:outputLabel for="reasonRejTxt" value="Reason for rejection:"/>
+                <p:inputTextarea id="reasonRejTxt" value="#{experimentController.reasonForRejection}" rows="4" cols="40"
+                                 autoResize="false"
+                                 converter="trimmingConverter"/>
+
+                <p:commandButton value="Reject" actionListener="#{experimentController.rejectExperiment}"
+                                 process="reasonRejTxt" update=":editorForm"/>
             </h:panelGrid>
         </p:dialog>
 
