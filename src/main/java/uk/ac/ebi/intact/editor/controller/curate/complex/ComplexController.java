@@ -118,7 +118,7 @@ public class ComplexController extends AnnotatedObjectController {
     private Integer newParameterBase;
     private Integer newParameterExponent;
     private Double newParameterUncertainty;
-
+    
     public ComplexController() {
     }
 
@@ -1067,40 +1067,35 @@ public class ComplexController extends AnnotatedObjectController {
 //    }
 
     public void rejectComplex(ActionEvent evt) {
-        String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
+        if (evt.getComponent().getId().equals("rejectComplex")) {
+            try {
+                getEditorService().reject(complex, getCurrentUser(), this.toBeReviewed);
 
-        if(toBeReviewed == null){
-            setToBeReviewed(date + ". " + newToBeReviewed);
-        } else if (newToBeReviewed != null){
-            setToBeReviewed(toBeReviewed + " " + date + ". " + newToBeReviewed);
+                addInfoMessage("Complex rejected", "");
+            } catch (IllegalTransitionException e) {
+                addErrorMessage("Cannot reject complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+            }
         } else {
-            setToBeReviewed(toBeReviewed);
+            String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
+
+            if (toBeReviewed == null) {
+                setToBeReviewed(date + ". " + newToBeReviewed);
+            } else if (newToBeReviewed != null) {
+                setToBeReviewed(toBeReviewed + " " + date + ". " + newToBeReviewed);
+            } else {
+                setToBeReviewed(toBeReviewed);
+            }
+
+            this.newToBeReviewed = null;
+            updateAnnotation(Releasable.TO_BE_REVIEWED, null, this.toBeReviewed, complex.getAnnotations());
+            removeAnnotation(Releasable.ACCEPTED, null, complex.getAnnotations());
+            removeAnnotation(Releasable.CORRECTION_COMMENT, null, complex.getAnnotations());
+
+            RequestContext requestContext = RequestContext.getCurrentInstance();
+            requestContext.execute("complexActionDlg.show()");
+
+            addInfoMessage("Added review message", complex.getShortName() + ": " + toBeReviewed);
         }
-
-        this.newToBeReviewed = null;
-        updateAnnotation(Releasable.TO_BE_REVIEWED, null, this.toBeReviewed, complex.getAnnotations());
-        removeAnnotation(Releasable.ACCEPTED, null, complex.getAnnotations());
-        removeAnnotation(Releasable.CORRECTION_COMMENT, null, complex.getAnnotations());
-
-        addInfoMessage("Added review message", complex.getShortName() + ": " + toBeReviewed);
-
-
-//        if (allActedUpon) {
-//            RequestContext requestContext = RequestContext.getCurrentInstance();
-//            requestContext.execute("publicationActionDlg.show()");
-//        }
-
-//        try {
-////            getEditorService().reject(complex, getCurrentUser(), date + ". " + reasonForRejection);
-//
-//            addInfoMessage("Complex rejected", "");
-//
-//            this.toBeReviewed = this.complex.getToBeReviewedComment();
-//        } catch (IllegalTransitionException e) {
-//            addErrorMessage("Cannot reject complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
-//        }
-        
-        
     }
 
     public boolean isBeenRejectedBefore() {
@@ -1464,5 +1459,13 @@ public class ComplexController extends AnnotatedObjectController {
 
     public void setShortName(String name) {
         this.complex.setShortName(name);
+    }
+
+    public String getNewToBeReviewed() {
+        return newToBeReviewed;
+    }
+
+    public void setNewToBeReviewed(String newToBeReviewed) {
+        this.newToBeReviewed = newToBeReviewed;
     }
 }
