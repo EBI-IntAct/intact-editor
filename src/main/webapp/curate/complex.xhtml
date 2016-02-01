@@ -3,264 +3,275 @@
                 xmlns:ui="http://java.sun.com/jsf/facelets"
                 xmlns:h="http://java.sun.com/jsf/html"
                 xmlns:f="http://java.sun.com/jsf/core"
-                xmlns:c="http://java.sun.com/jsp/jstl/core"
-                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
                 xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
 
                 template="/curate/curate_complex_template.xhtml">
 
-<ui:param name="annotatedObjectController" value="#{complexController}"/>
+    <ui:param name="annotatedObjectController" value="#{complexController}"/>
 
-<ui:param name="interaction" value="#{complexController.complex}" />
+    <ui:param name="interaction" value="#{complexController.complex}"/>
 
-<ui:define name="metadata">
-    <f:metadata>
-        <f:viewParam name="ac" value="#{complexController.ac}"/>
-        <f:event type="preRenderView" listener="#{complexController.loadData}"/>
-        <f:event type="preRenderView" listener="#{userAdminController.loadData}"/>
-        <f:event type="preRenderView" listener="#{curateController.setCurrentAnnotatedObjectController(complexController)}"/>
-    </f:metadata>
-</ui:define>
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewParam name="ac" value="#{complexController.ac}"/>
+            <f:event type="preRenderView" listener="#{complexController.loadData}"/>
+            <f:event type="preRenderView" listener="#{userAdminController.loadData}"/>
+            <f:event type="preRenderView"
+                     listener="#{curateController.setCurrentAnnotatedObjectController(complexController)}"/>
+        </f:metadata>
+    </ui:define>
 
-<ui:define name="topActionsPanel">
-    <p:commandButton value="Claim ownership"
-                     styleClass="important-button-alt"
-                     rendered="#{complexController.newComplex}"
-                     actionListener="#{complexController.markAsAssignedToMe}"
-                     action="#{complexController.doSave}" ajax="false"/>
-    <p:commandButton value="Start curation"
-                     styleClass="important-button-alt"
-                     rendered="#{complexController.assigned and userSessionController.isItMe(complexController.complex.currentOwner)}"
-                     actionListener="#{complexController.markAsCurationInProgress}"
-                     action="#{complexController.doSave}" ajax="false"/>
-    <p:commandButton value="Ready for checking"
-                     styleClass="important-button-alt"
-                     rendered="#{complexController.curationInProgress and not complexController.beenRejectedBefore
+    <ui:define name="topActionsPanel">
+        <p:commandButton value="Claim ownership"
+                         styleClass="important-button-alt"
+                         rendered="#{complexController.newComplex}"
+                         actionListener="#{complexController.markAsAssignedToMe}"
+                         action="#{complexController.doSave}" ajax="false"/>
+        <p:commandButton value="Start curation"
+                         styleClass="important-button-alt"
+                         rendered="#{complexController.assigned and userSessionController.isItMe(complexController.complex.currentOwner)}"
+                         actionListener="#{complexController.markAsCurationInProgress}"
+                         action="#{complexController.doSave}" ajax="false"/>
+        <p:commandButton value="Ready for checking"
+                         styleClass="important-button-alt"
+                         rendered="#{complexController.curationInProgress and not complexController.beenRejectedBefore
                      and userSessionController.isItMe(complexController.complex.currentOwner)}"
-                     actionListener="#{complexController.markAsReadyForChecking}"
-                     action="#{complexController.doSave}" ajax="false"/>
-    <p:commandButton value="Ready for checking (Again)"
-                     styleClass="important-button-alt"
-                     rendered="#{complexController.curationInProgress and complexController.beenRejectedBefore
+                         actionListener="#{complexController.markAsReadyForChecking}"
+                         action="#{complexController.doSave}" ajax="false"/>
+        <p:commandButton value="Ready for checking (Again)"
+                         styleClass="important-button-alt"
+                         rendered="#{complexController.curationInProgress and complexController.beenRejectedBefore
                      and userSessionController.isItMe(complexController.complex.currentOwner)}"
-                     actionListener="#{complexController.markAsReadyForChecking}"
-                     action="#{complexController.doSave}" ajax="false"/>
-    <p:commandButton value="Accept Complex"
-                     styleClass="important-button-good"
-                     rendered="#{complexController.readyForChecking and userSessionController.isItMe(complexController.complex.currentReviewer)}"
-                     actionListener="#{complexController.acceptComplex}"
-                     action="#{complexController.doSave}" ajax="false"/>
-    <p:commandButton value="Back to Curation in Progress"
-                     styleClass="important-button-alt"
-                     rendered="#{complexController.readyForChecking and userSessionController.isItMe(complexController.complex.currentOwner)}"
-                     actionListener="#{complexController.revertReadyForChecking}"
-                     action="#{complexController.doSave}" ajax="false"/>
-    <p:commandButton value="Revert Accepted"
-                     styleClass="important-button-alt"
-                     rendered="#{complexController.readyForRelease and !complexController.released
+                         actionListener="#{complexController.markAsReadyForChecking}"
+                         action="#{complexController.doSave}" ajax="false"/>
+        <p:commandButton value="Accept Complex"
+                         styleClass="important-button-good"
+                         rendered="#{complexController.readyForChecking and (complexController.toBeReviewed eq null or complexController.toBeReviewed eq '') and userSessionController.isItMe(complexController.complex.currentReviewer)}"
+                         actionListener="#{complexController.acceptComplex}"
+                         action="#{complexController.doSave}" ajax="false"/>
+        <p:commandButton value="Back to Curation in Progress"
+                         styleClass="important-button-alt"
+                         rendered="#{complexController.readyForChecking and userSessionController.isItMe(complexController.complex.currentOwner)}"
+                         actionListener="#{complexController.revertReadyForChecking}"
+                         action="#{complexController.doSave}" ajax="false"/>
+        <p:commandButton value="Revert Accepted"
+                         styleClass="important-button-alt"
+                         rendered="#{complexController.readyForRelease and !complexController.released
                      and userSessionController.isItMe(complexController.complex.currentReviewer)}"
-                     actionListener="#{complexController.revertAccepted}"
-                     action="#{complexController.doSave}" ajax="false"/>
-    <p:commandButton value="Put on hold" type="button"
-                     styleClass="important-button-bad"
-                     rendered="#{(complexController.readyForRelease or complexController.released)
+                         actionListener="#{complexController.revertAccepted}"
+                         action="#{complexController.doSave}" ajax="false"/>
+        <p:commandButton value="Put on hold" type="button"
+                         styleClass="important-button-bad"
+                         rendered="#{(complexController.readyForRelease or complexController.released)
                      and (userSessionController.isItMe(complexController.complex.currentOwner)
                      or userSessionController.isItMe(complexController.complex.currentReviewer))}"
-                     onclick="putOnHoldDialog.show()"/>
-    <!--THERE IS RIGHT NOW NO NEED OF HAVING THIS HERE. MAYBE ON SOME POINT IN THE FUTUTRE.-->
-    <!--<p:commandButton value="Remove on hold"-->
-                     <!--styleClass="important-button-bad"-->
-                     <!--rendered="#{complexController.complexOnHold and (userSessionController.isItMe(complexController.complex.currentOwner)-->
-                     <!--or userSessionController.isItMe(complexController.complex.currentReviewer))}"-->
-                     <!--actionListener="#{complexController.removeOnHold}"-->
-                     <!--action="#{complexController.doSave}" ajax="false"/>-->
-    <p:commandButton value="Remove to be reviewed"
-                     styleClass="important-button-bad"
-                     rendered="#{complexController.complexToBeReviewed and userSessionController.isItMe(complexController.complex.currentReviewer)}"
-                     actionListener="#{complexController.removeToBeReviewed}"
-                     action="#{complexController.doSave}" ajax="false"/>
-    <p:commandButton value="Ready for Release (removes on-hold)"
-                     styleClass="important-button-alt"
-                     rendered="#{complexController.acceptedOnHold and (userSessionController.isItMe(complexController.complex.currentReviewer)
+                         onclick="putOnHoldDialog.show()"/>
+        <!--THERE IS RIGHT NOW NO NEED OF HAVING THIS HERE. MAYBE ON SOME POINT IN THE FUTUTRE.-->
+        <!--<p:commandButton value="Remove on hold"-->
+        <!--styleClass="important-button-bad"-->
+        <!--rendered="#{complexController.complexOnHold and (userSessionController.isItMe(complexController.complex.currentOwner)-->
+        <!--or userSessionController.isItMe(complexController.complex.currentReviewer))}"-->
+        <!--actionListener="#{complexController.removeOnHold}"-->
+        <!--action="#{complexController.doSave}" ajax="false"/>-->
+        <p:commandButton value="Ready for Release (removes on-hold)"
+                         styleClass="important-button-alt"
+                         rendered="#{complexController.acceptedOnHold and (userSessionController.isItMe(complexController.complex.currentReviewer)
                      or userSessionController.isItMe(complexController.complex.currentOwner))}"
-                     actionListener="#{complexController.readyForReleaseFromOnHold}"
-                     action="#{complexController.doSave}" ajax="false"/>
-    <p:commandButton value="Correction Comment" type="button"
-                     styleClass="important-button-alt"
-                     rendered="#{complexController.curationInProgress and userSessionController.isItMe(complexController.complex.currentOwner)}"
-                     onclick="correctionCommentDialog.show()"/>
-    <p:commandButton value="Remove Correction Comment" actionListener="#{complexController.removeCorrectionComment}"
-                     styleClass="important-button-alt"
-                     rendered="#{complexController.complexWithCorrectionComment and (userSessionController.isItMe(complexController.complex.currentOwner)
+                         actionListener="#{complexController.readyForReleaseFromOnHold}"
+                         action="#{complexController.doSave}" ajax="false"/>
+        <p:commandButton value="Correction Comment" type="button"
+                         styleClass="important-button-alt"
+                         rendered="#{complexController.curationInProgress and userSessionController.isItMe(complexController.complex.currentOwner)}"
+                         onclick="correctionCommentDialog.show()"/>
+        <p:commandButton value="Remove Correction Comment" actionListener="#{complexController.removeCorrectionComment}"
+                         styleClass="important-button-alt"
+                         rendered="#{complexController.complexWithCorrectionComment and (userSessionController.isItMe(complexController.complex.currentOwner)
                      or userSessionController.isItMe(complexController.complex.currentReviewer))}"
-                     action="#{complexController.doSave}" ajax="false"/>
-    <p:commandButton value="Reject Complex" type="button"
-                     styleClass="important-button-bad"
-                     rendered="#{complexController.readyForChecking and userSessionController.isItMe(complexController.complex.currentReviewer) }"
-                     onclick="rejectComplexDialog.show()"/>
-</ui:define>
+                         action="#{complexController.doSave}" ajax="false"/>
+        <p:commandButton value="Reject Complex" type="button"
+                         styleClass="important-button-bad"
+                         rendered="#{complexController.readyForChecking and (complexController.toBeReviewed eq null or complexController.toBeReviewed eq '') and userSessionController.isItMe(complexController.complex.currentReviewer) }"
+                         onclick="addNewRejectComplexDialog.show()"/>
+        <p:commandButton value="Add rejection command" type="button"
+                         styleClass="important-button-bad"
+                         rendered="#{complexController.readyForChecking and (complexController.toBeReviewed eq null or complexController.toBeReviewed ne '') and userSessionController.isItMe(complexController.complex.currentReviewer) }"
+                         onclick="addNewRejectComplexDialog.show()"/>
+        <p:commandButton value="Edit Rejection Command" type="button"
+                         styleClass="important-button-bad"
+                         rendered="#{complexController.readyForChecking and (complexController.toBeReviewed eq null or complexController.toBeReviewed ne '') and userSessionController.isItMe(complexController.complex.currentReviewer) }"
+                         onclick="editRejectComplexDialog.show()"/>
+        <p:commandButton value="Remove to be reviewed"
+                         styleClass="important-button-bad"
+                         rendered="#{complexController.complexToBeReviewed and userSessionController.isItMe(complexController.complex.currentReviewer)}"
+                         actionListener="#{complexController.removeToBeReviewed}"
+                         action="#{complexController.doSave}" ajax="false"/>
+    </ui:define>
 
-<ui:define name="breadcrumbs">
-    <p:breadCrumb>
-        <p:menuitem ajax="false" onclick="loadDialog.show()" value="#{complexController.name}"
-                    action="/curate/complex?includeViewParams=true&amp;faces-redirect=true" process="@this"/>
-        <p:menuitem ajax="false" onclick="loadDialog.show()" value="#{complexController.name}"
-                    action="/curate/complex?includeViewParams=true&amp;faces-redirect=true" process="@this"/>
-    </p:breadCrumb>
-</ui:define>
+    <ui:define name="breadcrumbs">
+        <p:breadCrumb>
+            <p:menuitem ajax="false" onclick="loadDialog.show()" value="#{complexController.name}"
+                        action="/curate/complex?includeViewParams=true&amp;faces-redirect=true" process="@this"/>
+            <p:menuitem ajax="false" onclick="loadDialog.show()" value="#{complexController.name}"
+                        action="/curate/complex?includeViewParams=true&amp;faces-redirect=true" process="@this"/>
+        </p:breadCrumb>
+    </ui:define>
 
-<ui:define name="toolsContextual">
-    <p:submenu label="Export">
-        <ui:include src="complex_export_submenu.xhtml">
-            <ui:param name="ac" value="#{complexController.ac}"/>
-        </ui:include>
-    </p:submenu>
-    <p:menuitem value="Claim ownership" actionListener="#{complexController.claimOwnership}" ajax="false"/>
-</ui:define>
+    <ui:define name="toolsContextual">
+        <p:submenu label="Export">
+            <ui:include src="complex_export_submenu.xhtml">
+                <ui:param name="ac" value="#{complexController.ac}"/>
+            </ui:include>
+        </p:submenu>
+        <p:menuitem value="Claim ownership" actionListener="#{complexController.claimOwnership}" ajax="false"/>
+    </ui:define>
 
-<ui:define name="curateContent">
+    <ui:define name="curateContent">
 
-<h:panelGroup rendered="#{interaction == null}">
-    No interaction loaded!
-</h:panelGroup>
+        <h:panelGroup rendered="#{interaction == null}">
+            No interaction loaded!
+        </h:panelGroup>
 
-<h:panelGroup id="info" rendered="#{interaction != null}">
+        <h:panelGroup id="info" rendered="#{interaction != null}">
 
-<p:panel id="basic" header="Complex Details">
+            <p:panel id="basic" header="Complex Details">
 
-<p:outputPanel id="infoPanels">
-    <h:panelGroup rendered="#{complexController.complexToBeReviewed}">
-        <ia:panelMessage level="warn">
-            <b>To be reviewed: </b> #{complexController.toBeReviewed}
-        </ia:panelMessage>
-    </h:panelGroup>
+                <p:outputPanel id="infoPanels">
+                    <h:panelGroup rendered="#{complexController.complexToBeReviewed}">
+                        <ia:panelMessage level="warn">
+                            <b>To be reviewed: </b> #{complexController.toBeReviewed}
+                        </ia:panelMessage>
+                    </h:panelGroup>
 
-    <h:panelGroup rendered="#{complexController.complexWithCorrectionComment}">
-        <ia:panelMessage level="info">
-            <b>Correction comment: </b>#{complexController.correctionComment}
-        </ia:panelMessage>
-    </h:panelGroup>
+                    <h:panelGroup rendered="#{complexController.complexWithCorrectionComment}">
+                        <ia:panelMessage level="info">
+                            <b>Correction comment: </b>#{complexController.correctionComment}
+                        </ia:panelMessage>
+                    </h:panelGroup>
 
-    <h:panelGroup rendered="#{complexController.complexOnHold}">
-        <ia:panelMessage level="warn">
-            This Complex is <b>on-hold</b>. Reason: #{complexController.onHold}
-        </ia:panelMessage>
-    </h:panelGroup>
+                    <h:panelGroup rendered="#{complexController.complexOnHold}">
+                        <ia:panelMessage level="warn">
+                            This Complex is <b>on-hold</b>. Reason: #{complexController.onHold}
+                        </ia:panelMessage>
+                    </h:panelGroup>
 
-    <ui:include src="common_info_panels.xhtml">
-        <ui:param name="annotatedObjectController" value="#{complexController}"/>
-    </ui:include>
-</p:outputPanel>
+                    <ui:include src="common_info_panels.xhtml">
+                        <ui:param name="annotatedObjectController" value="#{complexController}"/>
+                    </ui:include>
+                </p:outputPanel>
 
-<h:panelGroup rendered="#{interaction != null}">
-    <div id="auditInfo" class="intact-auditPanel">
-        <ia:creatorUpdator annotatedObject="#{interaction}" />
-    </div>
-</h:panelGroup>
+                <h:panelGroup rendered="#{interaction != null}">
+                    <div id="auditInfo" class="intact-auditPanel">
+                        <ia:creatorUpdator annotatedObject="#{interaction}"/>
+                    </div>
+                </h:panelGroup>
 
-<table class="intact-tableBasicForm">
-    <tr>
-        <td class="firstCell">
-            <h:outputLabel value="Shortlabel: " for="shortlabelTxt"/>
-        </td>
-        <td>
-            <p:inputText id="shortlabelTxt" value="#{complexController.shortName}" size="30"
-                         converter="trimmingConverter"
-                         required="true" requiredMessage="Shortlabel is required">
-                <p:ajax event="change" update=":editorForm:messagesComponent,:editorForm:changesPanel,:editorForm:unsavedChangesInfo" async="true" process="@this" oncomplete="markAsUnsaved()"/>
-            </p:inputText>
-        </td>
-        <td style="padding-left: 50px;">
-            <h:outputLabel value="AC: " for="acTxt" styleClass="intact-disabled"/>
-            <p:inputText id="acTxt" value="#{interaction.ac}"
-                         size="10" readonly="true"/>
-        </td>
-    </tr>
-    <tr>
-        <td class="firstCell">
-            <h:outputLabel value="Recommended name: " for="recommendedNameTxt"/>
-        </td>
-        <td>
-            <h:panelGroup>
-                <p:inputText id="recommendedNameTxt" value="#{complexController.recommendedName}" size="70"
-                             valueChangeListener="#{complexController.onRecommendedNameChanged}">
-                    <ed:curation/>
-                </p:inputText>
-            </h:panelGroup>
-        </td>
-    </tr>
-    <tr>
-        <td class="firstCell">
-            <h:outputLabel value="Systematic name: " for="systematicNameTxt"/>
-        </td>
-        <td>
-            <h:panelGroup>
-                <p:inputText id="systematicNameTxt" value="#{complexController.systematicName}" size="70"
-                             valueChangeListener="#{complexController.onSystematicNameChanged}">
-                    <ed:curation/>
-                </p:inputText>
-            </h:panelGroup>
-        </td>
-    </tr>
-    <tr>
-        <td class="firstCell">
-            <h:outputLabel value="Complex type: " for="complexTypeTxt"/>
-        </td>
-        <td>
-            <ia:inputCvTerm id="complexTypeTxt" cvIdentifier="MI:0314"
-                            cvClass="uk.ac.ebi.intact.model.CvInteractorType"
-                            value="#{interaction.interactorType}"
-                            selectItems="#{cvObjectService.complexTypeSelectItems}"
-                            required="true" requiredMessage="Complex type is required"
-                            oncomplete="ia_enableSave()"
-                            update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
-                            valueChangeAwareObject="#{complexController}"/>
-        </td>
-        <td class="firstCell">
-            <h:outputLabel value="Organism: " for="organismTxt"/>
-        </td>
-        <td>
-            <ia:inputOrganism id="organismTxt" value="#{interaction.organism}"
-                              valueChangeAwareObject="#{complexController}"
-                              oncomplete="ia_enableSave()"
-                              update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
-                              selectItems="#{bioSourceService.organismSelectItems}">
-                <ed:curation/>
-            </ia:inputOrganism>
-        </td>
-    </tr>
-    <tr>
-        <td class="firstCell">
-            <h:outputLabel value="Interaction type: " for="interactionTypeTxt"/>
-        </td>
-        <td>
-            <ia:inputCvTerm id="interactionTypeTxt" cvIdentifier="MI:0190"
-                            cvClass="uk.ac.ebi.intact.model.CvInteractionType"
-                            value="#{interaction.interactionType}"
-                            selectItems="#{cvObjectService.interactionTypeSelectItems}"
-                            required="true" requiredMessage="Interaction type is required"
-                            oncomplete="ia_enableSave()"
-                            update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
-                            valueChangeAwareObject="#{complexController}"/>
-        </td>
-    </tr>
-    <tr>
-        <td class="firstCell">
-            <h:outputLabel value="ECO code: " for="ecoCodeTxt"/>
-        </td>
-        <td>
-            <ia:inputCvTerm id="ecoCodeTxt" cvIdentifier="MI:1331"
-                            cvClass="uk.ac.ebi.intact.model.CvTopic"
-                            value="#{interaction.evidenceType}"
-                            selectItems="#{cvObjectService.evidenceTypeSelectItems}"
-                            required="true" requiredMessage="ECO code is required"
-                            oncomplete="ia_enableSave()"
-                            update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
-                            valueChangeAwareObject="#{complexController}"/>
-        </td>
-    </tr>
+                <table class="intact-tableBasicForm">
+                    <tr>
+                        <td class="firstCell">
+                            <h:outputLabel value="Shortlabel: " for="shortlabelTxt"/>
+                        </td>
+                        <td>
+                            <p:inputText id="shortlabelTxt" value="#{complexController.shortName}" size="30"
+                                         converter="trimmingConverter"
+                                         required="true" requiredMessage="Shortlabel is required">
+                                <p:ajax event="change"
+                                        update=":editorForm:messagesComponent,:editorForm:changesPanel,:editorForm:unsavedChangesInfo"
+                                        async="true" process="@this" oncomplete="markAsUnsaved()"/>
+                            </p:inputText>
+                        </td>
+                        <td style="padding-left: 50px;">
+                            <h:outputLabel value="AC: " for="acTxt" styleClass="intact-disabled"/>
+                            <p:inputText id="acTxt" value="#{interaction.ac}"
+                                         size="10" readonly="true"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="firstCell">
+                            <h:outputLabel value="Recommended name: " for="recommendedNameTxt"/>
+                        </td>
+                        <td>
+                            <h:panelGroup>
+                                <p:inputText id="recommendedNameTxt" value="#{complexController.recommendedName}"
+                                             size="70"
+                                             valueChangeListener="#{complexController.onRecommendedNameChanged}">
+                                    <ed:curation/>
+                                </p:inputText>
+                            </h:panelGroup>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="firstCell">
+                            <h:outputLabel value="Systematic name: " for="systematicNameTxt"/>
+                        </td>
+                        <td>
+                            <h:panelGroup>
+                                <p:inputText id="systematicNameTxt" value="#{complexController.systematicName}"
+                                             size="70"
+                                             valueChangeListener="#{complexController.onSystematicNameChanged}">
+                                    <ed:curation/>
+                                </p:inputText>
+                            </h:panelGroup>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="firstCell">
+                            <h:outputLabel value="Complex type: " for="complexTypeTxt"/>
+                        </td>
+                        <td>
+                            <ia:inputCvTerm id="complexTypeTxt" cvIdentifier="MI:0314"
+                                            cvClass="uk.ac.ebi.intact.model.CvInteractorType"
+                                            value="#{interaction.interactorType}"
+                                            selectItems="#{cvObjectService.complexTypeSelectItems}"
+                                            required="true" requiredMessage="Complex type is required"
+                                            oncomplete="ia_enableSave()"
+                                            update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
+                                            valueChangeAwareObject="#{complexController}"/>
+                        </td>
+                        <td class="firstCell">
+                            <h:outputLabel value="Organism: " for="organismTxt"/>
+                        </td>
+                        <td>
+                            <ia:inputOrganism id="organismTxt" value="#{interaction.organism}"
+                                              valueChangeAwareObject="#{complexController}"
+                                              oncomplete="ia_enableSave()"
+                                              update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
+                                              selectItems="#{bioSourceService.organismSelectItems}">
+                                <ed:curation/>
+                            </ia:inputOrganism>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="firstCell">
+                            <h:outputLabel value="Interaction type: " for="interactionTypeTxt"/>
+                        </td>
+                        <td>
+                            <ia:inputCvTerm id="interactionTypeTxt" cvIdentifier="MI:0190"
+                                            cvClass="uk.ac.ebi.intact.model.CvInteractionType"
+                                            value="#{interaction.interactionType}"
+                                            selectItems="#{cvObjectService.interactionTypeSelectItems}"
+                                            required="true" requiredMessage="Interaction type is required"
+                                            oncomplete="ia_enableSave()"
+                                            update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
+                                            valueChangeAwareObject="#{complexController}"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="firstCell">
+                            <h:outputLabel value="ECO code: " for="ecoCodeTxt"/>
+                        </td>
+                        <td>
+                            <ia:inputCvTerm id="ecoCodeTxt" cvIdentifier="MI:1331"
+                                            cvClass="uk.ac.ebi.intact.model.CvTopic"
+                                            value="#{interaction.evidenceType}"
+                                            selectItems="#{cvObjectService.evidenceTypeSelectItems}"
+                                            required="true" requiredMessage="ECO code is required"
+                                            oncomplete="ia_enableSave()"
+                                            update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"
+                                            valueChangeAwareObject="#{complexController}"/>
+                        </td>
+                    </tr>
 
     <tr>
         <td class="firstCell">
@@ -287,255 +298,309 @@
         </td>
     </tr>
 
-    <tr>
-        <h:panelGroup rendered="#{complexController.complexOnHold}">
+                    <tr>
+                        <h:panelGroup rendered="#{complexController.complexOnHold}">
 
-            <td class="firstCell">
-                <h:outputLabel value="On hold: " for="onHoldTxt"/>
-            </td>
-            <td colspan="3">
-                <p:inputText id="onHoldTxt" value="#{complexController.onHold}" size="70"
-                             valueChangeListener="#{complexController.onHoldChanged}">
-                    <ed:curation/>
-                </p:inputText>
-            </td>
+                            <td class="firstCell">
+                                <h:outputLabel value="On hold: " for="onHoldTxt"/>
+                            </td>
+                            <td colspan="3">
+                                <p:inputText id="onHoldTxt" value="#{complexController.onHold}" size="70"
+                                             valueChangeListener="#{complexController.onHoldChanged}">
+                                    <ed:curation/>
+                                </p:inputText>
+                            </td>
+                        </h:panelGroup>
+                    </tr>
+                    <tr>
+                        <h:panelGroup rendered="#{complexController.complexToBeReviewed}">
+
+                            <td class="firstCell">
+                                <h:outputLabel value="To be reviewed: " for="toBeReviewedTxt"/>
+                            </td>
+                            <td colspan="3">
+                                <p:inputTextarea id="toBeReviewedTxt" value="#{complexController.toBeReviewed}"
+                                                 size="70" autoResize="false"
+                                                 valueChangeListener="#{complexController.onToBeReviewedChanged}">
+                                    <ed:curation/>
+                                </p:inputTextarea>
+                            </td>
+                        </h:panelGroup>
+                    </tr>
+                    <tr>
+                        <h:panelGroup rendered="#{complexController.complexWithCorrectionComment}">
+
+                            <td class="firstCell">
+                                <h:outputLabel value="Correction comment: " for="correctionCommentTxt"/>
+                            </td>
+                            <td colspan="3">
+                                <p:inputTextarea id="correctionCommentTxt"
+                                                 value="#{complexController.correctionComment}" size="70"
+                                                 autoResize="false"
+                                                 valueChangeListener="#{complexController.onCorrectionCommentChanged}">
+                                    <ed:curation/>
+                                </p:inputTextarea>
+                            </td>
+                        </h:panelGroup>
+                    </tr>
+                </table>
+            </p:panel>
+
+            <br/>
+
+            <p:tabView id="complexTabs" dynamic="true">
+                <p:ajax event="tabChange" listener="#{complexController.onTabChanged}" onstart="loadDialog.show()"
+                        oncomplete="loadDialog.hide()"/>
+
+                <p:tab id="participantsTab" title="Participants (#{complexController.participants.size()})">
+
+                    <p:panel style="padding:0">
+                        Participants:&#160;
+                        <p:commandButton value="New participant"
+                                         action="#{modelledParticipantController.newParticipant(interaction)}"
+                                         ajax="false"/>
+                        <p:commandButton id="importModelledParticipantBtn" value="Import..." type="button"
+                                         onclick="jimportParticipantDialog.show()"/>
+                        &#160;| Features:&#160;
+                        <p:commandButton value="Link features"
+                                         actionListener="#{complexController.linkSelectedFeatures}" ajax="false"/>
+                    </p:panel>
+
+                    <ia:spacer height="10"/>
+
+                    <ui:include src="jdialog_import_participant.xhtml"/>
+
+                    <p:outputPanel id="jparticipantsPanel" autoUpdate="false">
+                        <ui:include src="jparticipants_table.xhtml">
+                            <ui:param name="value" value="#{complexController.participants}"/>
+                        </ui:include>
+                    </p:outputPanel>
+                </p:tab>
+
+                <p:tab id="xrefsTab" title="Xrefs (#{annotatedObjectController.xrefsSize})">
+                    <p:outputPanel id="xrefsPanel" autoUpdate="false">
+                        <ui:decorate template="complex_xrefs_table.xhtml">
+
+                            <ui:param name="annotatedObjectController" value="#{complexController}"/>
+                            <ui:param name="update"
+                                      value=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent,:editorForm:basic"/>
+                            <ui:param name="valueChangeRender" value=":editorForm:basic :editorForm:changesPanel"/>
+                            <ui:param name="valueChangeAwareObject" value="#{complexController}"/>
+
+                            <ui:define name="syncValues">
+                                <ui:insert name="xrefSyncValues"/>
+                            </ui:define>
+
+                        </ui:decorate>
+                    </p:outputPanel>
+
+                </p:tab>
+
+                <p:tab id="annotationsTab" title="Annotations (#{complexController.annotationsSize})">
+                    <p:outputPanel id="annotationsPanel" autoUpdate="false">
+                        <ui:decorate template="annotations_table.xhtml">
+                            <ui:param name="annotatedObjectController" value="#{complexController}"/>
+                            <ui:param name="annotatedObjectSelectItems"
+                                      value="#{cvObjectService.complexTopicSelectItems}"/>
+                            <ui:param name="update"
+                                      value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:basic :editorForm:complexTabs"/>
+                            <ui:param name="valueChangeRender" value=":editorForm:basic :editorForm:changesPanel"/>
+                            <ui:param name="valueChangeAwareObject" value="#{complexController}"/>
+
+                            <ui:define name="syncValues">
+                                <ui:insert name="annotationSyncValues"/>
+                            </ui:define>
+
+                        </ui:decorate>
+                    </p:outputPanel>
+
+                </p:tab>
+                <p:tab id="aliasesTab" title="Aliases (#{complexController.aliasesSize})">
+                    <p:outputPanel id="aliasesPanel" autoUpdate="false">
+                        <ui:decorate template="aliases_table.xhtml">
+                            <ui:param name="annotatedObjectController" value="#{complexController}"/>
+                            <ui:param name="update"
+                                      value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:basic :editorForm:complexTabs"/>
+                            <ui:param name="valueChangeRender" value=":editorForm:basic :editorForm:changesPanel"/>
+                        </ui:decorate>
+
+                    </p:outputPanel>
+                </p:tab>
+
+
+                <p:tab id="parametersTab" title="Parameters (#{complexController.parametersSize})">
+
+                    <p:outputPanel id="parametersPanel" autoUpdate="false">
+                        <ui:decorate template="parameters_table.xhtml">
+                            <ui:param name="annotatedObjectController" value="#{complexController}"/>
+                            <ui:param name="update"
+                                      value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:complexTabs :editorForm:acTxt"/>
+                            <ui:param name="disableParameterSelectItems"
+                                      value="#{complexController.isParameterDisabled()}"/>
+                        </ui:decorate>
+                    </p:outputPanel>
+
+                </p:tab>
+
+                <p:tab id="confidencesTab" title="Confidences (#{complexController.confidencesSize})">
+
+                    <p:outputPanel id="confidencesPanel" autoUpdate="false">
+                        <ui:decorate template="confidences_table.xhtml">
+                            <ui:param name="annotatedObjectController" value="#{complexController}"/>
+                            <ui:param name="update"
+                                      value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:complexTabs :editorForm:acTxt"/>
+                            <ui:param name="disableConfidenceSelectItems"
+                                      value="#{complexController.isConfidenceDisabled()}"/>
+                        </ui:decorate>
+                    </p:outputPanel>
+
+                </p:tab>
+
+                <p:tab id="lifeCycleTab" title="Lifecycle">
+
+                    <h:panelGrid columns="2">
+                        <h:outputLabel for="statusTxt" value="Status: "/>
+                        <h:outputText id="statusTxt" value="#{interaction.status}"/>
+
+                        <h:outputLabel for="ownerTxt" value="Owner: " rendered="#{interaction.currentOwner != null}"/>
+                        <h:outputText id="ownerTxt" value="#{interaction.currentOwner.login}"
+                                      rendered="#{interaction.currentOwner != null}"/>
+
+                        <h:outputLabel value="Reviewer: " rendered="#{interaction.currentReviewer != null}"/>
+
+                        <h:outputText value="#{interaction.currentReviewer.login}"
+                                      rendered="#{interaction.currentReviewer != null}"/>
+
+                        <h:selectOneMenu value="#{complexController.complex.currentReviewer}"
+                                         hideNoSelectionOption="true"
+                                         rendered="#{(userSessionController.hasRole('ADMIN') and interaction.currentReviewer != null)}"
+                                         disabled="#{complexController.isLifeCycleDisabled()}"
+                                         converter="userConverter">
+                            <f:selectItems value="#{userAdminController.complexReviewerSelectItems}"/>
+                            <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()"
+                                    update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
+
+                        </h:selectOneMenu>
+                    </h:panelGrid>
+
+                    <br/>
+
+                    <p:fieldset legend="Events">
+
+                        <p:dataTable var="event" value="#{complexController.collectLifecycleEvents()}"
+                                     rendered="#{!complexController.isLifeCycleDisabled()}">
+                            <p:column headerText="Date">
+                                <h:outputText value="#{event.when}">
+                                    <f:convertDateTime pattern="dd-MM-yyyy HH:mm"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="Event">
+                                <h:outputText value="#{event.event}"/>
+                            </p:column>
+                            <p:column headerText="Who">
+                                <h:outputText value="#{event.who.login}"/>
+                            </p:column>
+                            <p:column headerText="Comment">
+                                <h:outputText value="#{event.note}"/>
+                            </p:column>
+                        </p:dataTable>
+
+                    </p:fieldset>
+
+                </p:tab>
+                <p:tab id="graphTab" title="Graph" rendered="#{complexController.participants.size() gt 0}">
+
+                    <p:outputPanel id="graphPanel" autoUpdate="false">
+                        <ui:decorate template="graph_tab.xhtml">
+                            <ui:param name="objType" value="complex"/>
+                            <ui:param name="ac" value="#{complexController.ac}"/>
+                        </ui:decorate>
+                    </p:outputPanel>
+
+                </p:tab>
+            </p:tabView>
+
         </h:panelGroup>
-    </tr>
-    <tr>
-        <h:panelGroup rendered="#{complexController.complexToBeReviewed}">
 
-            <td class="firstCell">
-                <h:outputLabel value="To be reviewed: " for="toBeReviewedTxt"/>
-            </td>
-            <td colspan="3">
-                <p:inputTextarea id="toBeReviewedTxt" value="#{complexController.toBeReviewed}" size="70" autoResize="false"
-                                 valueChangeListener="#{complexController.onToBeReviewedChanged}">
-                    <ed:curation/>
-                </p:inputTextarea>
-            </td>
-        </h:panelGroup>
-    </tr>
-    <tr>
-        <h:panelGroup rendered="#{complexController.complexWithCorrectionComment}">
+        <!-- DIALOGS -->
+        <p:dialog header="Put on hold" width="600" widgetVar="putOnHoldDialog" draggable="false"
+                  modal="true" position="center">
+            <h:panelGrid columns="3" style="margin-bottom:10px">
+                <h:outputLabel for="putOnHoldTxt" value="Reason for on-hold:"/>
+                <p:inputTextarea id="putOnHoldTxt" value="#{complexController.onHold}" rows="4" cols="60"
+                                 converter="trimmingConverter"/>
 
-            <td class="firstCell">
-                <h:outputLabel value="Correction comment: " for="correctionCommentTxt"/>
-            </td>
-            <td colspan="3">
-                <p:inputTextarea id="correctionCommentTxt" value="#{complexController.correctionComment}" size="70" autoResize="false"
-                                 valueChangeListener="#{complexController.onCorrectionCommentChanged}">
-                    <ed:curation/>
-                </p:inputTextarea>
-            </td>
-        </h:panelGroup>
-    </tr>
-</table>
-</p:panel>
+                <p:commandButton value="Put on hold" actionListener="#{complexController.putOnHold}"
+                                 action="#{complexController.doSave}"
+                                 process="putOnHoldTxt"
+                                 ajax="false"/>
+            </h:panelGrid>
+        </p:dialog>
 
-<br/>
+        <p:dialog header="Correction comment" width="600" widgetVar="correctionCommentDialog" draggable="false"
+                  modal="true" position="center">
+            <h:panelGrid columns="3" style="margin-bottom:10px">
+                <h:outputLabel for="corrComTxt" value="Comment to reviewer:"/>
+                <p:inputTextarea id="corrComTxt" value="#{complexController.correctionComment}" rows="4" cols="40"
+                                 autoResize="false"
+                                 converter="trimmingConverter"/>
 
-<p:tabView id="complexTabs" dynamic="true">
-    <p:ajax event="tabChange" listener="#{complexController.onTabChanged}" onstart="loadDialog.show()" oncomplete="loadDialog.hide()"/>
+                <p:commandButton value="Add comment" actionListener="#{complexController.addCorrectionComment}"
+                                 process="corrComTxt"
+                                 action="#{complexController.doSave}"
+                                 ajax="false"/>
+            </h:panelGrid>
+        </p:dialog>
 
-    <p:tab id="participantsTab" title="Participants (#{complexController.participants.size()})">
+        <p:dialog header="Reject complex" width="600" widgetVar="addNewRejectComplexDialog" draggable="false"
+                  modal="true" position="center">
+            <h:panelGrid columns="3" style="margin-bottom:10px">
+                <h:outputLabel for="newReasonRejTxt" value="Reason for rejection:"/>
+                <p:inputTextarea id="newReasonRejTxt" value="#{complexController.newToBeReviewed}" rows="4" cols="40"
+                                 autoResize="false"
+                                 converter="trimmingConverter"/>
 
-        <p:panel style="padding:0">
-            Participants:&#160;
-            <p:commandButton value="New participant" action="#{modelledParticipantController.newParticipant(interaction)}"
-                             ajax="false"/>
-            <p:commandButton id="importModelledParticipantBtn" value="Import..." type="button" onclick="jimportParticipantDialog.show()"/>
-            &#160;| Features:&#160;
-            <p:commandButton value="Link features" actionListener="#{complexController.linkSelectedFeatures}" ajax="false"/>
-        </p:panel>
+                <p:commandButton value="Reject" actionListener="#{complexController.rejectComplex}"
+                                 onclick="loadDialog.show()"
+                                 process="newReasonRejTxt" update=":editorForm"/>
+            </h:panelGrid>
+        </p:dialog>
 
-        <ia:spacer height="10" />
+        <!-- All experiments accepted/rejected -->
+        <p:dialog header="Decision about complex" width="400" widgetVar="complexActionDlg" draggable="false"
+                  modal="true" position="center">
+            <h:panelGroup style="margin-bottom:10px">
+                <h:outputText value="Do you want to send this complex back?"/>
 
-        <ui:include src="jdialog_import_participant.xhtml"/>
+                <br/>
 
-        <p:outputPanel id="jparticipantsPanel" autoUpdate="false">
-            <ui:include src="jparticipants_table.xhtml">
-                <ui:param name="value" value="#{complexController.participants}"/>
-            </ui:include>
-        </p:outputPanel>
-    </p:tab>
+                <p:commandButton id="rejectComplex" value="Reject complex (back to curator)"
+                                 actionListener="#{complexController.rejectComplex}"
+                                 onclick="loadDialog.show()"
+                                 ajax="false"/>
 
-    <p:tab id="xrefsTab" title="Xrefs (#{annotatedObjectController.xrefsSize})">
-        <p:outputPanel id="xrefsPanel" autoUpdate="false">
-            <ui:decorate template="complex_xrefs_table.xhtml">
+                <p:commandButton value="Continue reviewing"
+                                 onclick="complexActionDlg.hide()"
+                                 ajax="true"/>
 
-                <ui:param name="annotatedObjectController" value="#{complexController}"/>
-                <ui:param name="update" value=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent,:editorForm:basic"/>
-                <ui:param name="valueChangeRender" value=":editorForm:basic :editorForm:changesPanel"/>
-                <ui:param name="valueChangeAwareObject" value="#{complexController}"/>
+            </h:panelGroup>
+        </p:dialog>
 
-                <ui:define name="syncValues">
-                    <ui:insert name="xrefSyncValues"/>
-                </ui:define>
+        <p:dialog header="Reject complex" width="600" widgetVar="editRejectComplexDialog" draggable="false"
+                  modal="true" position="center">
+            <h:panelGrid columns="3" style="margin-bottom:10px">
+                <h:outputLabel for="reasonRejTxt" value="Reason for rejection:"/>
+                <p:inputTextarea id="reasonRejTxt" value="#{complexController.toBeReviewed}" rows="4" cols="40"
+                                 autoResize="false"
+                                 converter="trimmingConverter"/>
 
-            </ui:decorate>
-        </p:outputPanel>
+                <p:commandButton value="Reject" actionListener="#{complexController.rejectComplex}"
+                                 onclick="loadDialog.show()"
+                                 process="reasonRejTxt" update=":editorForm"/>
+            </h:panelGrid>
+        </p:dialog>
 
-    </p:tab>
-
-    <p:tab id="annotationsTab" title="Annotations (#{complexController.annotationsSize})">
-        <p:outputPanel id="annotationsPanel" autoUpdate="false">
-            <ui:decorate template="annotations_table.xhtml">
-                <ui:param name="annotatedObjectController" value="#{complexController}"/>
-                <ui:param name="annotatedObjectSelectItems" value="#{cvObjectService.complexTopicSelectItems}"/>
-                <ui:param name="update" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:basic :editorForm:complexTabs"/>
-                <ui:param name="valueChangeRender" value=":editorForm:basic :editorForm:changesPanel"/>
-                <ui:param name="valueChangeAwareObject" value="#{complexController}"/>
-
-                <ui:define name="syncValues">
-                    <ui:insert name="annotationSyncValues"/>
-                </ui:define>
-
-            </ui:decorate>
-        </p:outputPanel>
-
-    </p:tab>
-    <p:tab id="aliasesTab" title="Aliases (#{complexController.aliasesSize})">
-        <p:outputPanel id="aliasesPanel" autoUpdate="false">
-            <ui:decorate template="aliases_table.xhtml">
-                <ui:param name="annotatedObjectController" value="#{complexController}"/>
-                <ui:param name="update" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:basic :editorForm:complexTabs"/>
-                <ui:param name="valueChangeRender" value=":editorForm:basic :editorForm:changesPanel"/>
-            </ui:decorate>
-
-        </p:outputPanel>
-    </p:tab>
-
-
-    <p:tab id="parametersTab" title="Parameters (#{complexController.parametersSize})">
-
-        <p:outputPanel id="parametersPanel" autoUpdate="false">
-            <ui:decorate template="parameters_table.xhtml">
-                <ui:param name="annotatedObjectController" value="#{complexController}"/>
-                <ui:param name="update" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:complexTabs :editorForm:acTxt"/>
-                <ui:param name="disableParameterSelectItems" value="#{complexController.isParameterDisabled()}"/>
-            </ui:decorate>
-        </p:outputPanel>
-
-    </p:tab>
-
-    <p:tab id="confidencesTab" title="Confidences (#{complexController.confidencesSize})">
-
-        <p:outputPanel id="confidencesPanel" autoUpdate="false">
-            <ui:decorate template="confidences_table.xhtml">
-                <ui:param name="annotatedObjectController" value="#{complexController}"/>
-                <ui:param name="update" value=":editorForm:changesPanel :editorForm:unsavedChangesInfo :editorForm:messagesComponent :editorForm:complexTabs :editorForm:acTxt"/>
-                <ui:param name="disableConfidenceSelectItems" value="#{complexController.isConfidenceDisabled()}"/>
-            </ui:decorate>
-        </p:outputPanel>
-
-    </p:tab>
-
-    <p:tab id="lifeCycleTab" title="Lifecycle">
-
-        <h:panelGrid columns="2">
-            <h:outputLabel for="statusTxt" value="Status: "/>
-            <h:outputText id="statusTxt" value="#{interaction.status}"/>
-
-            <h:outputLabel for="ownerTxt" value="Owner: " rendered="#{interaction.currentOwner != null}"/>
-            <h:outputText id="ownerTxt" value="#{interaction.currentOwner.login}"
-                          rendered="#{interaction.currentOwner != null}"/>
-
-            <h:outputLabel value="Reviewer: " rendered="#{interaction.currentReviewer != null}"/>
-
-            <h:outputText value="#{interaction.currentReviewer.login}"
-                          rendered="#{interaction.currentReviewer != null}"/>
-
-            <h:selectOneMenu value="#{complexController.complex.currentReviewer}" hideNoSelectionOption="true"
-                             rendered="#{(userSessionController.hasRole('ADMIN') and interaction.currentReviewer != null)}"
-                             disabled="#{complexController.isLifeCycleDisabled()}" converter="userConverter">
-                <f:selectItems value="#{userAdminController.complexReviewerSelectItems}"/>
-                <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
-
-            </h:selectOneMenu>
-        </h:panelGrid>
-
-        <br/>
-
-        <p:fieldset legend="Events">
-
-            <p:dataTable var="event" value="#{complexController.collectLifecycleEvents()}" rendered="#{!complexController.isLifeCycleDisabled()}">
-                <p:column headerText="Date">
-                    <h:outputText value="#{event.when}">
-                        <f:convertDateTime pattern="dd-MM-yyyy HH:mm"/>
-                    </h:outputText>
-                </p:column>
-                <p:column headerText="Event">
-                    <h:outputText value="#{event.event}"/>
-                </p:column>
-                <p:column headerText="Who">
-                    <h:outputText value="#{event.who.login}"/>
-                </p:column>
-                <p:column headerText="Comment">
-                    <h:outputText value="#{event.note}"/>
-                </p:column>
-            </p:dataTable>
-
-        </p:fieldset>
-
-    </p:tab>
-    <p:tab id="graphTab" title="Graph" rendered="#{complexController.participants.size() gt 0}">
-
-        <p:outputPanel id="graphPanel" autoUpdate="false">
-            <ui:decorate template="graph_tab.xhtml">
-                <ui:param name="objType" value="complex"/>
-                <ui:param name="ac" value="#{complexController.ac}"/>
-            </ui:decorate>
-        </p:outputPanel>
-
-    </p:tab>
-</p:tabView>
-
-</h:panelGroup>
-
-<!-- DIALOGS -->
-<p:dialog header="Put on hold" width="600" widgetVar="putOnHoldDialog" draggable="false"
-          modal="true" position="center">
-    <h:panelGrid columns="3" style="margin-bottom:10px">
-        <h:outputLabel for="putOnHoldTxt" value="Reason for on-hold:"/>
-        <p:inputTextarea id="putOnHoldTxt" value="#{complexController.onHold}" rows="4" cols="60" converter="trimmingConverter"/>
-
-        <p:commandButton value="Put on hold" actionListener="#{complexController.putOnHold}"
-                         action="#{complexController.doSave}"
-                         process="putOnHoldTxt"
-                         ajax="false"/>
-    </h:panelGrid>
-</p:dialog>
-
-<p:dialog header="Correction comment" width="600" widgetVar="correctionCommentDialog" draggable="false"
-          modal="true" position="center">
-    <h:panelGrid columns="3" style="margin-bottom:10px">
-        <h:outputLabel for="corrComTxt" value="Comment to reviewer:"/>
-        <p:inputTextarea id="corrComTxt" value="#{complexController.correctionComment}" rows="4" cols="40"
-                         autoResize="false"
-                         converter="trimmingConverter"/>
-
-        <p:commandButton value="Add comment" actionListener="#{complexController.addCorrectionComment}"
-                         process="corrComTxt"
-                         action="#{complexController.doSave}"
-                         ajax="false"/>
-    </h:panelGrid>
-</p:dialog>
-
-<p:dialog header="Reject complex" width="600" widgetVar="rejectComplexDialog" draggable="false"
-          modal="true" position="center">
-    <h:panelGrid columns="3" style="margin-bottom:10px">
-        <h:outputLabel for="reasonRejTxt" value="Reason for rejection:"/>
-        <p:inputTextarea id="reasonRejTxt" value="#{complexController.toBeReviewed}" rows="4" cols="40"
-                         autoResize="false"
-                         converter="trimmingConverter"/>
-
-        <p:commandButton value="Reject" actionListener="#{complexController.rejectComplex}"
-                         process="reasonRejTxt"
-                         action="#{complexController.doSave}"
-                         ajax="false"/>
-    </h:panelGrid>
-</p:dialog>
-
-</ui:define>
+    </ui:define>
+    <ia:loadingDialog widgetVar="loadDialog" message="Loading..." modal="false"/>
 
 </ui:composition>
