@@ -48,7 +48,7 @@
                          action="#{complexController.doSave}" ajax="false"/>
         <p:commandButton value="Accept Complex"
                          styleClass="important-button-good"
-                         rendered="#{complexController.readyForChecking and userSessionController.isItMe(complexController.complex.currentReviewer)}"
+                         rendered="#{complexController.readyForChecking and (complexController.toBeReviewed eq null or complexController.toBeReviewed eq '') and userSessionController.isItMe(complexController.complex.currentReviewer)}"
                          actionListener="#{complexController.acceptComplex}"
                          action="#{complexController.doSave}" ajax="false"/>
         <p:commandButton value="Back to Curation in Progress"
@@ -75,11 +75,6 @@
         <!--or userSessionController.isItMe(complexController.complex.currentReviewer))}"-->
         <!--actionListener="#{complexController.removeOnHold}"-->
         <!--action="#{complexController.doSave}" ajax="false"/>-->
-        <p:commandButton value="Remove to be reviewed"
-                         styleClass="important-button-bad"
-                         rendered="#{complexController.complexToBeReviewed and userSessionController.isItMe(complexController.complex.currentReviewer)}"
-                         actionListener="#{complexController.removeToBeReviewed}"
-                         action="#{complexController.doSave}" ajax="false"/>
         <p:commandButton value="Ready for Release (removes on-hold)"
                          styleClass="important-button-alt"
                          rendered="#{complexController.acceptedOnHold and (userSessionController.isItMe(complexController.complex.currentReviewer)
@@ -97,8 +92,21 @@
                          action="#{complexController.doSave}" ajax="false"/>
         <p:commandButton value="Reject Complex" type="button"
                          styleClass="important-button-bad"
-                         rendered="#{complexController.readyForChecking and userSessionController.isItMe(complexController.complex.currentReviewer) }"
-                         onclick="rejectComplexDialog.show()"/>
+                         rendered="#{complexController.readyForChecking and (complexController.toBeReviewed eq null or complexController.toBeReviewed eq '') and userSessionController.isItMe(complexController.complex.currentReviewer) }"
+                         onclick="addNewRejectComplexDialog.show()"/>
+        <p:commandButton value="Add rejection command" type="button"
+                         styleClass="important-button-bad"
+                         rendered="#{complexController.readyForChecking and (complexController.toBeReviewed eq null or complexController.toBeReviewed ne '') and userSessionController.isItMe(complexController.complex.currentReviewer) }"
+                         onclick="addNewRejectComplexDialog.show()"/>
+        <p:commandButton value="Edit Rejection Command" type="button"
+                         styleClass="important-button-bad"
+                         rendered="#{complexController.readyForChecking and (complexController.toBeReviewed eq null or complexController.toBeReviewed ne '') and userSessionController.isItMe(complexController.complex.currentReviewer) }"
+                         onclick="editRejectComplexDialog.show()"/>
+        <p:commandButton value="Remove to be reviewed"
+                         styleClass="important-button-bad"
+                         rendered="#{complexController.complexToBeReviewed and userSessionController.isItMe(complexController.complex.currentReviewer)}"
+                         actionListener="#{complexController.removeToBeReviewed}"
+                         action="#{complexController.doSave}" ajax="false"/>
     </ui:define>
 
     <ui:define name="breadcrumbs">
@@ -546,48 +554,55 @@
             </h:panelGrid>
         </p:dialog>
 
-        <!--<p:dialog header="Reject complex" width="600" widgetVar="rejectComplexDialog" draggable="false"-->
-                  <!--modal="true" position="center">-->
-            <!--<h:panelGrid columns="3" style="margin-bottom:10px">-->
-                <!--<h:outputLabel for="reasonRejTxt" value="Reason for rejection:"/>-->
-                <!--<p:inputTextarea id="reasonRejTxt" value="#{complexController.toBeReviewed}" rows="4" cols="40"-->
-                                 <!--autoResize="false"-->
-                                 <!--converter="trimmingConverter"/>-->
-
-                <!--<p:commandButton value="Reject" actionListener="#{complexController.rejectComplex}"-->
-                                 <!--process="reasonRejTxt"-->
-                                 <!--action="#{complexController.doSave}"-->
-                                 <!--ajax="false"/>-->
-            <!--</h:panelGrid>-->
-        <!--</p:dialog>-->
-
-        <!-- DIALOGS -->
-        <p:dialog header="Reject experiment" width="600" widgetVar="addNewRejectExperimentDialog" draggable="false"
+        <p:dialog header="Reject complex" width="600" widgetVar="addNewRejectComplexDialog" draggable="false"
                   modal="true" position="center">
             <h:panelGrid columns="3" style="margin-bottom:10px">
                 <h:outputLabel for="newReasonRejTxt" value="Reason for rejection:"/>
-                <p:inputTextarea id="newReasonRejTxt" value="#{experimentController.newValue}" rows="4" cols="40"
+                <p:inputTextarea id="newReasonRejTxt" value="#{complexController.newToBeReviewed}" rows="4" cols="40"
                                  autoResize="false"
                                  converter="trimmingConverter"/>
 
-                <p:commandButton value="Reject" actionListener="#{experimentController.rejectExperiment}"
+                <p:commandButton value="Reject" actionListener="#{complexController.rejectComplex}"
+                                 onclick="loadDialog.show()"
                                  process="newReasonRejTxt" update=":editorForm"/>
             </h:panelGrid>
         </p:dialog>
 
-        <p:dialog header="Reject experiment" width="600" widgetVar="editRejectExperimentDialog" draggable="false"
+        <!-- All experiments accepted/rejected -->
+        <p:dialog header="Decision about complex" width="400" widgetVar="complexActionDlg" draggable="false"
+                  modal="true" position="center">
+            <h:panelGroup style="margin-bottom:10px">
+                <h:outputText value="Do you want to send this complex back?"/>
+
+                <br/>
+
+                <p:commandButton id="rejectComplex" value="Reject complex (back to curator)"
+                                 actionListener="#{complexController.rejectComplex}"
+                                 onclick="loadDialog.show()"
+                                 ajax="false"/>
+
+                <p:commandButton value="Continue reviewing"
+                                 onclick="complexActionDlg.hide()"
+                                 ajax="true"/>
+
+            </h:panelGroup>
+        </p:dialog>
+
+        <p:dialog header="Reject complex" width="600" widgetVar="editRejectComplexDialog" draggable="false"
                   modal="true" position="center">
             <h:panelGrid columns="3" style="margin-bottom:10px">
                 <h:outputLabel for="reasonRejTxt" value="Reason for rejection:"/>
-                <p:inputTextarea id="reasonRejTxt" value="#{experimentController.reasonForRejection}" rows="4" cols="40"
+                <p:inputTextarea id="reasonRejTxt" value="#{complexController.toBeReviewed}" rows="4" cols="40"
                                  autoResize="false"
                                  converter="trimmingConverter"/>
 
-                <p:commandButton value="Reject" actionListener="#{experimentController.rejectExperiment}"
+                <p:commandButton value="Reject" actionListener="#{complexController.rejectComplex}"
+                                 onclick="loadDialog.show()"
                                  process="reasonRejTxt" update=":editorForm"/>
             </h:panelGrid>
         </p:dialog>
 
     </ui:define>
+    <ia:loadingDialog widgetVar="loadDialog" message="Loading..." modal="false"/>
 
 </ui:composition>
