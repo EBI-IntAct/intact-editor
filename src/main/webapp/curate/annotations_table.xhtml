@@ -53,13 +53,13 @@
             </f:facet>
             <p:commandLink id="removeAnnotBtn" styleClass="ui-icon ui-icon-closethick" process="removeAnnotBtn"
                            actionListener="#{annotatedObjectController.removeAnnotation(annotation)}"
-                           onstart="delete_annotation.show()"
-                           oncomplete="delete_annotation.hide();markAsUnsaved()"
+                           onstart="delAnnoDialog.show();"
+                           oncomplete="delAnnoDialog.hide();markAsUnsaved()"
                            update="annotationsTable,#{update}"
                            disabled="#{annotatedObjectController.isAnnotationNotEditable(annotation)}"/>
         </p:column>
     </p:dataTable>
 
-    <ia:loadingDialog widgetVar="delete_annotation" message="Delete annotation..."/>
+    <ia:loadingDialog widgetVar="delAnnoDialog" message="Deleting xref..."/>
 
 </ui:composition>
