@@ -280,7 +280,7 @@
         <td>
             <h:panelGroup>
                 <p:inputTextarea id="curatedComplexTxt" value="#{complexController.description}"
-                                 valueChangeListener="#{complexController.onDescriptionChanged}" rows="5" cols="60" style="height:200px; overflow-y:scroll;">
+                                 valueChangeListener="#{complexController.onDescriptionChanged}" rows="12" cols="60" autoResize="false">
                     <ed:curation/>
                 </p:inputTextarea>
             </h:panelGroup>
@@ -290,8 +290,8 @@
         </td>
         <td>
             <h:panelGroup>
-                <p:inputTextarea id="complexPropertiesTxt" value="#{complexController.complexProperties}" rows="5" cols="60"
-                                 valueChangeListener="#{complexController.onComplexPropertiesChanged}" style="height:200px; overflow-y:scroll;">
+                <p:inputTextarea id="complexPropertiesTxt" value="#{complexController.complexProperties}"
+                                 valueChangeListener="#{complexController.onComplexPropertiesChanged}" rows="12" cols="60" autoResize="false">
                     <ed:curation/>
                 </p:inputTextarea>
             </h:panelGroup>
