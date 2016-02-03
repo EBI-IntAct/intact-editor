@@ -31,9 +31,12 @@
             <hr/>
         </p:outputPanel>
         <p:accordionPanel autoHeight="false">
-            <ui:include src="participants_table.xhtml">
-                <ui:param name="participants" value="#{expressInOrganismController.participants}"/>
-            </ui:include>
+            <p:tab title="Participants (#{expressInOrganismController.participants.rowCount})"
+                   rendered="#{expressInOrganismController.participants.rowCount != 0}">
+                <ui:include src="participants_table.xhtml">
+                    <ui:param name="participants" value="#{expressInOrganismController.participants}"/>
+                </ui:include>
+            </p:tab>
         </p:accordionPanel>
 
     </ui:define>

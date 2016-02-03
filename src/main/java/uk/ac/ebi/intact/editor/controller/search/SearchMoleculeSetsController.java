@@ -29,8 +29,9 @@ public class SearchMoleculeSetsController extends BaseController {
 	private LazyDataModel<MoleculeSummary> moleculeSets = null;
 	private String shortLabel;
 	private String numMoleculeSets;
+	private String resultsOutcome;
 
-    @Resource(name = "searchQueryService")
+	@Resource(name = "searchQueryService")
     private transient SearchQueryService searchQueryService;
 
 	public String getAc() {
@@ -76,4 +77,12 @@ public class SearchMoleculeSetsController extends BaseController {
         }
         return searchQueryService;
     }
+
+	public String getResultsOutcome() {
+		return resultsOutcome;
+	}
+
+	public void setResultsOutcome(String resultsOutcome) {
+		this.resultsOutcome = resultsOutcome;
+	}
 }
