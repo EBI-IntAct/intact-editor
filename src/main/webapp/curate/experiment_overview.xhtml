@@ -32,6 +32,8 @@
         <br/>
 
         <p:dataTable id="interactionReviewTable" var="interaction" itemType="none"
+                     sortBy="#{interaction.ac}"
+                     sortOrder="ascending"
                      value="#{value.interactions}"
                      paginator="true" paginatorAlwaysVisible="false" rows="10"
                      paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
