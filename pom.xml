@@ -22,10 +22,10 @@
     <!--</scm>-->
 
     <scm>
-        <connection>scm:git:https://bitbucket.org/intact-ebi/intact-editor.git</connection>
-        <developerConnection>scm:git:https://bitbucket.org/intact-ebi/intact-editor.git</developerConnection>
-        <url>https://bitbucket.org/intact-ebi/intact-editor</url>
-        <tag>HEAD</tag>
+        <connection>scm:git:https://github.com/EBI-IntAct/Editor.git</connection>
+        <developerConnection>scm:git:https://github.com/EBI-IntAct/Editor.git</developerConnection>
+        <url>https://github.com/EBI-IntAct/Editor</url>
+        <tag>editor-3.0.6</tag>
     </scm>
 
     <properties>
