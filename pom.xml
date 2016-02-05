@@ -11,7 +11,7 @@
     <artifactId>editor</artifactId>
     <packaging>war</packaging>
 
-    <version>3.0.6-SNAPSHOT</version>
+    <version>3.0.6</version>
 
     <name>Service :: IntAct Editor</name>
 
@@ -25,7 +25,8 @@
         <connection>scm:git:https://github.com/EBI-IntAct/Editor.git</connection>
         <developerConnection>scm:git:https://github.com/EBI-IntAct/Editor.git</developerConnection>
         <url>https://github.com/EBI-IntAct/Editor</url>
-    </scm>
+      <tag>editor-3.0.6</tag>
+  </scm>
 
     <properties>
         <!-- UTF-8 encoding to generate the build-->
