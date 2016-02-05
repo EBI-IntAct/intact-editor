@@ -1418,6 +1418,31 @@ public abstract class AnnotatedObjectController extends BaseController implement
         }
     }
 
+    public static class XrefComparator<T> implements Comparator<T>{
+
+        @Override
+        public int compare(T xrefObject1, T xrefObject2) {
+            if (xrefObject1 == null && xrefObject2 == null){
+                return 0;
+            }
+            else if (xrefObject1 == null){
+                return 1;
+            }
+            else if (xrefObject2 == null){
+                return -1;
+            }else{
+                try {
+                    return ((Xref) xrefObject1).getId().compareTo(((Xref) xrefObject2).getId());
+                }catch(Exception e){
+                    return 0;
+                }
+            }
+
+        }
+    }
+
+
+
     public CvTerm getNewDatabase() {
         return newDatabase;
     }

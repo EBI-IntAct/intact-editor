@@ -734,11 +734,14 @@ public class ComplexController extends AnnotatedObjectController {
     @Override
     public List<Xref> collectXrefs() {
         List<Xref> xrefs = new ArrayList<Xref>(this.complex.getDbXrefs());
-        Collections.sort(xrefs, new AuditableComparator());
+      //  Collections.sort(xrefs, new AuditableComparator());
+        Collections.sort(xrefs, new XrefComparator());
         return xrefs;
     }
 
-    public void auditList(ActionEvent evt) {
+    // This was for finding duplications
+
+    /*public void auditList(ActionEvent evt) {
 
         HashMap<String, Integer> dupAuditHM = new HashMap<String, Integer>();
         this.setDupAuditResult(null);
@@ -774,7 +777,7 @@ public class ComplexController extends AnnotatedObjectController {
         }else{
             return null;
         }
-    }
+    }*/
 
     @Override
     public void removeXref(Xref xref) {

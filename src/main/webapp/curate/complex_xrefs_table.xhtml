@@ -63,30 +63,31 @@
                     </h:panelGrid>
                 </h:panelGroup>
 
-                <h:panelGroup id="find_duplication">
+                <!--<h:panelGroup id="find_duplication">
                     <h:panelGrid columns="2" class="intact-buttonBar">
                         <p:commandButton id="find_dup_btn" value="Find Duplications"
-                                         actionListener="#{complexController.auditList}" update="audit_dialog" oncomplete="dlg1.show();"/>
-                        <p:dialog id="audit_dialog" header="Basic Dialog" widgetVar="dlg1" minHeight="40">
-                            <h:outputText value="Resistance to PrimeFaces is futile!"/>
+                                         actionListener="#{complexController.auditList}" update="dup_audit_table" oncomplete="dlg1.show();"/>
+                        <p:dialog id="audit_dialog" header="Duplication Audit Result" widgetVar="dlg1" minHeight="40">
+
+                            <p:dataTable id="dup_audit_table" var="auditMap"  value="#{complexController.dupAuditResultList}" style="width:100%">
+                                <p:column>
+                                    <f:facet name="header">
+                                        <h:outputText value="Identifier"/>
+                                    </f:facet>
+                                    <h:outputText value="#{auditMap.key}"/>
+                                </p:column>
+                                <p:column style="text-align: center">
+                                    <f:facet name="header">
+                                        <h:outputText value="No. Of Occurrences"/>
+                                    </f:facet>
+                                    <h:outputText value="#{auditMap.value}"/>
+                                </p:column>
+                            </p:dataTable>
                         </p:dialog>
-                        <p:dataTable id="dup_audit_table" var="auditMap" rendered="{complexController.dupAuditResultList !=null &amp;&amp; complexController.dupAuditResultList.size()>0}" value="#{complexController.dupAuditResultList}" style="width:100%">
-                            <p:column>
-                                <f:facet name="header">
-                                    <h:outputText value="Identifier"/>
-                                </f:facet>
-                                <h:outputText value="#{auditMap.key}"/>
-                            </p:column>
-                            <p:column>
-                                <f:facet name="header">
-                                    <h:outputText value="No. Of Occurrences"/>
-                                </f:facet>
-                                <h:outputText value="#{auditMap.value}"/>
-                            </p:column>
-                        </p:dataTable>
+
                     </h:panelGrid>
 
-                </h:panelGroup>
+                </h:panelGroup>-->
 
                 <p:dataTable id="xrefsTable" var="xref" value="#{annotatedObjectController.collectXrefs()}"
                              rowIndexVar="xrefIndex"
