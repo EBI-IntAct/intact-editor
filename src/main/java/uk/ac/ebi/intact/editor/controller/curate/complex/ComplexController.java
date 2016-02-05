@@ -1,12 +1,12 @@
 /**
  * Copyright 2010 The European Bioinformatics Institute, and others.
- * <p/>
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p/>
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -118,7 +118,8 @@ public class ComplexController extends AnnotatedObjectController {
     private Integer newParameterBase;
     private Integer newParameterExponent;
     private Double newParameterUncertainty;
-    
+    private HashMap<String, Integer> dupAuditResult;
+
     public ComplexController() {
     }
 
@@ -733,9 +734,50 @@ public class ComplexController extends AnnotatedObjectController {
     @Override
     public List<Xref> collectXrefs() {
         List<Xref> xrefs = new ArrayList<Xref>(this.complex.getDbXrefs());
-        Collections.sort(xrefs, new AuditableComparator());
+      //  Collections.sort(xrefs, new AuditableComparator());
+        Collections.sort(xrefs, new XrefComparator());
         return xrefs;
     }
+
+    // This was for finding duplications
+
+    /*public void auditList(ActionEvent evt) {
+
+        HashMap<String, Integer> dupAuditHM = new HashMap<String, Integer>();
+        this.setDupAuditResult(null);
+        this.setDupAuditResult(new HashMap<String, Integer>());
+
+        if (this.complex != null && this.complex.getDbXrefs() != null) {
+            for (Xref xref : this.complex.getDbXrefs()) {
+
+                if (dupAuditHM.containsKey(xref.getId())) {
+                    Integer increment = dupAuditHM.get(xref.getId()) + 1;
+                    dupAuditHM.put(xref.getId(), increment);
+                } else {
+                    dupAuditHM.put(xref.getId(), 1);
+                }
+
+
+            }
+            for (String identifier : dupAuditHM.keySet()) {
+                if (dupAuditHM.get(identifier) > 1) {
+                    dupAuditResult.put(identifier,dupAuditHM.get(identifier));
+                }
+            }
+        } else {
+            addErrorMessage("No List To Audit", "No List To Audit");
+        }
+
+        System.out.println("HashMap is" + dupAuditResult);
+    }
+
+    public List<Map.Entry<String, BigDecimal>> getDupAuditResultList() {
+        if(dupAuditResult!=null) {
+            return new ArrayList(dupAuditResult.entrySet());
+        }else{
+            return null;
+        }
+    }*/
 
     @Override
     public void removeXref(Xref xref) {
@@ -1467,5 +1509,14 @@ public class ComplexController extends AnnotatedObjectController {
 
     public void setNewToBeReviewed(String newToBeReviewed) {
         this.newToBeReviewed = newToBeReviewed;
+    }
+
+
+    public HashMap<String, Integer> getDupAuditResult() {
+        return dupAuditResult;
+    }
+
+    public void setDupAuditResult(HashMap<String, Integer> dupAuditResult) {
+        this.dupAuditResult = dupAuditResult;
     }
 }
