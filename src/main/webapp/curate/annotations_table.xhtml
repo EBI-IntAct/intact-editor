@@ -33,6 +33,7 @@
                              required="true" requiredMessage="Topic is required" disabled="#{annotatedObjectController.isAnnotationTopicDisabled()
                                  or annotatedObjectController.isAnnotationNotEditable(annotation)}" converter="cvObjectConverter">
                 <f:selectItems value="#{annotatedObjectSelectItems}"/>
+                <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
                 <ed:curation/>
             </h:selectOneMenu>
         </p:column>

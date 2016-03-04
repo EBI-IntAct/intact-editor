@@ -181,7 +181,7 @@
 
                 </h:panelGroup>
 
-                <p:remoteCommand name="save" actionListener="#{annotatedObjectController.doSave}"
+                <p:remoteCommand id="common_remote" name="save" actionListener="#{annotatedObjectController.doSave}"
                                  update=":editorForm"
                                  onstart="saveDialog.show(); var input = document.getElementById('topSaveButton'); input.disabled = true; input.value = 'Saving...'"
                                  onerror="alert('Error: '+error+' '+status)"

@@ -50,10 +50,9 @@
                             </f:facet>
                             <h:selectOneMenu id="databaseSel" value="#{xref.database}" required="true"
                                              requiredMessage="Database for xref is required" disabled="#{annotatedObjectController.isXrefDisabled()
-                                 or annotatedObjectController.isXrefNotEditable(xref)}"
-                                             onchange="markAsUnsaved()"
-                                             converter="cvObjectConverter">
+                                 or annotatedObjectController.isXrefNotEditable(xref)}" converter="cvObjectConverter">
                                 <f:selectItems value="#{cvObjectService.databaseSelectItems}"/>
+                                <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
                                 <ed:curation/>
                             </h:selectOneMenu>
 
@@ -119,8 +118,9 @@
                             <h:selectOneMenu id="qualifierSel" value="#{xref.qualifier}"
                                              converter="cvObjectConverter" disabled="#{annotatedObjectController.isXrefDisabled()
                                  or annotatedObjectController.isXrefNotEditable(xref)}"
-                                             onchange="markAsUnsaved()">
+                                             >
                                 <f:selectItems value="#{cvObjectService.qualifierSelectItems}"/>
+                                <p:ajax event="change" process="@this" oncomplete="markAsUnsaved()" update=":editorForm:changesPanel,:editorForm:unsavedChangesInfo,:editorForm:messagesComponent"/>
                                 <ed:curation/>
                             </h:selectOneMenu>
                         </p:column>
