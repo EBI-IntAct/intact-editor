@@ -24,7 +24,9 @@ import uk.ac.ebi.intact.jami.model.meta.DbInfo;
 import uk.ac.ebi.intact.jami.synchronizer.FinderException;
 import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
 import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
-import uk.ac.ebi.kraken.uuw.services.remoting.UniProtJAPI;
+import uk.ac.ebi.uniprot.dataservice.client.Client;
+import uk.ac.ebi.uniprot.dataservice.client.exception.ServiceException;
+import uk.ac.ebi.uniprot.dataservice.client.uniprot.UniProtService;
 
 import javax.annotation.PostConstruct;
 import javax.faces.model.SelectItem;
@@ -44,8 +46,11 @@ import java.util.Map;
 public class ApplicationInfoService extends AbstractEditorService {
     private static final Log log = LogFactory.getLog(ApplicationInfoService.class);
     private Map<Class, PropertyConverter> supportedPrimitiveConverter = Maps.newHashMap();
+    private UniProtService uniProtService;
 
     public ApplicationInfoService() {
+        // UniProtService
+        this.uniProtService = Client.getServiceFactoryInstance().getUniProtQueryService();
     }
 
     @PostConstruct
@@ -61,8 +66,17 @@ public class ApplicationInfoService extends AbstractEditorService {
 
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED, readOnly = true)
     public ApplicationInfo getCurrentApplicationInfo() {
-        String uniprotJapiVersion = UniProtJAPI.factory.getVersion();
-
+        String uniprotJapiVersion;
+        try {
+            uniProtService.start();
+            uniprotJapiVersion = uniProtService.getServiceInfo().getReleaseNumber();
+        } catch (ServiceException e) {
+            uniProtService.stop();
+            uniprotJapiVersion = "Couldn't receive UniProt release version";
+            e.printStackTrace();
+        }
+        uniProtService.stop();
+        
         final DbInfoDao infoDao = getIntactDao().getDbInfoDao();
 
         String schemaVersion = getDbInfoValue(infoDao, DbInfo.SCHEMA_VERSION);
