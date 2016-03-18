@@ -692,6 +692,12 @@
             <groupId>com.google.gdata</groupId>
             <artifactId>gdata-projecthosting-2.1</artifactId>
             <version>1.41.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.collections</groupId>
+                    <artifactId>google-collections</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!--&lt;!&ndash; H2 for user management &ndash;&gt;-->
