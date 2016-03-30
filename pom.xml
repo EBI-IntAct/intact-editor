@@ -12,14 +12,14 @@
     <packaging>war</packaging>
 
 
-    <version>3.0.7</version>
+    <version>3.0.8-SNAPSHOT</version>
     <name>Service :: IntAct Editor</name>
 
     <scm>
         <connection>scm:git:https://github.com/EBI-IntAct/Editor.git</connection>
         <developerConnection>scm:git:https://github.com/EBI-IntAct/Editor.git</developerConnection>
         <url>https://github.com/EBI-IntAct/Editor</url>
-        <tag>editor-3.0.7</tag>
+        <tag>HEAD</tag>
     </scm>
 
 
