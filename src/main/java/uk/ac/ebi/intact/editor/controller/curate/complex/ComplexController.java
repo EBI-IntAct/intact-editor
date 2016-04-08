@@ -1131,7 +1131,6 @@ public class ComplexController extends AnnotatedObjectController {
             this.newToBeReviewed = null;
             updateAnnotation(Releasable.TO_BE_REVIEWED, null, this.toBeReviewed, complex.getAnnotations());
             removeAnnotation(Releasable.ACCEPTED, null, complex.getAnnotations());
-            removeAnnotation(Releasable.CORRECTION_COMMENT, null, complex.getAnnotations());
 
             RequestContext requestContext = RequestContext.getCurrentInstance();
             requestContext.execute("complexActionDlg.show()");
