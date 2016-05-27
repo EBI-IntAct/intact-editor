@@ -651,7 +651,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
 
             if (xref.getAc() == null){
                 try {
-                    OntologyTerm goTerm = getGoServerProxy().fetchByIdentifier(xref.getId(), Xref.GO.toUpperCase());
+                    OntologyTerm goTerm = getGoServerProxy().fetchByIdentifier(xref.getId(), Xref.GO);
 
                     if (goTerm != null) {
                         if (goDb == null)
