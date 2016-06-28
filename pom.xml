@@ -31,16 +31,9 @@
         <timestamp>${maven.build.timestamp}</timestamp>
 
         <spring.version>3.2.9.RELEASE</spring.version>
-        <jami.batch.version>3.0.0</jami.batch.version>
-        <jami.core.version>3.0.0</jami.core.version>
-        <jami.xml.version>3.0.0</jami.xml.version>
-        <jami.commons.version>3.0.0</jami.commons.version>
-        <jami.mitab.version>3.0.0</jami.mitab.version>
-        <jami.html.version>3.0.0</jami.html.version>
-        <jami.bridges.version>3.0.0</jami.bridges.version>
-        <jami.interactionViewer.version>3.0.0</jami.interactionViewer.version>
-        <intact.jami.version>1.2.15</intact.jami.version>
-        <dataexchange.version>3.0.3</dataexchange.version>
+        <psi.jami.version>3.0.1</psi.jami.version>
+        <intact.jami.version>1.2.16</intact.jami.version>
+        <dataexchange.version>3.0.4</dataexchange.version>
         <h2.version>1.3.162</h2.version>
         <intact.primefaces.version>3.1.1-intact-SNAPSHOT</intact.primefaces.version>
 
@@ -182,7 +175,6 @@
                 <groupId>external.atlassian.jgitflow</groupId>
                 <artifactId>jgitflow-maven-plugin</artifactId>
                 <version>1.0-m5.1</version>
-                <configuration>
                     <configuration>
                         <flowInitContext>
                             <masterBranchName>master</masterBranchName>
@@ -190,11 +182,12 @@
                             <featureBranchPrefix>feature-</featureBranchPrefix>
                             <releaseBranchPrefix>release-</releaseBranchPrefix>
                             <hotfixBranchPrefix>hotfix-</hotfixBranchPrefix>
-                            <versionTagPrefix>blither-</versionTagPrefix>
+                            <versionTagPrefix>${project.artifactId}-</versionTagPrefix>
                         </flowInitContext>
+                        <!--Need to allow snapshot because of primefaces-->
+                        <allowSnapshots>true</allowSnapshots>
+                        <noDeploy>true</noDeploy>
                     </configuration>
-                    <!-- see goals wiki page for configuration options -->
-                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -245,32 +238,32 @@
         <dependency>
             <groupId>psidev.psi.mi.jami</groupId>
             <artifactId>jami-commons</artifactId>
-            <version>${jami.commons.version}</version>
+            <version>${psi.jami.version}</version>
         </dependency>
 
         <dependency>
             <groupId>psidev.psi.mi.jami</groupId>
             <artifactId>jami-batch</artifactId>
-            <version>${jami.batch.version}</version>
+            <version>${psi.jami.version}</version>
         </dependency>
 
         <dependency>
             <groupId>psidev.psi.mi.jami</groupId>
             <artifactId>jami-html</artifactId>
-            <version>${jami.html.version}</version>
+            <version>${psi.jami.version}</version>
         </dependency>
 
         <dependency>
             <groupId>psidev.psi.mi.jami</groupId>
             <artifactId>jami-interactionviewer-json</artifactId>
-            <version>${jami.interactionViewer.version}</version>
+            <version>${psi.jami.version}</version>
         </dependency>
 
         <!-- Bridges -->
         <dependency>
             <groupId>psidev.psi.mi.jami.bridges</groupId>
             <artifactId>jami-uniprot</artifactId>
-            <version>${jami.bridges.version}</version>
+            <version>${psi.jami.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework</groupId>
@@ -286,25 +279,25 @@
         <dependency>
             <groupId>psidev.psi.mi.jami.bridges</groupId>
             <artifactId>jami-uniprot-taxonomy</artifactId>
-            <version>${jami.bridges.version}</version>
+            <version>${psi.jami.version}</version>
         </dependency>
 
         <dependency>
             <groupId>psidev.psi.mi.jami.bridges</groupId>
             <artifactId>jami-chebi</artifactId>
-            <version>${jami.bridges.version}</version>
+            <version>${psi.jami.version}</version>
         </dependency>
 
         <dependency>
             <groupId>psidev.psi.mi.jami.bridges</groupId>
             <artifactId>jami-ols</artifactId>
-            <version>${jami.bridges.version}</version>
+            <version>${psi.jami.version}</version>
         </dependency>
 
         <dependency>
             <groupId>psidev.psi.mi.jami.bridges</groupId>
             <artifactId>jami-europubmedcentral</artifactId>
-            <version>${jami.bridges.version}</version>
+            <version>${psi.jami.version}</version>
         </dependency>
 
         <!-- jami xml -->
@@ -431,12 +424,12 @@
         <dependency>
             <groupId>psidev.psi.mi.jami</groupId>
             <artifactId>jami-xml</artifactId>
-            <version>${jami.xml.version}</version>
+            <version>${psi.jami.version}</version>
         </dependency>
         <dependency>
             <groupId>psidev.psi.mi.jami</groupId>
             <artifactId>jami-mitab</artifactId>
-            <version>${jami.mitab.version}</version>
+            <version>${psi.jami.version}</version>
         </dependency>
 
         <dependency>
