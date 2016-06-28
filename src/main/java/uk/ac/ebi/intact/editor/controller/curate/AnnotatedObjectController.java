@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
 import psidev.psi.mi.jami.bridges.fetcher.OntologyTermFetcher;
 import psidev.psi.mi.jami.bridges.ols.CachedOlsOntologyTermFetcher;
+import psidev.psi.mi.jami.bridges.ols.OlsOntologyTermFetcher;
 import psidev.psi.mi.jami.model.*;
 import psidev.psi.mi.jami.utils.AliasUtils;
 import psidev.psi.mi.jami.utils.AnnotationUtils;
@@ -49,6 +50,9 @@ import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleEventType;
 import uk.ac.ebi.intact.jami.model.lifecycle.Releasable;
 import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
 import uk.ac.ebi.intact.jami.utils.IntactUtils;
+import uk.ac.ebi.pride.utilities.ols.web.service.client.OLSClient;
+import uk.ac.ebi.pride.utilities.ols.web.service.config.OLSWsConfigProd;
+import uk.ac.ebi.pride.utilities.ols.web.service.model.Identifier;
 
 import javax.annotation.Resource;
 import javax.faces.component.UIComponent;
@@ -651,7 +655,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
 
             if (xref.getAc() == null){
                 try {
-                    OntologyTerm goTerm = getGoServerProxy().fetchByIdentifier(xref.getId(), Xref.GO.toUpperCase());
+                    OntologyTerm goTerm = getGoServerProxy().fetchByIdentifier(xref.getId(), Xref.GO.toLowerCase());
 
                     if (goTerm != null) {
                         if (goDb == null)
@@ -660,13 +664,30 @@ public abstract class AnnotatedObjectController extends BaseController implement
 
                         xref.setDatabase(goDb);
                         xref.setSecondaryId(goTerm.getFullName());
+                        //TODO Disables until we are able to do that with JAMI.
+//                        Collection<OntologyTerm> parents = new ArrayList<OntologyTerm>(goTerm.getParents());
+//                        // we have a root term
+//                        if (parents.isEmpty()) {
+//                            parents.add(goTerm);
+//                        }
 
-                        Collection<OntologyTerm> parents = new ArrayList<OntologyTerm>(goTerm.getParents());
-                        // we have a root term
-                        if (parents.isEmpty()) {
-                            parents.add(goTerm);
+//                        CvTerm qualifier = calculateQualifier(parents);
+
+                        CvTerm qualifier = null;
+                        //Find the needed annotation. Using the ols_client directly.. Not good pratice, but otherwise
+                        //we need to re-release everything again. Issue #14 psi-jami
+                        OLSClient olsClient = new OLSClient(new OLSWsConfigProd());
+                        Map<String, List<String>> annotations = olsClient.getAnnotations(new Identifier(xref.getId(), Identifier.IdentifierType.OBO), "go");
+                        String namespace = annotations.get("has_obo_namespace").get(0);
+
+                        if ("biological_process".equals(namespace)) {
+                            qualifier = IntactUtils.createMIQualifier(PROCESS, PROCESS_MI_REF);
+                        } else if ("molecular_function".equals(namespace)) { // GO:0005554 was an alternative id for molecular function
+                            qualifier = IntactUtils.createMIQualifier(FUNCTION, FUNCTION_MI_REF);
+                        } else if ("cellular_component".equals(namespace)) {
+                            qualifier = IntactUtils.createMIQualifier(COMPONENT, COMPONENT_MI_REF);
                         }
-                        CvTerm qualifier = calculateQualifier(parents);
+
                         xref.setQualifier(qualifier);
                     }
                 } catch (Throwable e) {
@@ -677,43 +698,44 @@ public abstract class AnnotatedObjectController extends BaseController implement
         }
     }
 
-    private CvTerm calculateQualifier(Collection<OntologyTerm> parents) {
-        if (parents.isEmpty()) return null;
-
-        Iterator<OntologyTerm> parentIterator = parents.iterator();
-        OntologyTerm firstParent = parentIterator.next();
-        while (firstParent.getIdentifiers().isEmpty() &&
-                parentIterator.hasNext()){
-            firstParent = parentIterator.next();
-        }
-        if (firstParent.getIdentifiers().isEmpty()){
-            return null;
-        }
-
-        String goId = firstParent.getIdentifiers().iterator().next().getId();
-
-        CvTerm terms = null;
-
-        if ("GO:0008150".equals(goId)) {
-            terms = IntactUtils.createMIQualifier(PROCESS, PROCESS_MI_REF);
-        } else if ("GO:0003674".equals(goId)) { // GO:0005554 was an alternative id for molecular function
-            terms = IntactUtils.createMIQualifier(FUNCTION, FUNCTION_MI_REF);
-        } else if ("GO:0005575".equals(goId)) {
-            terms = IntactUtils.createMIQualifier(COMPONENT, COMPONENT_MI_REF);
-        }
-        if (terms == null){
-            for (OntologyTerm parent : parents){
-                Collection<OntologyTerm> parents2 = parent.getParents();
-                CvTerm id = calculateQualifier(parents2);
-                if (id != null){
-                   return id;
-                }
-            }
-            if (log.isWarnEnabled()) log.warn("No qualifier found for category: " + goId);
-        }
-
-        return terms;
-    }
+    //TODO Disables until we are able to do that with JAMI.
+//    private CvTerm calculateQualifier(Collection<OntologyTerm> parents) {
+//        if (parents.isEmpty()) return null;
+//
+//        Iterator<OntologyTerm> parentIterator = parents.iterator();
+//        OntologyTerm firstParent = parentIterator.next();
+//        while (firstParent.getIdentifiers().isEmpty() &&
+//                parentIterator.hasNext()){
+//            firstParent = parentIterator.next();
+//        }
+//        if (firstParent.getIdentifiers().isEmpty()){
+//            return null;
+//        }
+//        Collection<Annotation> x = firstParent.getAnnotations();
+//        String goId = firstParent.getIdentifiers().iterator().next().getId();
+//
+//        CvTerm terms = null;
+//
+//        if ("GO:0008150".equals(goId)) {
+//            terms = IntactUtils.createMIQualifier(PROCESS, PROCESS_MI_REF);
+//        } else if ("GO:0003674".equals(goId)) { // GO:0005554 was an alternative id for molecular function
+//            terms = IntactUtils.createMIQualifier(FUNCTION, FUNCTION_MI_REF);
+//        } else if ("GO:0005575".equals(goId)) {
+//            terms = IntactUtils.createMIQualifier(COMPONENT, COMPONENT_MI_REF);
+//        }
+//        if (terms == null){
+//            for (OntologyTerm parent : parents){
+//                Collection<OntologyTerm> parents2 = parent.getParents();
+//                CvTerm id = calculateQualifier(parents2);
+//                if (id != null){
+//                   return id;
+//                }
+//            }
+//            if (log.isWarnEnabled()) log.warn("No qualifier found for category: " + goId);
+//        }
+//
+//        return terms;
+//    }
 
     public void newXref(ActionEvent evt){
         if (this.newDatabase != null && this.newXrefId != null){
