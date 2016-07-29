@@ -375,7 +375,7 @@ public class PublicationController extends AnnotatedObjectController {
         try {
             citexploreClient = new EuroPubmedCentralFetcher();
         } catch (Exception e) {
-            addErrorMessage("Cannot auto-complete", "Citexplore service is down at the moment");
+            addErrorMessage("Cannot auto-complete", "PubMed Central service is down at the moment");
             return;
         }
 
