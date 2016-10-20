@@ -1,12 +1,12 @@
 /**
  * Copyright 2010 The European Bioinformatics Institute, and others.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,7 +21,10 @@ import psidev.psi.mi.jami.model.*;
 import psidev.psi.mi.jami.utils.RangeUtils;
 import uk.ac.ebi.intact.editor.controller.curate.AnnotatedObjectController;
 import uk.ac.ebi.intact.editor.services.curate.cvobject.CvObjectService;
-import uk.ac.ebi.intact.jami.model.extension.*;
+import uk.ac.ebi.intact.jami.model.extension.AbstractIntactRange;
+import uk.ac.ebi.intact.jami.model.extension.AbstractIntactResultingSequence;
+import uk.ac.ebi.intact.jami.model.extension.AbstractIntactXref;
+import uk.ac.ebi.intact.jami.model.extension.IntactPosition;
 import uk.ac.ebi.intact.jami.utils.IntactUtils;
 
 import javax.faces.application.FacesMessage;
@@ -45,6 +48,7 @@ public class RangeWrapper {
     private AbstractIntactRange range;
     private String sequence;
     private String rangeAsString;
+//    private String resSeqAsString;
 
     private CvObjectService cvObjectService;
     private Class<? extends AbstractIntactResultingSequence> resultingSequenceClass;
@@ -66,15 +70,14 @@ public class RangeWrapper {
                         AnnotatedObjectController featureController) {
         this.range = range;
         this.rangeAsString = RangeUtils.convertRangeToString(range);
-        if (range.getParticipant() != null){
-            if (range.getParticipant().getInteractor() instanceof Polymer){
-                 this.sequence = ((Polymer)range.getParticipant().getInteractor()).getSequence();
-            }
-            else{
+//        this.resSeqAsString = range.getResultingSequence().getNewSequence();
+        if (range.getParticipant() != null) {
+            if (range.getParticipant().getInteractor() instanceof Polymer) {
+                this.sequence = ((Polymer) range.getParticipant().getInteractor()).getSequence();
+            } else {
                 this.sequence = null;
             }
-        }
-        else{
+        } else {
             this.sequence = sequence;
         }
 
@@ -84,13 +87,13 @@ public class RangeWrapper {
 
         List<String> messages = RangeUtils.validateRange(this.range, this.sequence);
         isInvalid = !messages.isEmpty();
-        if (isInvalid){
+        if (isInvalid) {
             this.badRangeInfo = StringUtils.join(messages, ", ");
         }
         this.featureController = featureController;
     }
 
-    public void onRangeAsStringChanged(AjaxBehaviorEvent evt) throws NoSuchMethodException,InstantiationException, IllegalAccessException,InvocationTargetException {
+    public void onRangeAsStringChanged(AjaxBehaviorEvent evt) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
         Range newRange = null;
         try {
             newRange = RangeUtils.createRangeFromString(rangeAsString, false);
@@ -100,23 +103,27 @@ public class RangeWrapper {
                     newRange.getEnd().getStart(), newRange.getEnd().getEnd());
 
             this.range.setPositions(start, end);
-            if (this.range.getResultingSequence() != null){
+            if (this.range.getResultingSequence() != null) {
                 this.range.getResultingSequence().setOriginalSequence(RangeUtils.extractRangeSequence(this.range, this.sequence));
-            }
-            else{
-                this.range.setResultingSequence(this.resultingSequenceClass.getConstructor(String.class, String.class).newInstance(RangeUtils.extractRangeSequence(this.range, this.sequence),null));
+            } else {
+                this.range.setResultingSequence(this.resultingSequenceClass.getConstructor(String.class, String.class).newInstance(RangeUtils.extractRangeSequence(this.range, this.sequence), null));
             }
 
             List<String> messages = RangeUtils.validateRange(this.range, this.sequence);
             isInvalid = !messages.isEmpty();
-            if (isInvalid){
+            if (isInvalid) {
                 this.badRangeInfo = StringUtils.join(messages, ", ");
             }
         } catch (IllegalRangeException e) {
-            String problemMsg =e.getMessage();
-            featureController.addErrorMessage("Range is not valid: "+rangeAsString, problemMsg);
+            String problemMsg = e.getMessage();
+            featureController.addErrorMessage("Range is not valid: " + rangeAsString, problemMsg);
             return;
         }
+    }
+
+    public void onResSeqAsStringChanged(AjaxBehaviorEvent evt) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        System.out.println(this.range.getResultingSequence().getNewSequence());
+
     }
 
     public void onFuzzyTypeChanged(AjaxBehaviorEvent evt) {
@@ -124,7 +131,7 @@ public class RangeWrapper {
         this.rangeAsString = RangeUtils.convertRangeToString(range);
         List<String> messages = RangeUtils.validateRange(this.range, this.sequence);
         isInvalid = !messages.isEmpty();
-        if (isInvalid){
+        if (isInvalid) {
             this.badRangeInfo = StringUtils.join(messages, ", ");
         }
     }
@@ -139,14 +146,27 @@ public class RangeWrapper {
                 EditableValueHolder valueHolder = (EditableValueHolder) component;
                 valueHolder.setValid(false);
 
-                FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Invalid range: "+ StringUtils.join(messages, ", "), "Range syntax is invalid: "+rangeAsStr);
+                FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Invalid range: " + StringUtils.join(messages, ", "), "Range syntax is invalid: " + rangeAsStr);
                 throw new ValidatorException(message);
             }
         } catch (IllegalRangeException e) {
             EditableValueHolder valueHolder = (EditableValueHolder) component;
             valueHolder.setValid(false);
 
-            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Invalid range: "+e.getMessage(), "Range syntax is invalid: "+rangeAsStr);
+            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Invalid range: " + e.getMessage(), "Range syntax is invalid: " + rangeAsStr);
+            throw new ValidatorException(message);
+        }
+    }
+
+    public void validateSequence(FacesContext context, UIComponent component, Object value) throws ValidatorException {
+
+        String resSeqAsString = (String) value;
+        if (((FeatureController) featureController).getFeature().getType().getShortName().contains("mutation")
+                && (resSeqAsString == null || resSeqAsString.equals("null") || resSeqAsString.isEmpty())) {
+//            EditableValueHolder valueHolder = (EditableValueHolder) component;
+//            valueHolder.setValid(false);
+
+            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Invalid resulting sequence of range: " + range.getAc(), "Mutation resulting sequence can't be empty");
             throw new ValidatorException(message);
         }
     }
@@ -175,32 +195,30 @@ public class RangeWrapper {
         return badRangeInfo;
     }
 
-    public Entity getParticipant(){
+    public Entity getParticipant() {
         return this.range.getParticipant();
     }
 
     public void setParticipant(Entity entity) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         this.range.setParticipant(entity);
 
-        if (entity != null && entity.getInteractor() instanceof Polymer){
-            sequence = ((Polymer)entity.getInteractor()).getSequence();
-        }
-        else{
+        if (entity != null && entity.getInteractor() instanceof Polymer) {
+            sequence = ((Polymer) entity.getInteractor()).getSequence();
+        } else {
             sequence = null;
         }
 
-        if (this.range.getResultingSequence() != null){
+        if (this.range.getResultingSequence() != null) {
             this.range.getResultingSequence().setOriginalSequence(RangeUtils.extractRangeSequence(this.range, this.sequence));
-        }
-        else{
-            this.range.setResultingSequence(this.resultingSequenceClass.getConstructor(String.class, String.class).newInstance(RangeUtils.extractRangeSequence(this.range, this.sequence),null));
+        } else {
+            this.range.setResultingSequence(this.resultingSequenceClass.getConstructor(String.class, String.class).newInstance(RangeUtils.extractRangeSequence(this.range, this.sequence), null));
         }
     }
 
     public void newXref(ActionEvent evt) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         range.getResultingSequence().getXrefs().add(this.resSequenceXrefClass.getConstructor(CvTerm.class, String.class)
                 .newInstance(IntactUtils.createMIDatabase("to set", null), "to set"));
-        if (this.newDatabase != null && this.newXrefId != null){
+        if (this.newDatabase != null && this.newXrefId != null) {
             AbstractIntactXref newRef = this.resSequenceXrefClass.getConstructor(CvTerm.class, String.class)
                     .newInstance(this.newDatabase, this.newXrefId);
             newRef.setSecondaryId(this.newSecondaryId);
@@ -216,9 +234,8 @@ public class RangeWrapper {
             this.newXrefVersion = null;
             this.newQualifier = null;
             this.newSecondaryId = null;
-        }
-        else{
-            featureController.addErrorMessage("Cannot add new xref as the database and/or primary identifier is(are) missing","No database/primary identifier provided");
+        } else {
+            featureController.addErrorMessage("Cannot add new xref as the database and/or primary identifier is(are) missing", "No database/primary identifier provided");
         }
     }
 
@@ -234,7 +251,7 @@ public class RangeWrapper {
         return xrefs;
     }
 
-    public boolean isXrefsTableEnabled(){
+    public boolean isXrefsTableEnabled() {
         return !range.getResultingSequence().getXrefs().isEmpty();
     }
 

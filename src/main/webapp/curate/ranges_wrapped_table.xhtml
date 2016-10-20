@@ -3,108 +3,133 @@
                 xmlns:ui="http://java.sun.com/jsf/facelets"
                 xmlns:h="http://java.sun.com/jsf/html"
                 xmlns:f="http://java.sun.com/jsf/core"
-                xmlns:c="http://java.sun.com/jsp/jstl/core"
-                xmlns:fn="http://java.sun.com/jsp/jstl/functions"
                 xmlns:p="http://primefaces.org/ui"
-                xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
-                xmlns:ed="http://ebi.ac.uk/intact/editor/ui"
-                xmlns:ot="http://myfaces.apache.org/orchestra"
-        >
-<h:outputScript library="javascript" name="xref.js"/>
+>
+    <h:outputScript library="javascript" name="xref.js"/>
 
-<p:dataTable id="rangesTable" var="rangeWrapper" value="#{value}"
-             paginator="true" rows="10" paginatorAlwaysVisible="false" paginatorPosition="both"
-             rowStyleClass="#{rangeWrapper.range.ac == null? 'intact-new' : changesController.isDeletedAc(rangeWrapper.range.ac)? 'intact-deleted' : null}"        >
-<p:column>
-    <f:facet name="header">
-        <h:outputText value="AC"/>
-    </f:facet>
-    <h:outputText value="#{rangeWrapper.range.ac}"/>
-</p:column>
-<p:column>
-    <f:facet name="header">
-        <h:outputText value="Value"/>
-    </f:facet>
-    <h:inputText id="rangeTxt" value="#{rangeWrapper.rangeAsString}"
-                 validator="#{rangeWrapper.validateRange}"
-                 required="true"
-                 requiredMessage="Range value is required"
-                 readonly="#{changesController.isDeletedAc(rangeWrapper.range.ac)}"
-                 styleClass="#{changesController.isDeletedAc(rangeWrapper.range.ac)? 'intact-deleted' : ''}"
-                 style="font-family: monospace">
-        <f:ajax event="valueChange" render=":editorForm:featureTabs:rangesPanel :editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
-                listener="#{rangeWrapper.onRangeAsStringChanged}" onevent="markAsUnsaved()"/>
-    </h:inputText>
+    <p:dataTable id="rangesTable" var="rangeWrapper" value="#{value}"
+                 paginator="true" rows="10" paginatorAlwaysVisible="false" paginatorPosition="both"
+                 rowStyleClass="#{rangeWrapper.range.ac == null? 'intact-new' : changesController.isDeletedAc(rangeWrapper.range.ac)? 'intact-deleted' : null}">
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="AC"/>
+            </f:facet>
+            <h:outputText value="#{rangeWrapper.range.ac}"/>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Range"/>
+            </f:facet>
+            <h:inputText id="rangeTxt" value="#{rangeWrapper.rangeAsString}"
+                         validator="#{rangeWrapper.validateRange}"
+                         required="true"
+                         requiredMessage="Range value is required"
+                         readonly="#{changesController.isDeletedAc(rangeWrapper.range.ac)}"
+                         styleClass="#{changesController.isDeletedAc(rangeWrapper.range.ac)? 'intact-deleted' : ''}"
+                         style="font-family: monospace">
+                <f:ajax event="valueChange"
+                        render=":editorForm:featureTabs:rangesPanel :editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
+                        listener="#{rangeWrapper.onRangeAsStringChanged}" onevent="markAsUnsaved()"/>
+            </h:inputText>
 
-    <h:panelGroup id="validityPanel">
-
-        <h:panelGroup rendered="#{not rangeWrapper.validRange}">
+            <h:panelGroup id="validityPanel">
+                <h:panelGroup rendered="#{not rangeWrapper.validRange}">
                                     <span class="ui-icon ui-icon-alert" style="display:inline-block"
                                           title="#{rangeWrapper.badRangeInfo}"/>
-        </h:panelGroup>
-    </h:panelGroup>
-</p:column>
-<p:column>
-    <f:facet name="header">
-        <h:outputText value="From type"/>
-    </f:facet>
-    <h:selectOneMenu id="fromCvFuzzyType" value="#{rangeWrapper.range.start.status}" converter="cvObjectConverter"
-                     required="true"
-                     requiredMessage="Range from CvFuzzyType is required" disabled="#{annotatedObjectController.isRangeDisabled()}">
-        <f:ajax event="valueChange" render=":editorForm:featureTabs:rangesPanel :editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
-                listener="#{rangeWrapper.onFuzzyTypeChanged}" onevent="markAsUnsaved()"/>
-        <f:selectItems value="#{cvObjectService.fuzzyTypeSelectItems}"/>
-    </h:selectOneMenu>
-</p:column>
-<p:column>
-    <f:facet name="header">
-        <h:outputText value="To type"/>
-    </f:facet>
-    <h:selectOneMenu id="toCvFuzzyType" value="#{rangeWrapper.range.end.status}" converter="cvObjectConverter"
-                     required="true"
-                     requiredMessage="Range to CvFuzzyType is required" disabled="#{annotatedObjectController.isRangeDisabled()}">
-        <f:ajax event="valueChange" render=":editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
-                listener="#{rangeWrapper.onFuzzyTypeChanged}" onevent="markAsUnsaved()"/>
-        <f:selectItems value="#{cvObjectService.fuzzyTypeSelectItems}"/>
-    </h:selectOneMenu>
-</p:column>
-<p:column>
-    <f:facet name="header">
-        <h:outputText value="Refers to participant"/>
-    </f:facet>
-    <h:selectOneMenu id="linkedParticipantMenu" value="#{rangeWrapper.participant}" converter="participantConverter"
-                     disabled="#{annotatedObjectController.isRangeDisabled()}"
-            rendered="#{annotatedObjectController.complexFeature}">
-        <f:ajax event="valueChange" render=":editorForm:featureTabs:rangesPanel :editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
-                onevent="markAsUnsaved()"/>
-        <f:selectItems value="#{annotatedObjectController.participantSelectItems}"/>
-    </h:selectOneMenu>
-    <h:outputText value="#{annotatedObjectController.feature.participant.interactor.shortName}" rendered="#{!annotatedObjectController.complexFeature and
+                </h:panelGroup>
+            </h:panelGroup>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Original Sequence"/>
+            </f:facet>
+            <h:inputTextarea value="#{rangeWrapper.range.resultingSequence.originalSequence}">
+                <f:ajax event="valueChange"
+                        render=":editorForm:featureTabs:rangesPanel :editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
+                        listener="#{rangeWrapper.onResSeqAsStringChanged}" onevent="markAsUnsaved()"/>
+            </h:inputTextarea>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Resulting Sequence"/>
+            </f:facet>
+            <p:inputTextarea id="resultingTxt" value="#{rangeWrapper.range.resultingSequence.newSequence}" cols="30" rows="3" onchange="markAsUnsaved()"
+                             validator="#{rangeWrapper.validateSequence}"
+                             disabled="#{annotatedObjectController.isRangeSequenceDisabled()}"/>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="From type"/>
+            </f:facet>
+            <h:selectOneMenu id="fromCvFuzzyType" value="#{rangeWrapper.range.start.status}"
+                             converter="cvObjectConverter"
+                             required="true"
+                             requiredMessage="Range from CvFuzzyType is required"
+                             disabled="#{annotatedObjectController.isRangeDisabled()}">
+                <f:ajax event="valueChange"
+                        render=":editorForm:featureTabs:rangesPanel :editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
+                        listener="#{rangeWrapper.onFuzzyTypeChanged}" onevent="markAsUnsaved()"/>
+                <f:selectItems value="#{cvObjectService.fuzzyTypeSelectItems}"/>
+            </h:selectOneMenu>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="To type"/>
+            </f:facet>
+            <h:selectOneMenu id="toCvFuzzyType" value="#{rangeWrapper.range.end.status}" converter="cvObjectConverter"
+                             required="true"
+                             requiredMessage="Range to CvFuzzyType is required"
+                             disabled="#{annotatedObjectController.isRangeDisabled()}">
+                <f:ajax event="valueChange"
+                        render=":editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
+                        listener="#{rangeWrapper.onFuzzyTypeChanged}" onevent="markAsUnsaved()"/>
+                <f:selectItems value="#{cvObjectService.fuzzyTypeSelectItems}"/>
+            </h:selectOneMenu>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Refers to participant"/>
+            </f:facet>
+            <h:selectOneMenu id="linkedParticipantMenu" value="#{rangeWrapper.participant}"
+                             converter="participantConverter"
+                             disabled="#{annotatedObjectController.isRangeDisabled()}"
+                             rendered="#{annotatedObjectController.complexFeature}">
+                <f:ajax event="valueChange"
+                        render=":editorForm:featureTabs:rangesPanel :editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
+                        onevent="markAsUnsaved()"/>
+                <f:selectItems value="#{annotatedObjectController.participantSelectItems}"/>
+            </h:selectOneMenu>
+            <h:outputText value="#{annotatedObjectController.feature.participant.interactor.shortName}" rendered="#{!annotatedObjectController.complexFeature and
     annotatedObjectController.feature.participant != null}"/>
-</p:column>
-<p:column>
-    <f:facet name="header">
-        <h:outputText value="Intramolecular"/>
-    </f:facet>
-    <h:selectBooleanCheckbox value="#{rangeWrapper.range.link}" disabled="#{annotatedObjectController.isRangeDisabled()}">
-        <f:ajax event="valueChange" render=":editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
-                onevent="markAsUnsaved()"/>
-    </h:selectBooleanCheckbox>
-</p:column>
-<p:column>
-    <f:facet name="header">
-        <h:outputText value="Actions"/>
-    </f:facet>
-    <p:commandLink id="markDeletedBtn" process="markDeletedBtn" immediate="true" title="Mark to be deleted" styleClass="ui-icon ui-icon-closethick"
-                   actionListener="#{annotatedObjectController.markRangeToDelete(rangeWrapper)}"
-                   update=":editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo,:editorForm:featureTabs:rangesPanel"
-                   rendered="#{not changesController.isDeletedAc(rangeWrapper.range.ac)}"
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Intramolecular"/>
+            </f:facet>
+            <h:selectBooleanCheckbox value="#{rangeWrapper.range.link}"
+                                     disabled="#{annotatedObjectController.isRangeDisabled()}">
+                <f:ajax event="valueChange"
+                        render=":editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
+                        onevent="markAsUnsaved()"/>
+            </h:selectBooleanCheckbox>
+        </p:column>
+        <p:column>
+            <f:facet name="header">
+                <h:outputText value="Actions"/>
+            </f:facet>
+            <p:commandLink id="markDeletedBtn" process="markDeletedBtn" immediate="true" title="Mark to be deleted"
+                           styleClass="ui-icon ui-icon-closethick"
+                           actionListener="#{annotatedObjectController.markRangeToDelete(rangeWrapper)}"
+                           update=":editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo,:editorForm:featureTabs:rangesPanel"
+                           rendered="#{not changesController.isDeletedAc(rangeWrapper.range.ac)}"
             />
-    <p:commandLink id="revertBtn" process="revertBtn" immediate="true" title="Revert" styleClass="ui-icon ui-icon-arrowreturnthick-1-w"
-                   actionListener="#{annotatedObjectController.revert(rangeWrapper.range)}"
-                   update=":editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo,:editorForm:featureTabs:rangesPanel" rendered="#{changesController.isDeletedAc(rangeWrapper.range.ac)}"/>
-</p:column>
+            <p:commandLink id="revertBtn" process="revertBtn" immediate="true" title="Revert"
+                           styleClass="ui-icon ui-icon-arrowreturnthick-1-w"
+                           actionListener="#{annotatedObjectController.revert(rangeWrapper.range)}"
+                           update=":editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo,:editorForm:featureTabs:rangesPanel"
+                           rendered="#{changesController.isDeletedAc(rangeWrapper.range.ac)}"/>
+        </p:column>
 
-</p:dataTable>
+    </p:dataTable>
 
 </ui:composition>
