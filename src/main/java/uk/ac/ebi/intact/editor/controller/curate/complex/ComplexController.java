@@ -734,7 +734,7 @@ public class ComplexController extends AnnotatedObjectController {
     @Override
     public List<Xref> collectXrefs() {
         List<Xref> xrefs = new ArrayList<Xref>(this.complex.getDbXrefs());
-      //  Collections.sort(xrefs, new AuditableComparator());
+        //  Collections.sort(xrefs, new AuditableComparator());
         Collections.sort(xrefs, new XrefComparator());
         return xrefs;
     }
@@ -1237,6 +1237,31 @@ public class ComplexController extends AnnotatedObjectController {
         }
 
         return "/curate/complex?faces-redirect=true";
+    }
+
+    public void createNewVersion() {
+        processVersioningAndSave();
+    }
+
+    public void processVersioningAndSave() {
+
+        Collection<Annotation> annots=this.complex.getAnnotations();
+
+        Annotation annotation = newAnnotation("obsolete complex", null, "");
+        annots.add(annotation);
+        doSave(true);
+
+        /*if (getAnnotatedObject() != null) {
+            IntactPrimaryObject clone = cloneAnnotatedObject(getAnnotatedObject(), newClonerInstance());
+            if (clone == null) return null;
+            addInfoMessage("Cloned annotated object", null);
+            setAnnotatedObject(clone);
+            setUnsavedChanges(true);
+            getCurateController().save(clone);
+            return getCurateController().edit(clone);
+        }
+
+        return null;*/
     }
 
     @Override
