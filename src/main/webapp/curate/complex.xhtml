@@ -128,7 +128,7 @@
     </ui:define>
 
     <ui:define name="curateContent">
-
+<ed:custom-readonly readOnly="true">
         <h:panelGroup rendered="#{interaction == null}">
             No interaction loaded!
         </h:panelGroup>
@@ -604,7 +604,7 @@
                                  process="reasonRejTxt" update=":editorForm"/>
             </h:panelGrid>
         </p:dialog>
-
+</ed:custom-readonly>
     </ui:define>
     <ia:loadingDialog widgetVar="loadDialog" message="Loading..." modal="false"/>
 
