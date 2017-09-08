@@ -186,6 +186,11 @@
                             <p:inputText id="acTxt" value="#{interaction.ac}"
                                          size="10" readonly="true"/>
                         </td>
+
+                        <td>
+                        <p:commandButton value="New Version" id="complex_new_version" update="basic" actionListener="#{complexController.createNewVersion}" />
+                        </td>
+
                     </tr>
                     <tr>
                         <td class="firstCell">
