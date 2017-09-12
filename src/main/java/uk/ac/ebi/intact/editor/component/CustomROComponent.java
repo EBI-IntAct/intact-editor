@@ -1,9 +1,7 @@
 package uk.ac.ebi.intact.editor.component;
 
-import javax.faces.component.FacesComponent;
-import javax.faces.component.UIComponent;
-import javax.faces.component.UIComponentBase;
-import javax.faces.component.UIInput;
+import javax.faces.component.*;
+import javax.faces.component.html.HtmlCommandButton;
 import javax.faces.context.FacesContext;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -41,10 +39,24 @@ public class CustomROComponent extends UIComponentBase
             if (UIInput.class.isAssignableFrom(child.getClass()))
             {
                 UIInput inputText = (UIInput) child;
-                if (!callMethod(inputText, "setReadonly", setTo))
+                if (!callMethod(inputText, "setDisabled", setTo))
                 {
                     // second attempt.
-                    callMethod(inputText, "setReadOnly", setTo);
+                    callMethod(inputText, "setDisabled", setTo);
+                }
+            }else if(child.getClass().equals(UINamingContainer.class)){
+                UINamingContainer customComponent=(UINamingContainer)child;
+                /*if(customComponent.getAttributes().get("disabled")!=null){
+                    customComponent.getAttributes().put("disabled",true);
+                }*/
+
+                child=customComponent.getFacet("javax.faces.component.COMPOSITE_FACET_NAME");
+            }else if (UICommand.class.isAssignableFrom(child.getClass())){
+                UICommand uiCommand = (UICommand) child;
+                if (!callMethod(uiCommand, "setDisabled", setTo))
+                {
+                    // second attempt.
+                    callMethod(uiCommand, "setDisabled", setTo);
                 }
             }
 
@@ -65,4 +77,20 @@ public class CustomROComponent extends UIComponentBase
         }
         return true;
     }
+
+    private boolean callMethod(UICommand uiCommand, String name, boolean setTo)
+    {
+        try
+        {
+            Method method = uiCommand.getClass().getMethod(name, boolean.class);
+            method.invoke(uiCommand, setTo);
+        }
+        catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e)
+        {
+            return false;
+        }
+        return true;
+    }
+
+
 }

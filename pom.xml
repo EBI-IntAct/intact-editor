@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -65,8 +66,8 @@
         <!-- other property defaults -->
         <webapp.logo.url>http://www.ebi.ac.uk/~intact/images/intact_logo.png</webapp.logo.url>
         <intact.instance.name>Not Set</intact.instance.name>
-        <google.username />
-        <google.password />
+        <google.username/>
+        <google.password/>
         <editor.theme>ui-lightness</editor.theme>
         <maintainer.emails>intact-dev@ebi.ac.uk</maintainer.emails>
 
@@ -159,8 +160,8 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
 
@@ -169,19 +170,19 @@
                 <groupId>external.atlassian.jgitflow</groupId>
                 <artifactId>jgitflow-maven-plugin</artifactId>
                 <version>1.0-m5.1</version>
-                    <configuration>
-                        <flowInitContext>
-                            <masterBranchName>master</masterBranchName>
-                            <developBranchName>develop</developBranchName>
-                            <featureBranchPrefix>feature-</featureBranchPrefix>
-                            <releaseBranchPrefix>release-</releaseBranchPrefix>
-                            <hotfixBranchPrefix>hotfix-</hotfixBranchPrefix>
-                            <versionTagPrefix>${project.artifactId}-</versionTagPrefix>
-                        </flowInitContext>
-                        <!--Need to allow snapshot because of primefaces-->
-                        <allowSnapshots>true</allowSnapshots>
-                        <noDeploy>true</noDeploy>
-                    </configuration>
+                <configuration>
+                    <flowInitContext>
+                        <masterBranchName>master</masterBranchName>
+                        <developBranchName>develop</developBranchName>
+                        <featureBranchPrefix>feature-</featureBranchPrefix>
+                        <releaseBranchPrefix>release-</releaseBranchPrefix>
+                        <hotfixBranchPrefix>hotfix-</hotfixBranchPrefix>
+                        <versionTagPrefix>${project.artifactId}-</versionTagPrefix>
+                    </flowInitContext>
+                    <!--Need to allow snapshot because of primefaces-->
+                    <allowSnapshots>true</allowSnapshots>
+                    <noDeploy>true</noDeploy>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -203,11 +204,11 @@
                 <db.driver>org.h2.Driver</db.driver>
                 <db.dialect>org.hibernate.dialect.H2Dialect</db.dialect>
                 <db.user>sa</db.user>
-                <db.password />
+                <db.password/>
                 <db.hbm2ddl>update</db.hbm2ddl>
-                <ic.username />
-                <ic.password />
-                <ic.endpoint />
+                <ic.username/>
+                <ic.password/>
+                <ic.endpoint/>
                 <update.log.directory>target/imex-report</update.log.directory>
             </properties>
 
@@ -278,9 +279,9 @@
          related with the exclusion in jami-uniprot -->
         <!--TODO check if it is solve in a future release of uniprot-japi-->
         <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>2.7.5</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.7.5</version>
         </dependency>
 
         <dependency>
@@ -428,14 +429,14 @@
         </dependency>
         <!--These dependencies are pulled by intact-dataexchange-->
         <!--<dependency>-->
-            <!--<groupId>psidev.psi.mi.jami</groupId>-->
-            <!--<artifactId>jami-xml</artifactId>-->
-            <!--<version>${psi.jami.version}</version>-->
+        <!--<groupId>psidev.psi.mi.jami</groupId>-->
+        <!--<artifactId>jami-xml</artifactId>-->
+        <!--<version>${psi.jami.version}</version>-->
         <!--</dependency>-->
         <!--<dependency>-->
-            <!--<groupId>psidev.psi.mi.jami</groupId>-->
-            <!--<artifactId>jami-mitab</artifactId>-->
-            <!--<version>${psi.jami.version}</version>-->
+        <!--<groupId>psidev.psi.mi.jami</groupId>-->
+        <!--<artifactId>jami-mitab</artifactId>-->
+        <!--<version>${psi.jami.version}</version>-->
         <!--</dependency>-->
 
         <dependency>
