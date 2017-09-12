@@ -128,7 +128,7 @@
     </ui:define>
 
     <ui:define name="curateContent">
-<ed:custom-readonly readOnly="true">
+<ed:custom-readonly readOnly="#{complexController.complexReadOnly}">
         <h:panelGroup rendered="#{interaction == null}">
             No interaction loaded!
         </h:panelGroup>
@@ -188,7 +188,7 @@
                         </td>
 
                         <td>
-                        <p:commandButton value="New Version" id="complex_new_version" update="basic" actionListener="#{complexController.createNewVersion}" />
+                        <p:commandButton rendered="#{!complexController.complexReadOnly}" value="New Version" id="complex_new_version" update="basic" actionListener="#{complexController.createNewVersion}" />
                         </td>
 
                     </tr>

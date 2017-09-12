@@ -23,7 +23,7 @@ public class CustomROComponent extends UIComponentBase
     @Override
     public void encodeBegin(FacesContext context) throws IOException
     {
-        Boolean readOnly = new Boolean((String)getAttributes().get("readOnly"));
+        Boolean readOnly = (Boolean)getAttributes().get("readOnly");
         if (readOnly == null)
         {
             readOnly = false;

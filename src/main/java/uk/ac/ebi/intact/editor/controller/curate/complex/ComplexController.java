@@ -91,6 +91,7 @@ public class ComplexController extends AnnotatedObjectController {
     private boolean isConfidenceDisabled;
     private boolean isLifeCycleDisabled;
     private boolean assignToMe = true;
+    private boolean isComplexReadOnly = false;
     @Resource(name = "jamiLifeCycleManager")
     private transient LifeCycleManager lifecycleManager;
     @Resource(name = "complexEditorService")
@@ -212,6 +213,19 @@ public class ComplexController extends AnnotatedObjectController {
         }
     }
 
+    protected void complexElementsRendering(){
+        if(complex!=null&&complex.getAnnotations()!=null){
+            for(Annotation annotation:complex.getAnnotations()){
+                if(annotation.getTopic().getShortName().equals("obsolete complex")){
+                   isComplexReadOnly=true;
+                    return;
+                }
+            }
+
+            isComplexReadOnly=false;
+        }
+    }
+
     public String getOnHold() {
         return onHold != null ? onHold : "";
     }
@@ -247,6 +261,7 @@ public class ComplexController extends AnnotatedObjectController {
             refreshTabs();
         }
         generalLoadChecks();
+        complexElementsRendering();
     }
 
     @Override
@@ -1542,5 +1557,14 @@ public class ComplexController extends AnnotatedObjectController {
 
     public void setDupAuditResult(HashMap<String, Integer> dupAuditResult) {
         this.dupAuditResult = dupAuditResult;
+    }
+
+
+    public boolean isComplexReadOnly() {
+        return isComplexReadOnly;
+    }
+
+    public void setComplexReadOnly(boolean complexReadOnly) {
+        isComplexReadOnly = complexReadOnly;
     }
 }
