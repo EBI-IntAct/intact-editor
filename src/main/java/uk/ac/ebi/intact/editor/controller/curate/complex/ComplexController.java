@@ -1274,7 +1274,7 @@ public class ComplexController extends AnnotatedObjectController {
             /* Mark previous version as obsolete - Start*/
 
            Collection<Annotation> annots = this.complex.getAnnotations();
-
+           String oldVersionAc=this.complex.getAc();
             Annotation annotation = newAnnotation("obsolete complex", null, this.obsoleteVersion);
             annots.add(annotation);
             doSave(false);
@@ -1293,7 +1293,7 @@ public class ComplexController extends AnnotatedObjectController {
             Xref xrefToChange = null;
             for (Xref xref : xrefs) {
 
-                if (xref.getDatabase().getShortName().equals("complex portal") && xref.getQualifier().getShortName().equals("complex-primary")) {
+                if (xref.getDatabase().getShortName().equals("complex portal") && xref.getQualifier().getShortName().equals("complex-primary")) { // To Do Have hard coded values in some constants
                     String complexVersion = xref.getVersion();
                   //  int versionNumber = Integer.parseInt(complexVersion.substring(complexVersion.indexOf("-") + 1, complexVersion.length()));
                     int versionNumber = Integer.parseInt(complexVersion);
@@ -1305,6 +1305,9 @@ public class ComplexController extends AnnotatedObjectController {
                 }
 
             }
+
+            //add secondaryAc for storing previous version accessions
+            addXref("intact","MI:0469",oldVersionAc,null,Xref.SECONDARY,Xref.SECONDARY_MI,xrefs); // To Do Have hard coded values in some constants
 
      //     saveNewVersion(true);
          //   doSave();
