@@ -33,6 +33,7 @@ import psidev.psi.mi.jami.utils.CvTermUtils;
 import psidev.psi.mi.jami.utils.XrefUtils;
 import uk.ac.ebi.intact.editor.controller.UserSessionController;
 import uk.ac.ebi.intact.editor.controller.curate.AnnotatedObjectController;
+import uk.ac.ebi.intact.editor.controller.curate.CurateController;
 import uk.ac.ebi.intact.editor.controller.curate.UnsavedChange;
 import uk.ac.ebi.intact.editor.controller.curate.cloner.ComplexCloner;
 import uk.ac.ebi.intact.editor.controller.curate.cloner.EditorCloner;
@@ -102,6 +103,7 @@ public class ComplexController extends AnnotatedObjectController {
     private String toBeReviewed = null;
     private String newToBeReviewed = null;
     private String onHold = null;
+    private String obsoleteVersion=null;
     private String correctionComment = null;
     private String cautionMessage = null;
     private String internalRemark = null;
@@ -213,16 +215,16 @@ public class ComplexController extends AnnotatedObjectController {
         }
     }
 
-    protected void complexElementsRendering(){
-        if(complex!=null&&complex.getAnnotations()!=null){
-            for(Annotation annotation:complex.getAnnotations()){
-                if(annotation.getTopic().getShortName().equals("obsolete complex")){
-                   isComplexReadOnly=true;
+    protected void complexElementsRendering() {
+        if (complex != null && complex.getAnnotations() != null) {
+            for (Annotation annotation : complex.getAnnotations()) {
+                if (annotation.getTopic().getShortName().equals("obsolete complex")) {
+                    isComplexReadOnly = true;
                     return;
                 }
             }
 
-            isComplexReadOnly=false;
+            isComplexReadOnly = false;
         }
     }
 
@@ -491,6 +493,7 @@ public class ComplexController extends AnnotatedObjectController {
                 "curated-complex");
         this.description = desc != null ? desc.getValue() : null;
         this.complexProperties = this.complex.getPhysicalProperties();
+        this.obsoleteVersion="";
     }
 
     public String getComplexProperties() {
@@ -1254,29 +1257,65 @@ public class ComplexController extends AnnotatedObjectController {
         return "/curate/complex?faces-redirect=true";
     }
 
-    public void createNewVersion() {
-        processVersioningAndSave();
+    public String createNewVersion() {
+        return processVersioningAndSave();
     }
 
-    public void processVersioningAndSave() {
+    public String processVersioningAndSave() {
 
-        Collection<Annotation> annots=this.complex.getAnnotations();
 
-        Annotation annotation = newAnnotation("obsolete complex", null, "");
-        annots.add(annotation);
-        doSave(true);
-
-        /*if (getAnnotatedObject() != null) {
+       /*Assign New Version to the complex-primary xref to the cloned version and save clone - Start*/
+        if (getAnnotatedObject() != null) {
             IntactPrimaryObject clone = cloneAnnotatedObject(getAnnotatedObject(), newClonerInstance());
             if (clone == null) return null;
             addInfoMessage("Cloned annotated object", null);
+
+
+            /* Mark previous version as obsolete - Start*/
+
+           Collection<Annotation> annots = this.complex.getAnnotations();
+
+            Annotation annotation = newAnnotation("obsolete complex", null, this.obsoleteVersion);
+            annots.add(annotation);
+            doSave(false);
+
+          /* Mark previous version as obsolete- End*/
+
             setAnnotatedObject(clone);
             setUnsavedChanges(true);
-            getCurateController().save(clone);
-            return getCurateController().edit(clone);
+
+            CurateController.CurateObjectMetadata metadata = getCurateController().getMetadata(clone);
+            getCurateController().setCurrentAnnotatedObjectController(metadata.getAnnotatedObjectController());
+
+            collectLifecycleEvents();
+            setUnsavedChanges(true);
+            Collection<Xref> xrefs = this.complex.getXrefs();
+            Xref xrefToChange = null;
+            for (Xref xref : xrefs) {
+
+                if (xref.getDatabase().getShortName().equals("complex portal") && xref.getQualifier().getShortName().equals("complex-primary")) {
+                    String complexVersion = xref.getVersion();
+                  //  int versionNumber = Integer.parseInt(complexVersion.substring(complexVersion.indexOf("-") + 1, complexVersion.length()));
+                    int versionNumber = Integer.parseInt(complexVersion);
+                    versionNumber++;
+                    String newVersionNumber = "" + versionNumber;
+
+                    updateXref(xref.getDatabase().getShortName(), xref.getDatabase().getMIIdentifier(), xref.getId(), xref.getQualifier().getShortName(), xref.getQualifier().getMIIdentifier(), newVersionNumber,xrefs);
+                    break;
+                }
+
+            }
+
+     //     saveNewVersion(true);
+         //   doSave();
+            //saveNewVersion(false);
+            /*Assign New Version to the complex-primary xref to the cloned version and save clone - End*/
+
+            return navigateToObject(getAnnotatedObject());// navigate to new complex
         }
 
-        return null;*/
+        return null;
+
     }
 
     @Override
@@ -1566,5 +1605,13 @@ public class ComplexController extends AnnotatedObjectController {
 
     public void setComplexReadOnly(boolean complexReadOnly) {
         isComplexReadOnly = complexReadOnly;
+    }
+
+    public String getObsoleteVersion() {
+        return obsoleteVersion != null ? obsoleteVersion : "";
+    }
+
+    public void setObsoleteVersion(String reason) {
+        this.obsoleteVersion = reason;
     }
 }

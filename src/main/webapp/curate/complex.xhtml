@@ -188,7 +188,7 @@
                         </td>
 
                         <td>
-                        <p:commandButton rendered="#{!complexController.complexReadOnly}" value="New Version" id="complex_new_version" update="basic" actionListener="#{complexController.createNewVersion}" />
+                        <p:commandButton rendered="#{!complexController.complexReadOnly}" value="New Version" id="complex_new_version" update="basic"  onclick="createNewVersionDialog.show()" />
                         </td>
 
                     </tr>
@@ -539,6 +539,20 @@
                                  action="#{complexController.doSave}"
                                  process="putOnHoldTxt"
                                  ajax="false"/>
+            </h:panelGrid>
+        </p:dialog>
+
+        <p:dialog header="Create New Version" width="600" widgetVar="createNewVersionDialog" draggable="false"
+                  modal="true" position="center">
+            <h:panelGrid columns="3" style="margin-bottom:10px">
+                <h:outputLabel for="createNewVersionTxt" value="Reason for marking current complex as obsolete:"/>
+                <p:inputTextarea id="createNewVersionTxt" value="#{complexController.obsoleteVersion}" rows="4" cols="49"
+                                 converter="trimmingConverter"/>
+
+                <p:commandButton value="New Version" onstart="newVersionCreationDialog.show();" oncomplete="newVersionCreationDialog.hide();"
+                                 action="#{complexController.createNewVersion}"
+                                 process="createNewVersionTxt"
+                                 update=":editorForm"/>
             </h:panelGrid>
         </p:dialog>
 

@@ -297,20 +297,31 @@ public abstract class AnnotatedObjectController extends BaseController implement
     public void doSave(boolean refreshCurrentView) {
 
         if (getAnnotatedObject() != null){
-            doSaveIntact(refreshCurrentView, changesController);
+            doSaveIntact(refreshCurrentView, changesController,false);
 
         }
     }
 
-    protected void doSaveIntact(boolean refreshCurrentView, ChangesController changesController) {
+    public void saveNewVersion(boolean refreshCurrentView) {
+
+        if (getAnnotatedObject() != null){
+            doSaveIntact(refreshCurrentView, changesController,true);
+
+        }
+    }
+
+    protected void doSaveIntact(boolean refreshCurrentView, ChangesController changesController, boolean saveExactClone) {
 
         String currentAc = getAnnotatedObject().getAc();
         boolean currentAnnotatedObjectDeleted = false;
         boolean bypassSavingMessageForRange=false;
 
         try{
-            Collection<String> duplicatedAcs = getEditorService().findObjectDuplicates(getAnnotatedObject(), getDbSynchronizer());
-            if (!duplicatedAcs.isEmpty()){
+            Collection<String> duplicatedAcs=null;
+            if(!saveExactClone) {
+                duplicatedAcs = getEditorService().findObjectDuplicates(getAnnotatedObject(), getDbSynchronizer());
+            }
+            if (!saveExactClone&&!duplicatedAcs.isEmpty()){
                 addErrorMessage(duplicatedAcs.size()+" identical object exists: " + StringUtils.join(duplicatedAcs,", "), "Cannot save identical objects");
                 FacesContext.getCurrentInstance().renderResponse();
             }
@@ -333,7 +344,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
                 if (isParentObjectNotSaved()){
                     AnnotatedObjectController parent = getParentController();
                     if (parent != null){
-                        parent.doSaveIntact(refreshCurrentView, changesController);
+                        parent.doSaveIntact(refreshCurrentView, changesController,saveExactClone);
                         saved = true;
                     }
                 }
@@ -766,21 +777,21 @@ public abstract class AnnotatedObjectController extends BaseController implement
 
     public abstract List<psidev.psi.mi.jami.model.Xref> collectXrefs();
 
-    public void updateXref(String database, String databaseMI, String primaryId, String qualifier, String qualifierMI,
+    public void updateXref(String database, String databaseMI, String primaryId, String qualifier, String qualifierMI,String version,
                            Collection<Xref> refs ) {
         if (database == null){
             throw new IllegalArgumentException("Impossible to create/update/delete cross references if the database is not set.");
         }
 
         if ( primaryId != null && !primaryId.isEmpty() ) {
-            replaceOrCreateXref( database, databaseMI, primaryId, null, qualifier, qualifierMI, refs );
+            replaceOrCreateXref( database, databaseMI, primaryId, null, qualifier, qualifierMI,version, refs);
         } else {
             removeXref( database, databaseMI, qualifier, qualifierMI, refs );
         }
     }
 
     public void replaceOrCreateXref( String database, String databaseMI, String primaryId, String secondaryId,
-                                     String qualifier, String qualifierMI, Collection<Xref> refs ) {
+                                     String qualifier, String qualifierMI,String version, Collection<Xref> refs ) {
         if (database == null){
             throw new IllegalArgumentException("Impossible to replace or create cross references if the database is not set.");
         }
@@ -796,6 +807,9 @@ public abstract class AnnotatedObjectController extends BaseController implement
             AbstractIntactXref intactRef = (AbstractIntactXref)existingRef;
             intactRef.setSecondaryId(secondaryId);
             intactRef.setId(primaryId);
+            if(version!=null) {
+                intactRef.setVersion(version);
+            }
         }
         // create if not exists
         else{
