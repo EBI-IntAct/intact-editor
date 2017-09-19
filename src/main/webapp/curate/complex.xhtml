@@ -188,7 +188,8 @@
                         </td>
 
                         <td>
-                        <p:commandButton rendered="#{!complexController.complexReadOnly}" value="New Version" id="complex_new_version" update="basic"  onclick="createNewVersionDialog.show()" />
+                        <p:commandButton rendered="#{!complexController.complexReadOnly and complexController.released and !complexController.complexOnHold and (userSessionController.isItMe(complexController.complex.currentOwner)
+                     or userSessionController.isItMe(complexController.complex.currentReviewer))}" value="New Version" id="complex_new_version" update="basic"  onclick="createNewVersionDialog.show()" />
                         </td>
 
                     </tr>
@@ -551,8 +552,9 @@
 
                 <p:commandButton value="New Version" onstart="newVersionCreationDialog.show();" oncomplete="newVersionCreationDialog.hide();"
                                  action="#{complexController.createNewVersion}"
+                                 actionListener="#{complexController.putObsoleteOnHold}"
                                  process="createNewVersionTxt"
-                                 update=":editorForm"/>
+                                 update=":editorForm" />
             </h:panelGrid>
         </p:dialog>
 
