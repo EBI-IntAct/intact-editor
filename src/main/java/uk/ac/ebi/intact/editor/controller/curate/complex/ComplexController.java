@@ -959,13 +959,13 @@ public class ComplexController extends AnnotatedObjectController {
         }
     }
 
-    public void putObsoleteOnHold(ActionEvent evt) {
+/*    public void putObsoleteOnHold(ActionEvent evt) {
         try {
             getEditorService().putOnHold(complex, getCurrentUser(), obsoleteVersion, isReadyForRelease(), isReleased());
         } catch (IllegalTransitionException e) {
             addErrorMessage("Error updating old version, Could not mark it 'On Hold' " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
-    }
+    }*/
 
     public void readyForReleaseFromOnHold(ActionEvent evt) {
         setOnHold(null);
@@ -1270,19 +1270,20 @@ public class ComplexController extends AnnotatedObjectController {
     }
 
     public String processVersioningAndSave() {
-
+        boolean previousVersionSaved=false;
+        String oldVersionAc=null;
         try {
+
        /*Assign New Version to the complex-primary xref to the cloned version and save clone - Start*/
             if (getAnnotatedObject() != null) {
-                IntactPrimaryObject clone = cloneAnnotatedObject(getAnnotatedObject(), newClonerInstance());
-                if (clone == null) return null;
-                addInfoMessage("Cloned annotated object", null);
+
+               // addInfoMessage("Cloned annotated object", null);
 
 
                /* Mark previous version as obsolete - Start*/
 
                 Collection<Annotation> annots = this.complex.getAnnotations();
-                String oldVersionAc = this.complex.getAc();
+                oldVersionAc = this.complex.getAc();
                 Annotation annotation = newAnnotation("obsolete complex", null, this.obsoleteVersion);
                 annots.add(annotation);
                /* Mark previous version as obsolete- End*/
@@ -1291,12 +1292,15 @@ public class ComplexController extends AnnotatedObjectController {
 
 
                 getEditorService().putOnHold(this.complex, getCurrentUser(), "Newer Version Created", isReadyForRelease(), isReleased());
-
+//                lifecycleManager.getReleasedStatus().putOnHold(this.complex, "Newer Version Created", getCurrentUser());
 
                 /*put the previous version on hold -end */
 
                 doSave(false);// save previous version
+                previousVersionSaved=true;
 
+                IntactPrimaryObject clone = cloneAnnotatedObject(getAnnotatedObject(), newClonerInstance());
+                if (clone == null) return null;
 
                 setAnnotatedObject(clone);
                 setUnsavedChanges(true);
@@ -1305,7 +1309,7 @@ public class ComplexController extends AnnotatedObjectController {
                 getCurateController().setCurrentAnnotatedObjectController(metadata.getAnnotatedObjectController());
 
                // collectLifecycleEvents();
-                setUnsavedChanges(true);
+
                 Collection<Xref> xrefs = this.complex.getXrefs();
                 Xref xrefToChange = null;
                 for (Xref xref : xrefs) {
@@ -1325,7 +1329,9 @@ public class ComplexController extends AnnotatedObjectController {
 
                 //add secondaryAc for storing previous version accessions
                 addXref("intact", "MI:0469", oldVersionAc, null, Xref.SECONDARY, Xref.SECONDARY_MI, xrefs); // To Do Have hard coded values in some constants
+                removeAnnotation(annotation);
 
+                setUnsavedChanges(true);
                 //     saveNewVersion(true);
                 //   doSave();
                 //saveNewVersion(false);
@@ -1334,7 +1340,12 @@ public class ComplexController extends AnnotatedObjectController {
                 return navigateToObject(getAnnotatedObject());// navigate to new complex
             }
         } catch (Exception e) {
-            addErrorMessage("Cannot create new version " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+           String previousVersionAnnotated=null;
+            if(previousVersionSaved){
+                previousVersionAnnotated="Previous Version("+oldVersionAc+") is marked as old version" +" , contact intact developers 'intact-help@ebi.ac.uk' for revert";
+            }
+            addErrorMessage("Could not create new version " , previousVersionAnnotated );
+            e.printStackTrace();
         }
         return null;
 
