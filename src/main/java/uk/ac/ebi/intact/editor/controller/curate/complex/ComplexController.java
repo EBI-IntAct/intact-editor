@@ -1313,8 +1313,7 @@ public class ComplexController extends AnnotatedObjectController {
                 Collection<Xref> xrefs = this.complex.getXrefs();
                 Xref xrefToChange = null;
                 for (Xref xref : xrefs) {
-
-                    if (xref.getDatabase().getShortName().equals("complex portal") && xref.getQualifier().getShortName().equals("complex-primary")) { // To Do Have hard coded values in some constants
+                    if (XrefUtils.isXrefFromDatabase(xref, Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI) && XrefUtils.doesXrefHaveQualifier(xref, Xref.COMPLEX_PRIMARY_MI,Xref.COMPLEX_PRIMARY)) {
                         String complexVersion = xref.getVersion();
                         //  int versionNumber = Integer.parseInt(complexVersion.substring(complexVersion.indexOf("-") + 1, complexVersion.length()));
                         int versionNumber = Integer.parseInt(complexVersion);
