@@ -1269,16 +1269,34 @@ public class ComplexController extends AnnotatedObjectController {
         return processVersioningAndSave();
     }
 
+    /*
+    * Create New Version of the current complex
+    * # Annotate current complex as obsolete.
+    * # Move the current complex to "On Hold" status.
+    * # Clone the current complex for new version of complex.
+    * # Increase the Version of complex-primary xref in new version created above.
+    * # Add secondary-ac xref with old version complex ac to the new versioned complex.
+    * */
     public String processVersioningAndSave() {
         boolean previousVersionSaved=false;
         String oldVersionAc=null;
+        Xref complex_primaryXref=null;
         try {
 
        /*Assign New Version to the complex-primary xref to the cloned version and save clone - Start*/
             if (getAnnotatedObject() != null) {
 
-               // addInfoMessage("Cloned annotated object", null);
+              /*Extract Complex Primary Xref Start*/
+                Collection<Xref> currentComplexXrefs = this.complex.getXrefs();
+                for (Xref xref : currentComplexXrefs) {
+                    if (XrefUtils.isXrefFromDatabase(xref,Xref.COMPLEX_PORTAL_MI, Xref.COMPLEX_PORTAL ) && XrefUtils.doesXrefHaveQualifier(xref, Xref.COMPLEX_PRIMARY_MI,Xref.COMPLEX_PRIMARY)) {
+                        complex_primaryXref=xref;
+                        break;
+                    }
 
+                }
+
+                /*Extract Complex Primary Xref End*/
 
                /* Mark previous version as obsolete - Start*/
 
@@ -1292,7 +1310,6 @@ public class ComplexController extends AnnotatedObjectController {
 
 
                 getEditorService().putOnHold(this.complex, getCurrentUser(), "Newer Version Created", isReadyForRelease(), isReleased());
-//                lifecycleManager.getReleasedStatus().putOnHold(this.complex, "Newer Version Created", getCurrentUser());
 
                 /*put the previous version on hold -end */
 
@@ -1303,31 +1320,31 @@ public class ComplexController extends AnnotatedObjectController {
                 if (clone == null) return null;
 
                 setAnnotatedObject(clone);
-                setUnsavedChanges(true);
 
                 CurateController.CurateObjectMetadata metadata = getCurateController().getMetadata(clone);
                 getCurateController().setCurrentAnnotatedObjectController(metadata.getAnnotatedObjectController());
 
                // collectLifecycleEvents();
 
-                Collection<Xref> xrefs = this.complex.getXrefs();
+                Collection<Xref> clonedComplexXrefs = this.complex.getXrefs();
                 Xref xrefToChange = null;
-                for (Xref xref : xrefs) {
-                    if (XrefUtils.isXrefFromDatabase(xref, Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI) && XrefUtils.doesXrefHaveQualifier(xref, Xref.COMPLEX_PRIMARY_MI,Xref.COMPLEX_PRIMARY)) {
-                        String complexVersion = xref.getVersion();
-                        //  int versionNumber = Integer.parseInt(complexVersion.substring(complexVersion.indexOf("-") + 1, complexVersion.length()));
-                        int versionNumber = Integer.parseInt(complexVersion);
-                        versionNumber++;
-                        String newVersionNumber = "" + versionNumber;
 
-                        updateXref(xref.getDatabase().getShortName(), xref.getDatabase().getMIIdentifier(), xref.getId(), xref.getQualifier().getShortName(), xref.getQualifier().getMIIdentifier(), newVersionNumber, xrefs);
-                        break;
-                    }
+                /*We have to add 'complex_primaryXref' here with updated version because it would be removed while cloning*/
+                if(complex_primaryXref!=null){
+                    String complexVersion = complex_primaryXref.getVersion();
+                    //  int versionNumber = Integer.parseInt(complexVersion.substring(complexVersion.indexOf("-") + 1, complexVersion.length()));
+                    int versionNumber = Integer.parseInt(complexVersion);
+                    versionNumber++;
+                    String newVersionNumber = "" + versionNumber;
 
+                    AbstractIntactXref abstractIntactXref=(AbstractIntactXref)complex_primaryXref;
+                    abstractIntactXref.setVersion(newVersionNumber);
+                    clonedComplexXrefs.add(complex_primaryXref);
+                    //updateXref(complex_primaryXref.getDatabase().getShortName(), complex_primaryXref.getDatabase().getMIIdentifier(), complex_primaryXref.getId(), complex_primaryXref.getQualifier().getShortName(), complex_primaryXref.getQualifier().getMIIdentifier(), newVersionNumber, clonedComplexXrefs);
                 }
 
                 //add secondaryAc for storing previous version accessions
-                addXref("intact", "MI:0469", oldVersionAc, null, Xref.SECONDARY, Xref.SECONDARY_MI, xrefs); // To Do Have hard coded values in some constants
+                addXref("intact", "MI:0469", oldVersionAc, null, Xref.SECONDARY, Xref.SECONDARY_MI, clonedComplexXrefs); // To Do Have hard coded values in some constants
                 removeAnnotation(annotation);
 
                 setUnsavedChanges(true);
