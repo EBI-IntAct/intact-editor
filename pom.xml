@@ -12,7 +12,7 @@
     <packaging>war</packaging>
 
 
-    <version>3.0.19</version>
+    <version>3.0.20</version>
     <name>Service :: IntAct Editor</name>
 
     <scm>
@@ -181,6 +181,11 @@
                         <!--Need to allow snapshot because of primefaces-->
                         <allowSnapshots>true</allowSnapshots>
                         <noDeploy>true</noDeploy>
+                        <pullMaster>true</pullMaster>
+                        <pullDevelop>true</pullDevelop>
+                        <pushReleases>true</pushReleases>
+                        <pushHotfixes>true</pushHotfixes>
+                        <pushFeatures>true</pushFeatures>
                     </configuration>
             </plugin>
         </plugins>
@@ -227,6 +232,14 @@
             <groupId>uk.ac.ebi.intact.jami</groupId>
             <artifactId>intact-jami</artifactId>
             <version>${intact.jami.version}</version>
+        </dependency>
+
+
+        <!--TODO Remove this dependency after the relese of psi-jami with the right dependency-->
+        <dependency>
+            <groupId>uk.ac.ebi.uniprot</groupId>
+            <artifactId>japi</artifactId>
+            <version>1.0.15</version>
         </dependency>
 
         <dependency>
