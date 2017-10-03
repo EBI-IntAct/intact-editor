@@ -178,6 +178,8 @@
                             <hotfixBranchPrefix>hotfix-</hotfixBranchPrefix>
                             <versionTagPrefix>${project.artifactId}-</versionTagPrefix>
                         </flowInitContext>
+                        <username>${git.user}</username>
+                        <password>${git.password}</password>
                         <!--Need to allow snapshot because of primefaces-->
                         <allowSnapshots>true</allowSnapshots>
                         <noDeploy>true</noDeploy>
