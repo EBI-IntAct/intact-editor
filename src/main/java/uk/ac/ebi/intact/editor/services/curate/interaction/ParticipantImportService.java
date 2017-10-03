@@ -22,7 +22,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import psidev.psi.mi.jami.bridges.chebi.ChebiFetcher;
 import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
 import psidev.psi.mi.jami.bridges.uniprot.UniprotGeneFetcher;
 import psidev.psi.mi.jami.bridges.uniprot.UniprotProteinFetcher;
@@ -55,8 +54,8 @@ public class ParticipantImportService extends AbstractEditorService {
     @Resource(name = "proteinFetcher")
     private UniprotProteinFetcher uniprotRemoteService;
 
-    @Resource(name = "bioactiveEntityFetcher")
-    private ChebiFetcher chebiFetcher;
+//    @Resource(name = "bioactiveEntityFetcher")
+//    private ChebiFetcher chebiFetcher;
 
     @Resource(name = "geneFetcher")
     private UniprotGeneFetcher uniprotGeneFetcher;
@@ -202,12 +201,12 @@ public class ParticipantImportService extends AbstractEditorService {
     private Set<ImportCandidate> importFromChebi(String participantToImport) throws BridgeFailedException, SynchronizerException, FinderException, PersisterException {
         Set<ImportCandidate> candidates = new HashSet<ImportCandidate>();
 
-        final Collection<BioactiveEntity> smallMolecules = chebiFetcher.fetchByIdentifier(participantToImport);
-        for (BioactiveEntity entity : smallMolecules){
-            ImportCandidate candidate = toImportCandidate(participantToImport, toBioactiveEntity(entity));
-            candidate.setSource("chebi");
-            candidates.add(candidate);
-        }
+//        final Collection<BioactiveEntity> smallMolecules = chebiFetcher.fetchByIdentifier(participantToImport);
+//        for (BioactiveEntity entity : smallMolecules){
+//            ImportCandidate candidate = toImportCandidate(participantToImport, toBioactiveEntity(entity));
+//            candidate.setSource("chebi");
+//            candidates.add(candidate);
+//        }
 
         return candidates;
     }
