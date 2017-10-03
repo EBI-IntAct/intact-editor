@@ -181,6 +181,11 @@
                         <!--Need to allow snapshot because of primefaces-->
                         <allowSnapshots>true</allowSnapshots>
                         <noDeploy>true</noDeploy>
+                        <pullMaster>true</pullMaster>
+                        <pullDevelop>true</pullDevelop>
+                        <pushReleases>true</pushReleases>
+                        <pushHotfixes>true</pushHotfixes>
+                        <pushFeatures>true</pushFeatures>
                     </configuration>
             </plugin>
         </plugins>
