@@ -12,7 +12,7 @@
     <packaging>war</packaging>
 
 
-    <version>3.0.23</version>
+    <version>3.0.24</version>
     <name>Service :: IntAct Editor</name>
 
     <scm>
@@ -32,7 +32,7 @@
 
         <spring.version>3.2.9.RELEASE</spring.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
-        <psi.jami.version>3.0.12</psi.jami.version>
+        <psi.jami.version>3.0.13</psi.jami.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
         <intact.jami.version>1.2.23</intact.jami.version>
         <dataexchange.version>3.0.15</dataexchange.version>
