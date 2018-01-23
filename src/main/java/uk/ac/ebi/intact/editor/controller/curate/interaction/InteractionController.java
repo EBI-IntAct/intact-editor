@@ -474,7 +474,7 @@ public class InteractionController extends AnnotatedObjectController {
                 addErrorMessage("Cannot copy", "No experiment found with this AC or short label: "+experimentToCopyTo);
                 return null;
             }
-            newInteraction = cloneAnnotatedObject(interaction, new InteractionEvidenceCloner());
+            newInteraction = cloneAnnotatedObject(interaction, newClonerInstance());
             newInteraction.setExperiment(experiment);
 
             newInteraction.getVariableParameterValues().clear();
