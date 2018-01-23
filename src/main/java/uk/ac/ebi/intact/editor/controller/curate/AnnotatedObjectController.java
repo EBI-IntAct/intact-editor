@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
 import psidev.psi.mi.jami.bridges.fetcher.OntologyTermFetcher;
 import psidev.psi.mi.jami.bridges.ols.CachedOlsOntologyTermFetcher;
-import psidev.psi.mi.jami.bridges.ols.OlsOntologyTermFetcher;
 import psidev.psi.mi.jami.model.*;
 import psidev.psi.mi.jami.utils.AliasUtils;
 import psidev.psi.mi.jami.utils.AnnotationUtils;
@@ -295,33 +294,20 @@ public abstract class AnnotatedObjectController extends BaseController implement
      * by the CorePersister (ie. wrapped components). At the end, the current object is refreshed from the database.
      */
     public void doSave(boolean refreshCurrentView) {
-
         if (getAnnotatedObject() != null){
-            doSaveIntact(refreshCurrentView, changesController,false);
-
+            doSaveIntact(refreshCurrentView, changesController);
         }
     }
 
-    public void saveNewVersion(boolean refreshCurrentView) {
-
-        if (getAnnotatedObject() != null){
-            doSaveIntact(refreshCurrentView, changesController,true);
-
-        }
-    }
-
-    protected void doSaveIntact(boolean refreshCurrentView, ChangesController changesController, boolean saveExactClone) {
+    protected void  doSaveIntact(boolean refreshCurrentView, ChangesController changesController) {
 
         String currentAc = getAnnotatedObject().getAc();
         boolean currentAnnotatedObjectDeleted = false;
         boolean bypassSavingMessageForRange=false;
 
         try{
-            Collection<String> duplicatedAcs=null;
-            if(!saveExactClone) {
-                duplicatedAcs = getEditorService().findObjectDuplicates(getAnnotatedObject(), getDbSynchronizer());
-            }
-            if (!saveExactClone&&!duplicatedAcs.isEmpty()){
+            Collection<String> duplicatedAcs = getEditorService().findObjectDuplicates(getAnnotatedObject(), getDbSynchronizer());
+            if (!duplicatedAcs.isEmpty()){
                 addErrorMessage(duplicatedAcs.size()+" identical object exists: " + StringUtils.join(duplicatedAcs,", "), "Cannot save identical objects");
                 FacesContext.getCurrentInstance().renderResponse();
             }
@@ -344,7 +330,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
                 if (isParentObjectNotSaved()){
                     AnnotatedObjectController parent = getParentController();
                     if (parent != null){
-                        parent.doSaveIntact(refreshCurrentView, changesController,saveExactClone);
+                        parent.doSaveIntact(refreshCurrentView, changesController);
                         saved = true;
                     }
                 }
@@ -372,7 +358,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
                 if (annotatedObject != null){
                     setAnnotatedObject(annotatedObject);
                     if(!bypassSavingMessageForRange) {
-                        addInfoMessage("Saved", getDescription());
+                        addInfoMessage("Saved", getAc()+": " + getDescription());
                     }
                     doPostSave();
                 }
@@ -777,21 +763,21 @@ public abstract class AnnotatedObjectController extends BaseController implement
 
     public abstract List<psidev.psi.mi.jami.model.Xref> collectXrefs();
 
-    public void updateXref(String database, String databaseMI, String primaryId, String qualifier, String qualifierMI,String version,
+    public void updateXref(String database, String databaseMI, String primaryId, String qualifier, String qualifierMI,
                            Collection<Xref> refs ) {
         if (database == null){
             throw new IllegalArgumentException("Impossible to create/update/delete cross references if the database is not set.");
         }
 
         if ( primaryId != null && !primaryId.isEmpty() ) {
-            replaceOrCreateXref( database, databaseMI, primaryId, null, qualifier, qualifierMI,version, refs);
+            replaceOrCreateXref( database, databaseMI, primaryId, null, qualifier, qualifierMI, refs);
         } else {
             removeXref( database, databaseMI, qualifier, qualifierMI, refs );
         }
     }
 
     public void replaceOrCreateXref( String database, String databaseMI, String primaryId, String secondaryId,
-                                     String qualifier, String qualifierMI,String version, Collection<Xref> refs ) {
+                                     String qualifier, String qualifierMI, Collection<Xref> refs ) {
         if (database == null){
             throw new IllegalArgumentException("Impossible to replace or create cross references if the database is not set.");
         }
@@ -807,9 +793,6 @@ public abstract class AnnotatedObjectController extends BaseController implement
             AbstractIntactXref intactRef = (AbstractIntactXref)existingRef;
             intactRef.setSecondaryId(secondaryId);
             intactRef.setId(primaryId);
-            if(version!=null) {
-                intactRef.setVersion(version);
-            }
         }
         // create if not exists
         else{
@@ -839,6 +822,23 @@ public abstract class AnnotatedObjectController extends BaseController implement
                 refIterator.remove();
             }
         }
+        setUnsavedChanges(true);
+    }
+
+    public void addXref(Xref xref, Collection<Xref> refs) {
+        addXref(xref.getDatabase(), xref.getId(), null, xref.getVersion(), xref.getQualifier(), refs);
+    }
+
+    public void addXref(CvTerm database, String primaryId, String secondaryId,
+                        String version, CvTerm qualifier, Collection<Xref> refs) {
+        if (database == null) {
+            throw new IllegalArgumentException("Impossible to add cross references if the database is not set.");
+        }
+        if (primaryId == null) {
+            throw new IllegalArgumentException("Impossible to add cross references if the primary id is not set.");
+        }
+
+        refs.add(newXref(database, primaryId, secondaryId, version, qualifier));
         setUnsavedChanges(true);
     }
 

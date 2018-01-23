@@ -578,14 +578,14 @@ public class ExperimentController extends AnnotatedObjectController {
 
             // update the primary reference when moving the experiment
             if (publicationController.getPublication().getPubmedId() != null) {
-                updateXref(Xref.PUBMED, Xref.PUBMED_MI, publicationController.getPublication().getPubmedId(), Xref.PRIMARY, Xref.PRIMARY_MI,null, experiment.getXrefs());
+                updateXref(Xref.PUBMED, Xref.PUBMED_MI, publicationController.getPublication().getPubmedId(), Xref.PRIMARY, Xref.PRIMARY_MI, experiment.getXrefs());
             } else {
                 removeXref(Xref.PUBMED, Xref.PUBMED_MI, Xref.PRIMARY, Xref.PRIMARY_MI, experiment.getXrefs());
             }
 
             // update the imex reference when moving the experiment
             if (publicationController.getPublication().getImexId() != null) {
-                updateXref(Xref.IMEX, Xref.IMEX_MI, publicationController.getPublication().getImexId(), Xref.IMEX_PRIMARY, Xref.IMEX_PRIMARY_MI,null, experiment.getXrefs());
+                updateXref(Xref.IMEX, Xref.IMEX_MI, publicationController.getPublication().getImexId(), Xref.IMEX_PRIMARY, Xref.IMEX_PRIMARY_MI, experiment.getXrefs());
             } else {
                 removeXref(Xref.IMEX, Xref.IMEX_MI, Xref.IMEX, Xref.IMEX_PRIMARY_MI, experiment.getXrefs());
             }
