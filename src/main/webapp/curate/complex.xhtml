@@ -181,17 +181,12 @@
                                         async="true" process="@this" oncomplete="markAsUnsaved()"/>
                             </p:inputText>
                         </td>
-                        <td style="padding-left: 50px;">
-                            <h:outputLabel value="AC: " for="acTxt" styleClass="intact-disabled"/>
-                            <p:inputText id="acTxt" value="#{interaction.ac}"
-                                         size="10" readonly="true"/>
+                        <td class="firstCell">
+                            <h:outputLabel value="AC: " for="acTxt"/>
                         </td>
-
                         <td>
-                        <p:commandButton type="button" rendered="#{!complexController.complexReadOnly and complexController.released and !complexController.complexOnHold and (userSessionController.isItMe(complexController.complex.currentOwner)
-                     or userSessionController.isItMe(complexController.complex.currentReviewer))}" value="New Version" id="complex_new_version" update="basic"  onclick="createNewVersionDialog.show()" />
+                            <p:inputText id="acTxt" value="#{interaction.ac}" size="20" readonly="true"/>
                         </td>
-
                     </tr>
                     <tr>
                         <td class="firstCell">
@@ -205,6 +200,16 @@
                                     <ed:curation/>
                                 </p:inputText>
                             </h:panelGroup>
+                        </td>
+                        <td class="firstCell">
+                            <h:outputLabel value="Complex AC: " for="complexAcTxt"/>
+                        </td>
+                        <td>
+                            <p:inputText id="complexAcTxt" value="#{interaction.complexAc}" size="20" readonly="true"/>
+                            <p:commandButton type="button"
+                                             rendered="#{!complexController.complexReadOnly and complexController.released and !complexController.complexOnHold}"
+                                             value="New CP Version" id="complex_new_version" update="basic"
+                                             onclick="createNewVersionDialog.show()"/>
                         </td>
                     </tr>
                     <tr>
