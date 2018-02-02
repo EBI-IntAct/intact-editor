@@ -205,7 +205,7 @@
                             <h:outputLabel value="Complex AC: " for="complexAcTxt"/>
                         </td>
                         <td>
-                            <p:inputText id="complexAcTxt" value="#{interaction.complexAc}" size="20" readonly="true"/>
+                            <p:inputText id="complexAcTxt" value="#{interaction.complexAc}.#{interaction.complexVersion}" size="20" readonly="true"/>
                             <p:commandButton type="button"
                                              rendered="#{!complexController.complexReadOnly and complexController.released and !complexController.complexOnHold}"
                                              value="New CP Version" id="complex_new_version" update="basic"
