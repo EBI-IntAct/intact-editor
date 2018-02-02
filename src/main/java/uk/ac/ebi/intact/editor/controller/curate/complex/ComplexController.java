@@ -91,6 +91,7 @@ public class ComplexController extends AnnotatedObjectController {
     private boolean isConfidenceDisabled;
     private boolean isLifeCycleDisabled;
     private boolean assignToMe = true;
+    private boolean isComplexReadOnly = false;
     @Resource(name = "jamiLifeCycleManager")
     private transient LifeCycleManager lifecycleManager;
     @Resource(name = "complexEditorService")
@@ -101,6 +102,7 @@ public class ComplexController extends AnnotatedObjectController {
     private String toBeReviewed = null;
     private String newToBeReviewed = null;
     private String onHold = null;
+    private String obsoleteVersion = null;
     private String correctionComment = null;
     private String cautionMessage = null;
     private String internalRemark = null;
@@ -164,7 +166,7 @@ public class ComplexController extends AnnotatedObjectController {
     @Override
     public void modifyClone(IntactPrimaryObject clone) {
         super.modifyClone(clone);
-        // to be overrided
+        // to be overridden
         IntactComplex complex = (IntactComplex) clone;
         try {
             getLifecycleManager().getStartStatus().create(complex, "Created in Editor",
@@ -175,6 +177,12 @@ public class ComplexController extends AnnotatedObjectController {
                 getLifecycleManager().getNewStatus().claimOwnership(complex, user);
                 getLifecycleManager().getAssignedStatus().startCuration(complex, user);
             }
+
+            // Ask to the database for the next available complex accession.
+            // It is initialised with version 1. Call this method only for brand new complexes
+            String acValue = getComplexEditorService().retrieveNextComplexAc();
+            addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getXrefs());
+
         } catch (IllegalTransitionException e) {
             addErrorMessage("Cannot create complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
@@ -209,6 +217,19 @@ public class ComplexController extends AnnotatedObjectController {
     protected void loadCautionMessages() {
         if (this.complex != null) {
             refreshInfoMessages();
+        }
+    }
+
+    protected void complexElementsRendering() {
+        if (complex != null && complex.getAnnotations() != null) {
+            for (Annotation annotation : complex.getAnnotations()) {
+                if (annotation.getTopic().getShortName().equals("obsolete complex")) {
+                    isComplexReadOnly = true;
+                    return;
+                }
+            }
+
+            isComplexReadOnly = false;
         }
     }
 
@@ -247,6 +268,7 @@ public class ComplexController extends AnnotatedObjectController {
             refreshTabs();
         }
         generalLoadChecks();
+        complexElementsRendering();
     }
 
     @Override
@@ -441,7 +463,6 @@ public class ComplexController extends AnnotatedObjectController {
         this.complex = complex;
         if (complex != null) {
             this.ac = complex.getAc();
-
             initialiseDefaultProperties(complex);
         } else {
             this.ac = null;
@@ -476,6 +497,7 @@ public class ComplexController extends AnnotatedObjectController {
                 "curated-complex");
         this.description = desc != null ? desc.getValue() : null;
         this.complexProperties = this.complex.getPhysicalProperties();
+        this.obsoleteVersion = "";
     }
 
     public String getComplexProperties() {
@@ -631,9 +653,9 @@ public class ComplexController extends AnnotatedObjectController {
     }
 
     @Override
-    public InteractorXref newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+    public InteractorXref newXref(String db, String dbMI, String id, String version, String qualifier, String qualifierMI) {
         return new InteractorXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, dbMI != null ? dbMI : db),
-                id, secondaryId, getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
+                id, version, getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
     }
 
     @Override
@@ -724,7 +746,7 @@ public class ComplexController extends AnnotatedObjectController {
 
     @Override
     public boolean isXrefNotEditable(Xref ref) {
-        return false;
+        return XrefUtils.doesXrefHaveQualifier(ref, Xref.COMPLEX_PRIMARY_MI, Xref.COMPLEX_PRIMARY);
     }
 
     public boolean isComplexGoRef(Xref ref) {
@@ -734,7 +756,7 @@ public class ComplexController extends AnnotatedObjectController {
     @Override
     public List<Xref> collectXrefs() {
         List<Xref> xrefs = new ArrayList<Xref>(this.complex.getDbXrefs());
-      //  Collections.sort(xrefs, new AuditableComparator());
+        //  Collections.sort(xrefs, new AuditableComparator());
         Collections.sort(xrefs, new XrefComparator());
         return xrefs;
     }
@@ -940,6 +962,14 @@ public class ComplexController extends AnnotatedObjectController {
             addErrorMessage("Cannot put on-hold: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
+
+/*    public void putObsoleteOnHold(ActionEvent evt) {
+        try {
+            getEditorService().putOnHold(complex, getCurrentUser(), obsoleteVersion, isReadyForRelease(), isReleased());
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Error updating old version, Could not mark it 'On Hold' " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        }
+    }*/
 
     public void readyForReleaseFromOnHold(ActionEvent evt) {
         setOnHold(null);
@@ -1187,6 +1217,12 @@ public class ComplexController extends AnnotatedObjectController {
             try {
                 IntactComplex complex = getComplexEditorService().cloneInteractionEvidence(interactionEvidence, new ComplexCloner());
                 setComplex(complex);
+
+                // Ask to the database for the next available complex accession.
+                // It is initialised with version 1. Call this method only for brand new complexes
+                String acValue = getComplexEditorService().retrieveNextComplexAc();
+                addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getXrefs());
+
             } catch (SynchronizerException e) {
                 addErrorMessage("Cannot clone the interaction evidence as a complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
             } catch (FinderException e) {
@@ -1225,6 +1261,12 @@ public class ComplexController extends AnnotatedObjectController {
         this.complex.setCreator(user.getLogin());
         this.complex.setUpdator(user.getLogin());
         this.complex.setInteractorType(type);
+
+        // Ask to the database for the next available complex accession.
+        // It is initialised with version 1. Call this method only for brand new complexes
+        String acValue = getComplexEditorService().retrieveNextComplexAc();
+        addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getXrefs());
+
         try {
             getLifecycleManager().getStartStatus().create(this.complex, "Created in Editor", user);
 
@@ -1237,6 +1279,101 @@ public class ComplexController extends AnnotatedObjectController {
         }
 
         return "/curate/complex?faces-redirect=true";
+    }
+
+    public String createNewVersion() {
+        return processVersioningAndSave();
+    }
+
+    /*
+     * Create New Version of the current complex
+     * # Annotate current complex as obsolete.
+     * # Move the current complex to "On Hold" status.
+     * # Clone the current complex for new version of complex.
+     * # Increase the Version of complex-primary xref in new version created above.
+     * # Add secondary-ac xref with old version complex ac to the new versioned complex.
+     * */
+    private String processVersioningAndSave() {
+        boolean previousVersionSaved = false;
+        String oldVersionAc = null;
+        Xref complex_primaryXref = null;
+        try {
+
+            /* Assign New Version to the complex-primary xref to the cloned version and save clone - Start */
+            if (getAnnotatedObject() != null) {
+
+                /* Extract Complex Primary Xref - Start */
+                Collection<Xref> currentComplexXrefs = this.complex.getXrefs();
+                for (Xref xref : currentComplexXrefs) {
+                    if (XrefUtils.isXrefFromDatabase(xref, Xref.COMPLEX_PORTAL_MI, Xref.COMPLEX_PORTAL) && XrefUtils.doesXrefHaveQualifier(xref, Xref.COMPLEX_PRIMARY_MI, Xref.COMPLEX_PRIMARY)) {
+                        complex_primaryXref = xref;
+                        break;
+                    }
+
+                }
+                /* Extract Complex Primary Xref - End */
+
+                /* Mark previous version as obsolete - Start */
+                Collection<Annotation> annots = this.complex.getAnnotations();
+                Annotation annotation = newAnnotation("obsolete complex", null, this.obsoleteVersion);
+                annots.add(annotation);
+                /* Mark previous version as obsolete - End */
+
+
+                // Collects intact secondary acs from previous versions of the same complex and previous primary
+                Collection<Xref> oldVersionAcs = XrefUtils.collectAllXrefsHavingDatabaseAndQualifier(this.complex.getIdentifiers(), "MI:0469", "intact", Xref.SECONDARY_MI, Xref.SECONDARY);
+                oldVersionAc = this.complex.getAc();
+
+                /* Put the previous version on hold - Start */
+                getEditorService().putOnHold(this.complex, getCurrentUser(), "Newer Version Created", isReadyForRelease(), isReleased());
+                /* Put the previous version on hold  - End */
+
+                doSave(false);// save previous version
+                previousVersionSaved = true;
+
+                IntactComplex clone = cloneAnnotatedObject(complex, newClonerInstance());
+                if (clone == null) return null;
+
+                setAnnotatedObject(clone);
+                Collection<Xref> clonedComplexXrefs = clone.getXrefs();
+
+                /* We have to add 'complex_primaryXref' here with updated version because it would be removed while cloning */
+                assert complex_primaryXref != null; //It is a requirement because the new version is based in a previous complex
+                String complexVersion = complex_primaryXref.getVersion();
+                int versionNumber = Integer.parseInt(complexVersion);
+                versionNumber++;
+                String newVersionNumber = "" + versionNumber;
+
+                //Internally removes the xref created by the cloner and replaces it with the new version
+                addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, complex_primaryXref.getId(), newVersionNumber, Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, clonedComplexXrefs);
+
+                //add intact secondary acs for storing previous version accessions and the current primary
+                //ToDo Have hard coded values in some constants
+                for (Xref versionAc : oldVersionAcs) {
+                    addXref(versionAc, clonedComplexXrefs);
+                }
+                addXref("intact", "MI:0469", oldVersionAc, null, Xref.SECONDARY, Xref.SECONDARY_MI, clonedComplexXrefs);
+
+
+                //removes the obsolete complex annotation
+                removeAnnotation(annotation);
+
+                setUnsavedChanges(true);
+                doSave(); //We decided to save because it is part of the same unit (together with turing the previous one to read only)
+                /* Assign New Version to the complex-primary xref to the cloned version and save clone - End */
+
+                return getCurateController().edit(clone);// navigate to new complex
+            }
+        } catch (Exception e) {
+            String previousVersionAnnotated = null;
+            if (previousVersionSaved) {
+                previousVersionAnnotated = "Previous Version(" + oldVersionAc + ") is marked as old version" + " , contact intact developers 'intact-help@ebi.ac.uk' for revert";
+            }
+            addErrorMessage("Could not create new version ", previousVersionAnnotated);
+            e.printStackTrace();
+        }
+        return null;
+
     }
 
     @Override
@@ -1517,5 +1654,22 @@ public class ComplexController extends AnnotatedObjectController {
 
     public void setDupAuditResult(HashMap<String, Integer> dupAuditResult) {
         this.dupAuditResult = dupAuditResult;
+    }
+
+
+    public boolean isComplexReadOnly() {
+        return isComplexReadOnly;
+    }
+
+    public void setComplexReadOnly(boolean complexReadOnly) {
+        isComplexReadOnly = complexReadOnly;
+    }
+
+    public String getObsoleteVersion() {
+        return obsoleteVersion != null ? obsoleteVersion : "";
+    }
+
+    public void setObsoleteVersion(String reason) {
+        this.obsoleteVersion = reason;
     }
 }

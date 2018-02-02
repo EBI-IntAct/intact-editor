@@ -35,8 +35,6 @@ import uk.ac.ebi.intact.jami.model.extension.*;
 import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
 import uk.ac.ebi.intact.jami.utils.IntactUtils;
 
-import javax.faces.application.FacesMessage;
-import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
 import java.math.BigDecimal;
 import java.util.*;
@@ -226,10 +224,9 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
     }
 
     @Override
-    public FeatureEvidenceXref newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+    public FeatureEvidenceXref newXref(String db, String dbMI, String id, String version, String qualifier, String qualifierMI) {
         return new FeatureEvidenceXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, dbMI != null ? dbMI : db),
-                id,
-                secondaryId,
+                id, version,
                 getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
     }
 

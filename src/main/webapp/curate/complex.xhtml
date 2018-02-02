@@ -128,7 +128,7 @@
     </ui:define>
 
     <ui:define name="curateContent">
-
+<ed:custom-readonly readOnly="#{complexController.complexReadOnly}">
         <h:panelGroup rendered="#{interaction == null}">
             No interaction loaded!
         </h:panelGroup>
@@ -181,10 +181,11 @@
                                         async="true" process="@this" oncomplete="markAsUnsaved()"/>
                             </p:inputText>
                         </td>
-                        <td style="padding-left: 50px;">
-                            <h:outputLabel value="AC: " for="acTxt" styleClass="intact-disabled"/>
-                            <p:inputText id="acTxt" value="#{interaction.ac}"
-                                         size="10" readonly="true"/>
+                        <td class="firstCell">
+                            <h:outputLabel value="AC: " for="acTxt"/>
+                        </td>
+                        <td>
+                            <p:inputText id="acTxt" value="#{interaction.ac}" size="20" readonly="true"/>
                         </td>
                     </tr>
                     <tr>
@@ -199,6 +200,16 @@
                                     <ed:curation/>
                                 </p:inputText>
                             </h:panelGroup>
+                        </td>
+                        <td class="firstCell">
+                            <h:outputLabel value="Complex AC: " for="complexAcTxt"/>
+                        </td>
+                        <td>
+                            <p:inputText id="complexAcTxt" value="#{interaction.complexAc}.#{interaction.complexVersion}" size="20" readonly="true"/>
+                            <p:commandButton type="button"
+                                             rendered="#{!complexController.complexReadOnly and complexController.released and !complexController.complexOnHold}"
+                                             value="New CP Version" id="complex_new_version" update="basic"
+                                             onclick="createNewVersionDialog.show()"/>
                         </td>
                     </tr>
                     <tr>
@@ -537,6 +548,20 @@
             </h:panelGrid>
         </p:dialog>
 
+        <p:dialog header="Create New Version" width="600" widgetVar="createNewVersionDialog" draggable="false"
+                  modal="true" position="center">
+            <h:panelGrid columns="3" style="margin-bottom:10px">
+                <h:outputLabel for="createNewVersionTxt" value="Reason for marking current complex as obsolete:"/>
+                <p:inputTextarea id="createNewVersionTxt" value="#{complexController.obsoleteVersion}" rows="4" cols="49"
+                                 converter="trimmingConverter"/>
+
+                <p:commandButton value="New Version" onstart="newVersionCreationDialog.show();" oncomplete="newVersionCreationDialog.hide();"
+                                 action="#{complexController.createNewVersion}"
+                                 process="createNewVersionTxt"
+                                 update=":editorForm" />
+            </h:panelGrid>
+        </p:dialog>
+
         <p:dialog header="Correction comment" width="600" widgetVar="correctionCommentDialog" draggable="false"
                   modal="true" position="center">
             <h:panelGrid columns="3" style="margin-bottom:10px">
@@ -599,7 +624,7 @@
                                  process="reasonRejTxt" update=":editorForm"/>
             </h:panelGrid>
         </p:dialog>
-
+</ed:custom-readonly>
     </ui:define>
     <ia:loadingDialog widgetVar="loadDialog" message="Loading..." modal="false"/>
 

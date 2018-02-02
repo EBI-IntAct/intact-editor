@@ -180,7 +180,8 @@ public class ComplexCloner extends AbstractEditorCloner<Complex, IntactComplex> 
         // do not clone identifiers, only xrefs
         for (Xref ref : complex.getXrefs()){
             if (!XrefUtils.isXrefFromDatabase(ref, Xref.IMEX_MI, Xref.IMEX)
-                    && !XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY)){
+                    && !XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY)
+                    && !XrefUtils.doesXrefHaveQualifier(ref, Xref.COMPLEX_PRIMARY_MI, Xref.COMPLEX_PRIMARY)){
                 if (ref instanceof ComplexGOXref){
                     ComplexGOXref intactRef = new ComplexGOXref(ref.getId(), ref.getVersion(), ref.getQualifier());
                     intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
@@ -203,7 +204,8 @@ public class ComplexCloner extends AbstractEditorCloner<Complex, IntactComplex> 
             if (!AnnotationUtils.doesAnnotationHaveTopic(annotation, null, Releasable.CORRECTION_COMMENT)
                     && !AnnotationUtils.doesAnnotationHaveTopic(annotation, null, Releasable.ON_HOLD)
                     && !AnnotationUtils.doesAnnotationHaveTopic(annotation, null, Releasable.TO_BE_REVIEWED)
-                    && !AnnotationUtils.doesAnnotationHaveTopic(annotation, null, Releasable.ACCEPTED) ){
+                    && !AnnotationUtils.doesAnnotationHaveTopic(annotation, null, Releasable.ACCEPTED)
+                    && !AnnotationUtils.doesAnnotationHaveTopic(annotation,null,"obsolete complex")){
                 clone.getAnnotations().add(new InteractorAnnotation(annotation.getTopic(), annotation.getValue()));
             }
         }

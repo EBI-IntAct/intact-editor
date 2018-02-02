@@ -26,6 +26,24 @@
 
     <tag>
         <description>
+            Controls some of the curation flow
+        </description>
+
+        <tag-name>custom-readonly</tag-name>
+
+        <component>
+            <component-type>uk.ac.ebi.intact.editor.component.CustomROComponent</component-type>
+        </component>
+
+        <attribute>
+            <name>rendered</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <description>
             Syncs the value of two input components, placed as a child of an input component.
         </description>
 

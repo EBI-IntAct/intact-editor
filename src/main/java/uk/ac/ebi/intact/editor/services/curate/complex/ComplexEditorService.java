@@ -23,6 +23,7 @@ import uk.ac.ebi.intact.editor.controller.curate.cloner.ComplexCloner;
 import uk.ac.ebi.intact.editor.controller.curate.cloner.ModelledFeatureCloner;
 import uk.ac.ebi.intact.editor.controller.curate.cloner.ModelledParticipantCloner;
 import uk.ac.ebi.intact.editor.services.AbstractEditorService;
+import uk.ac.ebi.intact.jami.model.ComplexAcValue;
 import uk.ac.ebi.intact.jami.model.extension.*;
 import uk.ac.ebi.intact.jami.model.lifecycle.AbstractLifeCycleEvent;
 import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleEvent;
@@ -30,6 +31,7 @@ import uk.ac.ebi.intact.jami.synchronizer.FinderException;
 import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
 import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
 
+import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -207,6 +209,12 @@ public class ComplexEditorService extends AbstractEditorService {
         initialiseParameters(interactor.getModelledParameters());
 
         return interactor;
+    }
+
+    @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
+    public String retrieveNextComplexAc() {
+        EntityManager em = getIntactDao().getEntityManager();
+        return ComplexAcValue.getNextComplexAcValue(em);
     }
 
     private boolean areComplexCollectionsLazy(IntactComplex interactor) {
