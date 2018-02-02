@@ -124,11 +124,10 @@ public class InteractorController extends AnnotatedObjectController {
     }
 
     @Override
-    public InteractorXref newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+    public InteractorXref newXref(String db, String dbMI, String id, String version, String qualifier, String qualifierMI) {
         return new InteractorXref(getCvService().findCvObjectByIdentifier(IntactUtils.DATABASE_OBJCLASS,
                 dbMI != null ? dbMI : db),
-                id,
-                secondaryId,
+                id, version,
                 getCvService().findCvObjectByIdentifier(IntactUtils.QUALIFIER_OBJCLASS,
                         qualifierMI != null ? qualifierMI : qualifier));
     }

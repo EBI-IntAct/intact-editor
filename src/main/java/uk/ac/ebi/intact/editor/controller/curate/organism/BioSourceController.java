@@ -116,7 +116,7 @@ public class BioSourceController extends AnnotatedObjectController {
     }
 
     @Override
-    public <T extends AbstractIntactXref> T newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+    public <T extends AbstractIntactXref> T newXref(String db, String dbMI, String id, String version, String qualifier, String qualifierMI) {
         return null;
     }
 

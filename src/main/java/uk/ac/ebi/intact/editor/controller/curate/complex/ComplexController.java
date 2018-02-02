@@ -83,7 +83,6 @@ public class ComplexController extends AnnotatedObjectController {
     private final LifecycleEventListener lifecycleEventListener = new ComplexBCLifecycleEventListener();
     private IntactComplex complex;
     private String ac;
-    private String complexAc;
     private LinkedList<ParticipantWrapper> participantWrappers;
     @Autowired
     private UserSessionController userSessionController;
@@ -182,7 +181,7 @@ public class ComplexController extends AnnotatedObjectController {
             // Ask to the database for the next available complex accession.
             // It is initialised with version 1. Call this method only for brand new complexes
             String acValue = getComplexEditorService().retrieveNextComplexAc();
-            complex.assignComplexAc(acValue);
+            addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getXrefs());
 
         } catch (IllegalTransitionException e) {
             addErrorMessage("Cannot create complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
@@ -380,14 +379,6 @@ public class ComplexController extends AnnotatedObjectController {
         this.ac = ac;
     }
 
-    public String getComplexAc() {
-        return complexAc;
-    }
-
-    public void setComplexAc(String complexAc) {
-        this.complexAc = complexAc;
-    }
-
     public void cloneParticipant(ParticipantWrapper participantWrapper) {
         ModelledParticipantCloner cloner = new ModelledParticipantCloner();
 
@@ -472,11 +463,9 @@ public class ComplexController extends AnnotatedObjectController {
         this.complex = complex;
         if (complex != null) {
             this.ac = complex.getAc();
-            this.complexAc = complex.getComplexAc();
             initialiseDefaultProperties(complex);
         } else {
             this.ac = null;
-            this.complexAc = null;
         }
     }
 
@@ -492,7 +481,6 @@ public class ComplexController extends AnnotatedObjectController {
 
         this.systematicName = this.complex.getSystematicName();
         this.recommendedName = this.complex.getRecommendedName();
-        this.complexAc = this.complex.getComplexAc();
     }
 
     private void refreshInfoMessages() {
@@ -665,9 +653,9 @@ public class ComplexController extends AnnotatedObjectController {
     }
 
     @Override
-    public InteractorXref newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+    public InteractorXref newXref(String db, String dbMI, String id, String version, String qualifier, String qualifierMI) {
         return new InteractorXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, dbMI != null ? dbMI : db),
-                id, secondaryId, getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
+                id, version, getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
     }
 
     @Override
@@ -758,7 +746,7 @@ public class ComplexController extends AnnotatedObjectController {
 
     @Override
     public boolean isXrefNotEditable(Xref ref) {
-        return false;
+        return XrefUtils.doesXrefHaveQualifier(ref, Xref.COMPLEX_PRIMARY_MI, Xref.COMPLEX_PRIMARY);
     }
 
     public boolean isComplexGoRef(Xref ref) {
@@ -1233,7 +1221,7 @@ public class ComplexController extends AnnotatedObjectController {
                 // Ask to the database for the next available complex accession.
                 // It is initialised with version 1. Call this method only for brand new complexes
                 String acValue = getComplexEditorService().retrieveNextComplexAc();
-                this.complex.assignComplexAc(acValue);
+                addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getXrefs());
 
             } catch (SynchronizerException e) {
                 addErrorMessage("Cannot clone the interaction evidence as a complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
@@ -1277,7 +1265,7 @@ public class ComplexController extends AnnotatedObjectController {
         // Ask to the database for the next available complex accession.
         // It is initialised with version 1. Call this method only for brand new complexes
         String acValue = getComplexEditorService().retrieveNextComplexAc();
-        this.complex.assignComplexAc(acValue);
+        addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getXrefs());
 
         try {
             getLifecycleManager().getStartStatus().create(this.complex, "Created in Editor", user);

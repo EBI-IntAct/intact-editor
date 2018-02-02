@@ -759,7 +759,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
 
     protected abstract <T extends AbstractIntactXref> T newXref(CvTerm db, String id, String secondaryId, String version, CvTerm qualifier);
 
-    protected abstract <T extends AbstractIntactXref> T newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI);
+    protected abstract <T extends AbstractIntactXref> T newXref(String db, String dbMI, String id, String version, String qualifier, String qualifierMI);
 
     public abstract List<psidev.psi.mi.jami.model.Xref> collectXrefs();
 
@@ -776,7 +776,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
         }
     }
 
-    public void replaceOrCreateXref( String database, String databaseMI, String primaryId, String secondaryId,
+    public void replaceOrCreateXref( String database, String databaseMI, String primaryId, String version,
                                      String qualifier, String qualifierMI, Collection<Xref> refs ) {
         if (database == null){
             throw new IllegalArgumentException("Impossible to replace or create cross references if the database is not set.");
@@ -791,13 +791,13 @@ public abstract class AnnotatedObjectController extends BaseController implement
         // update if existing
         if (existingRef instanceof AbstractIntactXref){
             AbstractIntactXref intactRef = (AbstractIntactXref)existingRef;
-            intactRef.setSecondaryId(secondaryId);
+            intactRef.setVersion(version);
             intactRef.setId(primaryId);
         }
         // create if not exists
         else{
             refs.removeAll(existingRefs);
-            refs.add(newXref(database, databaseMI, primaryId, secondaryId, qualifier, qualifierMI));
+            refs.add(newXref(database, databaseMI, primaryId, version, qualifier, qualifierMI));
         }
         setUnsavedChanges(true);
     }
@@ -842,7 +842,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
         setUnsavedChanges(true);
     }
 
-    public void addXref(String database, String databaseMI, String primaryId, String secondaryId,
+    public void addXref(String database, String databaseMI, String primaryId, String version,
                         String qualifier, String qualifierMI, Collection<Xref> refs) {
         if (database == null){
             throw new IllegalArgumentException("Impossible to add cross references if the database is not set.");
@@ -851,7 +851,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
             throw new IllegalArgumentException("Impossible to add cross references if the primary id is not set.");
         }
 
-        refs.add(newXref(database, databaseMI, primaryId, secondaryId, qualifier, qualifierMI));
+        refs.add(newXref(database, databaseMI, primaryId, version, qualifier, qualifierMI));
         setUnsavedChanges(true);
     }
 

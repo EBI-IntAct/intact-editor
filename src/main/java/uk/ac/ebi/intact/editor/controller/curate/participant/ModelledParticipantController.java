@@ -160,10 +160,9 @@ public class ModelledParticipantController extends AbstractParticipantController
     }
 
     @Override
-    public ModelledParticipantXref newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+    public ModelledParticipantXref newXref(String db, String dbMI, String id, String version, String qualifier, String qualifierMI) {
         return new ModelledParticipantXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, dbMI != null ? dbMI : db),
-                id,
-                secondaryId,
+                id, version,
                 getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
     }
 

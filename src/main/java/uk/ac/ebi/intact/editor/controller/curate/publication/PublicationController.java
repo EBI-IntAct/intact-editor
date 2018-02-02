@@ -872,9 +872,9 @@ public class PublicationController extends AnnotatedObjectController {
     }
 
     @Override
-    public PublicationXref newXref(String db, String dbMI, String id, String secondaryId, String qualifier, String qualifierMI) {
+    public PublicationXref newXref(String db, String dbMI, String id, String version, String qualifier, String qualifierMI) {
         return new PublicationXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, dbMI != null ? dbMI : db),
-                id, secondaryId, getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
+                id, version, getCvService().findCvObject(IntactUtils.QUALIFIER_OBJCLASS, qualifierMI != null ? qualifierMI : qualifier));
     }
 
     public void addDataset(ActionEvent evt) {
