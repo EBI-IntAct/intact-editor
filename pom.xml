@@ -16,9 +16,9 @@
     <name>Service :: IntAct Editor</name>
 
     <scm>
-        <connection>scm:git:https://github.com/EBI-IntAct/Editor.git</connection>
-        <developerConnection>scm:git:https://github.com/EBI-IntAct/Editor.git</developerConnection>
-        <url>https://github.com/EBI-IntAct/Editor</url>
+        <connection>scm:git:https://github.com/EBI-IntAct/intact-editor.git</connection>
+        <developerConnection>scm:git:https://github.com/EBI-IntAct/intact-editor.git</developerConnection>
+        <url>https://github.com/EBI-IntAct/intact-editor</url>
         <tag>HEAD</tag>
     </scm>
 
