@@ -440,7 +440,7 @@ public class EditorObjectService extends AbstractEditorService {
         if (releasable != null){
             detachObject((IntactPrimaryObject)releasable);
 
-            lifecycleManager.getGlobalStatus().changeOwnership(releasable, user, null);
+            lifecycleManager.getGlobalStatus().changeOwnership(releasable, user, "Ownership Claimed");
 
             // automatically set as curation in progress if no one was assigned before
             if (isAssigned) {
