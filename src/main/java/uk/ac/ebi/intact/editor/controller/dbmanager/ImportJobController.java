@@ -135,8 +135,6 @@ public class ImportJobController extends BaseController {
             } catch ( JobParametersInvalidException e ) {
                 addErrorMessage( "Job parameters are invalid "+e.getMessage(), "Execution ID: " + executionId );
                 e.printStackTrace();
-            } catch (NoSuchJobInstanceException e) {
-                addErrorMessage("Job instance does not exist "+e.getMessage(), "Execution ID: " + executionId);
             }
         }
     }
