@@ -45,7 +45,7 @@
             <f:facet name="header">
                 <h:outputText value="Resuling sequence xref(s)"/>
             </f:facet>
-            <h:panelGrid id="newXrefTxt" columns="11" class="intact-buttonBar">
+            <h:panelGrid id="rangeXrefTxt" columns="11" class="intact-buttonBar">
                 <h:outputLabel value="Database: " for="databaseSel1"/>
                 <h:selectOneMenu id="databaseSel1" value="#{rangeWrapper.newDatabase}" converter="cvObjectConverter"
                                  disabled="#{annotatedObjectController.isRangeSequenceDisabled()}">
@@ -70,7 +70,7 @@
                 <p:inputText id="version1Txt" value="#{rangeWrapper.newXrefVersion}" size="5"
                              converter="trimmingConverter" disabled="#{annotatedObjectController.isRangeSequenceDisabled()}"/>
                 <p:commandButton id="newXrefBtn" value="New Mutated sequence xref" actionListener="#{rangeWrapper.newXref}"
-                                 process="newXrefTxt"
+                                 process="rangeXrefTxt"
                                  update=":editorForm:featureTabs:sequencesPanel :editorForm:messagesComponent :editorForm:changesPanel :editorForm:unsavedChangesInfo"
                                  disabled="#{annotatedObjectController.isRangeSequenceDisabled()}"/>
             </h:panelGrid>
