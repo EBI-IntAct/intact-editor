@@ -15,6 +15,9 @@
  */
 package uk.ac.ebi.intact.editor.controller.curate.publication;
 
+import com.ocpsoft.pretty.faces.annotation.URLAction;
+import com.ocpsoft.pretty.faces.annotation.URLMapping;
+import com.ocpsoft.pretty.faces.annotation.URLMappings;
 import edu.ucla.mbi.imex.central.ws.v20.IcentralFault;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -84,6 +87,11 @@ import java.util.regex.Pattern;
 @Controller
 @Scope("conversation.access")
 @ConversationName("general")
+@URLMappings(mappings = {
+        @URLMapping(id = "newAutocomplete",
+                pattern = "/pubnew/#{ newAutocomplete : publicationController.identifierToImport}", // URL mapped to jsf file
+                viewId = "/publication.xhtml"),    // jsf file
+       })
 public class PublicationController extends AnnotatedObjectController {
 
     public static final String SUBMITTED = "MI:0878";
@@ -286,6 +294,7 @@ public class PublicationController extends AnnotatedObjectController {
         return true;
     }
 
+    @URLAction(mappingId = "newAutocomplete")
     public String newAutocomplete() {
         identifier = identifierToImport;
 
