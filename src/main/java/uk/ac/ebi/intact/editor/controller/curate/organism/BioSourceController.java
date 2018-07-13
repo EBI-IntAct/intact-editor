@@ -129,10 +129,9 @@ public class BioSourceController extends AnnotatedObjectController {
     }
 
     public void autoFill(ActionEvent evt) {
-        final int taxIdStr = bioSource.getTaxId();
 
         try {
-            final int taxId = Integer.valueOf(taxIdStr);
+            final int taxId = bioSource.getTaxId();
 
             final Organism term = getOrganismFetcher().fetchByTaxID(taxId);
 
@@ -150,7 +149,7 @@ public class BioSourceController extends AnnotatedObjectController {
 
             if (term != null){
                 this.bioSource.setCommonName(name);
-                this.bioSource.setScientificName(name);
+                this.bioSource.setScientificName(term.getScientificName());
                 if (!term.getAliases().isEmpty()){
                     CvObjectService cvService = ApplicationContextProvider.getBean("cvObjectService");
                     for (Alias alias :term.getAliases()){
@@ -168,6 +167,7 @@ public class BioSourceController extends AnnotatedObjectController {
                 }
             }
 
+            //TODO. CellType and Tissue are always null before saving the organims, the commonName doesn't get updated.
             if (this.bioSource.getCellType() != null){
                 this.bioSource.setCommonName(this.bioSource.getCommonName()+"-"+this.bioSource.getCellType().getShortName());
             }
