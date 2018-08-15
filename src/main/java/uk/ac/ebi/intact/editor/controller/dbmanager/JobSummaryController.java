@@ -43,7 +43,7 @@ public class JobSummaryController extends BaseController {
 
     private String query;
 
-    private int threadTimeOut = 10;
+    private int threadTimeOut = 30;
 
     private LazyDataModel<PublicationSummary> publications;
 
