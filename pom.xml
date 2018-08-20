@@ -12,7 +12,7 @@
     <packaging>war</packaging>
 
 
-    <version>3.0.33-SNAPSHOT</version>
+    <version>3.0.32</version>
     <name>Service :: IntAct Editor</name>
 
     <scm>
