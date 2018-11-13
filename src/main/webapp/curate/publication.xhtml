@@ -27,18 +27,18 @@
                      styleClass="important-button-alt"
                      rendered="#{publicationController.newPublication}"
                      actionListener="#{publicationController.markAsAssignedToMe}"
-                     action="#{publicationController.doSave}" ajax="false"/>
+                     ajax="false"/>
     <p:commandButton value="Start curation"
                      styleClass="important-button-alt"
                      rendered="#{publicationController.assigned and userSessionController.isItMe(publicationController.publication.currentOwner)}"
                      actionListener="#{publicationController.markAsCurationInProgress}"
-                     action="#{publicationController.doSave}" ajax="false"/>
+                     ajax="false"/>
     <p:commandButton value="Ready for checking"
                      styleClass="important-button-alt"
                      rendered="#{publicationController.curationInProgress and not publicationController.beenRejectedBefore
                      and userSessionController.isItMe(publicationController.publication.currentOwner)}"
                      actionListener="#{publicationController.markAsReadyForChecking}"
-                     action="#{publicationController.doSave}" ajax="false"/>
+                     ajax="false"/>
     <p:commandButton value="Ready for checking (Again)"
                      styleClass="important-button-alt"
                      rendered="#{publicationController.curationInProgress and publicationController.beenRejectedBefore
@@ -49,19 +49,19 @@
                      styleClass="important-button-good"
                      rendered="#{publicationController.accepted and publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                      actionListener="#{publicationController.acceptPublication}"
-                     action="#{publicationController.doSave}" ajax="false"/>
+                     ajax="false"/>
     <p:commandButton value="Revert Accepted"
                      styleClass="important-button-alt"
                      rendered="#{publicationController.readyForRelease and !publicationController.released
                      and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
                      actionListener="#{publicationController.revertAccepted}"
-                     action="#{publicationController.doSave}" ajax="false"/>
+                     ajax="false"/>
     <p:commandButton value="Back to Curation in Progress"
                      styleClass="important-button-alt"
                      rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentOwner)
                      and publicationController.backToCurationButtonRendered}"
                      actionListener="#{publicationController.revertReadyForChecking}"
-                     action="#{publicationController.doSave}" ajax="false"/>
+                     ajax="false"/>
     <p:commandButton value="Send Back to Curation"
                      styleClass="important-button-alt"
                      rendered="#{publicationController.readyForChecking and userSessionController.isItMe(publicationController.publication.currentReviewer)}"
@@ -89,7 +89,7 @@
                      rendered="#{publicationController.isAllExperimentsAccepted() and publicationController.acceptedOnHold and (userSessionController.isItMe(publicationController.publication.currentReviewer)
                      or userSessionController.isItMe(publicationController.publication.currentOwner))}"
                      actionListener="#{publicationController.readyForReleaseFromOnHold}"
-                     action="#{publicationController.doSave}" ajax="false"/>
+                     ajax="false"/>
 </ui:define>
 
 <ui:define name="breadcrumbs">
@@ -465,7 +465,6 @@
         <p:inputTextarea id="putOnHoldTxt" value="#{publicationController.onHold}" rows="4" cols="60" converter="trimmingConverter"/>
 
         <p:commandButton value="Put on hold" actionListener="#{publicationController.putOnHold}"
-                         action="#{publicationController.doSave}"
                          process="putOnHoldTxt"
                          ajax="false"/>
     </h:panelGrid>

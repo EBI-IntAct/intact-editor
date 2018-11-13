@@ -573,6 +573,8 @@ public class PublicationController extends AnnotatedObjectController {
         try{
             getEditorService().claimOwnership(publication, getCurrentUser(), isAssigned());
 
+            doSave();
+
             // automatically set as curation in progress if no one was assigned before
             if (isAssigned()) {
                 addInfoMessage("Curation started", "Curation is now in progress");
@@ -602,6 +604,7 @@ public class PublicationController extends AnnotatedObjectController {
 
             addInfoMessage("Curation started", "Curation is now in progress");
 
+            doSave();
             // try to register/update record in IMEx central if they don't have IMEx. IMEx records are updated automatically with a cronjob
             if (publication.getAc() != null && getImexId()==null){
                 try {
@@ -626,6 +629,7 @@ public class PublicationController extends AnnotatedObjectController {
 
             addInfoMessage("Curation started", "Curation is now in progress");
 
+            doSave();
             // try to register/update record in IMEx central if they don't have IMEx. IMEx records are updated automatically with a cronjob
             if (publication.getAc() != null && getImexId()==null){
                 try {
@@ -667,6 +671,8 @@ public class PublicationController extends AnnotatedObjectController {
             reasonForReadyForChecking = null;
 
             addInfoMessage("Publication ready for checking", "Assigned to reviewer: " + publication.getCurrentReviewer().getLogin());
+
+            doSave();
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
             if (publication.getAc() != null && getImexId() == null){
                 try {
@@ -684,6 +690,9 @@ public class PublicationController extends AnnotatedObjectController {
     public void revertReadyForChecking(ActionEvent evt) {
         try{
             getEditorService().revertReadyForChecking(this.publication, getCurrentUser());
+
+            doSave();
+
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
             if (publication.getAc() != null && getImexId() == null){
                 try {
@@ -701,6 +710,8 @@ public class PublicationController extends AnnotatedObjectController {
     public void revertAccepted(ActionEvent evt) {
         try{
             getEditorService().revertAccepted(this.publication, getCurrentUser(), isReadyForRelease());
+
+            doSave();
 
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
             if (publication.getAc() != null && getImexId() == null){
@@ -726,6 +737,8 @@ public class PublicationController extends AnnotatedObjectController {
                 addInfoMessage("On-hold added to released publication", "Data will be publicly visible until the next release");
             }
 
+            doSave();
+
             //reasonForOnHoldFromDialog = null;
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
             if (publication.getAc() != null && getImexId() == null){
@@ -746,6 +759,9 @@ public class PublicationController extends AnnotatedObjectController {
 
         try{
             getEditorService().readyForReleaseFromOnHold(publication, getCurrentUser());
+
+            doSave();
+
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
             if (publication.getAc() != null && getImexId() == null){
                 try {
@@ -1408,6 +1424,17 @@ public class PublicationController extends AnnotatedObjectController {
             // refresh experiments with possible changes in publication title, annotations and publication identifier
             copyAnnotationsToExperiments(null);
             copyPrimaryIdentifierToExperiments();
+
+
+            doSave();
+
+            if (publication.getAc() != null && getImexId() == null){
+                try {
+                    getImexCentralManager().registerAndUpdatePublication(publication.getAc());
+                } catch (EnricherException e) {
+                    addWarningMessage("Impossible to register/update status of " + identifier + " in IMEx central", e.getMessage());
+                }
+            }
         }
         catch (IllegalTransitionException e){
             addErrorMessage("Cannot accept publication: "+e.getMessage(), ExceptionUtils.getFullStackTrace(e));
