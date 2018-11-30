@@ -88,8 +88,8 @@ import java.util.regex.Pattern;
 @Scope("conversation.access")
 @ConversationName("general")
 @URLMappings(mappings = {
-        @URLMapping(id = "newAutocomplete",
-                pattern = "/pubnew/#{ newAutocomplete : publicationController.identifierToImport}", // URL mapped to jsf file
+        @URLMapping(id = "createOrEditPublication",
+                pattern = "/createOrEditPublication/#{ createOrEditPublication : publicationController.identifierToImport}", // URL mapped to jsf file
                 viewId = "/publication.xhtml"),    // jsf file
        })
 public class PublicationController extends AnnotatedObjectController {
@@ -294,7 +294,6 @@ public class PublicationController extends AnnotatedObjectController {
         return true;
     }
 
-    @URLAction(mappingId = "newAutocomplete")
     public String newAutocomplete() {
         identifier = identifierToImport;
 
@@ -342,6 +341,30 @@ public class PublicationController extends AnnotatedObjectController {
 
                 return "/curate/publication?faces-redirect=true";
             }
+        }
+    }
+
+    @URLAction(mappingId = "createOrEditPublication")
+    public String createOrEditPublication() {
+        identifier = identifierToImport;
+
+        if (identifier == null) {
+            addErrorMessage("Cannot auto-complete", "ID is empty");
+            RequestContext requestContext = RequestContext.getCurrentInstance();
+            requestContext.execute("newPublicationDlg.hide()");
+            return null;
+        }
+
+        // check if already exists
+        IntactPublication existingPublication = getPublicationEditorService().loadPublicationByAcOrPubmedId(identifier);
+
+        if (existingPublication != null) {
+            setPublication(existingPublication);
+            addWarningMessage("Publication already exists", "Loaded from the database");
+            return "/curate/publication?faces-redirect=true";
+        } else {
+                createNewPublication(null);
+                return "/curate/publication?faces-redirect=true";
         }
     }
 
@@ -580,7 +603,7 @@ public class PublicationController extends AnnotatedObjectController {
                 addInfoMessage("Curation started", "Curation is now in progress");
 
                 // try to register/update record in IMEx central if they don't have IMEx. IMEx records are updated automatically with a cronjob
-                if (publication.getAc() != null && getImexId()==null){
+                if (publication.getAc() != null){
                     try {
                         getImexCentralManager().registerAndUpdatePublication(publication.getAc());
                     } catch (EnricherException e) {
@@ -606,7 +629,7 @@ public class PublicationController extends AnnotatedObjectController {
 
             doSave();
             // try to register/update record in IMEx central if they don't have IMEx. IMEx records are updated automatically with a cronjob
-            if (publication.getAc() != null && getImexId()==null){
+            if (publication.getAc() != null){
                 try {
                     getImexCentralManager().registerAndUpdatePublication(publication.getAc());
                 } catch (EnricherException e) {
@@ -631,7 +654,7 @@ public class PublicationController extends AnnotatedObjectController {
 
             doSave();
             // try to register/update record in IMEx central if they don't have IMEx. IMEx records are updated automatically with a cronjob
-            if (publication.getAc() != null && getImexId()==null){
+            if (publication.getAc() != null){
                 try {
                     getImexCentralManager().registerAndUpdatePublication(publication.getAc());
                 } catch (EnricherException e) {
@@ -674,7 +697,7 @@ public class PublicationController extends AnnotatedObjectController {
 
             doSave();
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
-            if (publication.getAc() != null && getImexId() == null){
+            if (publication.getAc() != null){
                 try {
                     getImexCentralManager().registerAndUpdatePublication(publication.getAc());
                 } catch (EnricherException e) {
@@ -694,7 +717,7 @@ public class PublicationController extends AnnotatedObjectController {
             doSave();
 
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
-            if (publication.getAc() != null && getImexId() == null){
+            if (publication.getAc() != null){
                 try {
                     getImexCentralManager().registerAndUpdatePublication(publication.getAc());
                 } catch (EnricherException e) {
@@ -714,7 +737,7 @@ public class PublicationController extends AnnotatedObjectController {
             doSave();
 
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
-            if (publication.getAc() != null && getImexId() == null){
+            if (publication.getAc() != null){
                 try {
                     getImexCentralManager().registerAndUpdatePublication(publication.getAc());
                 } catch (EnricherException e) {
@@ -741,7 +764,7 @@ public class PublicationController extends AnnotatedObjectController {
 
             //reasonForOnHoldFromDialog = null;
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
-            if (publication.getAc() != null && getImexId() == null){
+            if (publication.getAc() != null){
                 try {
                     getImexCentralManager().registerAndUpdatePublication(publication.getAc());
                 } catch (EnricherException e) {
@@ -763,7 +786,7 @@ public class PublicationController extends AnnotatedObjectController {
             doSave();
 
             // try to register/update record in IMEx central. IMEx records are updated automatically with a cron job so if it has an IMEx id we do nothing
-            if (publication.getAc() != null && getImexId() == null){
+            if (publication.getAc() != null){
                 try {
                     getImexCentralManager().registerAndUpdatePublication(publication.getAc());
                 } catch (EnricherException e) {
@@ -1428,7 +1451,7 @@ public class PublicationController extends AnnotatedObjectController {
 
             doSave();
 
-            if (publication.getAc() != null && getImexId() == null){
+            if (publication.getAc() != null){
                 try {
                     getImexCentralManager().registerAndUpdatePublication(publication.getAc());
                 } catch (EnricherException e) {
