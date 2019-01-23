@@ -36,6 +36,7 @@
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
         <intact.jami.version>1.3.2</intact.jami.version>
         <dataexchange.version>3.0.34</dataexchange.version>
+
         <h2.version>1.3.162</h2.version>
         <intact.primefaces.version>3.1.1-intact-SNAPSHOT</intact.primefaces.version>
 
@@ -51,8 +52,8 @@
         <db.hbm2ddl>none</db.hbm2ddl>
 
         <!-- default IMEx central client-->
-        <ic.username>${imex.username}</ic.username>
-        <ic.password>${imex.password}</ic.password>
+        <!--<ic.username>${imex.username}</ic.username>
+        <ic.password>${imex.password}</ic.password>-->
         <ic.endpoint>${imex.endpoint}</ic.endpoint>
         <update.log.directory>target/imex-report</update.log.directory>
 
