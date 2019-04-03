@@ -43,9 +43,9 @@
 
 
     <!-- imex central client -->
-    <bean id="imexCentralClient" class="uk.ac.ebi.intact.editor.controller.curate.publication.ImexCentralClientWrapper" lazy-init="true">
-        <constructor-arg index="0" value="${ic.username}"/>
-        <constructor-arg index="1" value="${ic.password}"/>
+    <bean id="imexCentralClient" class="uk.ac.ebi.intact.editor.controller.curate.publication.ImexCentralClientWrapper" scope="session" lazy-init="true">
+        <constructor-arg index="0" value="#{userSessionController.currentUser.login}"/>
+        <constructor-arg index="1" value="SHA1:#{userSessionController.currentUser.password}"/>
         <constructor-arg index="2" value="${ic.endpoint}"/>
     </bean>
 
@@ -55,41 +55,41 @@
     </bean>
 
     <!-- actions -->
-    <bean id="imexCentralRegister" class="psidev.psi.mi.jami.imex.actions.impl.ImexCentralPublicationRegisterImpl">
+    <bean id="imexCentralRegister" class="psidev.psi.mi.jami.imex.actions.impl.ImexCentralPublicationRegisterImpl" scope="session" lazy-init="true">
         <constructor-arg ref="imexCentralClient"/>
     </bean>
-    <bean id="intactImexAssigner" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactImexAssignerImpl">
+    <bean id="intactImexAssigner" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactImexAssignerImpl" scope="session" lazy-init="true">
         <constructor-arg ref="imexCentralClient"/>
     </bean>
-    <bean id="intactImexAdminGroupSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactPublicationAdminGroupSynchronizerImpl">
+    <bean id="intactImexAdminGroupSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactPublicationAdminGroupSynchronizerImpl"  scope="session" lazy-init="true">
         <constructor-arg ref="imexCentralClient"/>
     </bean>
-    <bean id="intactImexAdminUserSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactPublicationAdminUserSynchronizerImpl">
+    <bean id="intactImexAdminUserSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactPublicationAdminUserSynchronizerImpl" scope="session" lazy-init="true">
         <constructor-arg ref="imexCentralClient"/>
     </bean>
-    <bean id="publicationIdentifierSynchronizer" class="psidev.psi.mi.jami.imex.actions.impl.PublicationIdentifierSynchronizerImpl">
+    <bean id="publicationIdentifierSynchronizer" class="psidev.psi.mi.jami.imex.actions.impl.PublicationIdentifierSynchronizerImpl" scope="session" lazy-init="true">
         <constructor-arg ref="imexCentralClient"/>
     </bean>
-    <bean id="intactImexStatusSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactPublicationStatusSynchronizerImpl">
+    <bean id="intactImexStatusSynchronizer" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.actions.impl.IntactPublicationStatusSynchronizerImpl" scope="session" lazy-init="true">
         <constructor-arg ref="imexCentralClient"/>
     </bean>
 
     <!-- enricher -->
-    <bean id="intactPublicationRegister" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.enrichers.IntactImexPublicationRegister">
+    <bean id="intactPublicationRegister" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.enrichers.IntactImexPublicationRegister" scope="session" lazy-init="true">
         <constructor-arg ref="imexCentralClient"/>
         <property name="adminUserSynchronizer" ref="intactImexAdminUserSynchronizer"/>
         <property name="adminGroupSynchronizer" ref="intactImexAdminGroupSynchronizer"/>
         <property name="publicationRegister" ref="imexCentralRegister"/>
         <property name="statusSynchronizer" ref="intactImexStatusSynchronizer"/>
     </bean>
-    <bean id="intactPublicationUpdater" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.enrichers.IntactImexPublicationUpdater">
+    <bean id="intactPublicationUpdater" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.enrichers.IntactImexPublicationUpdater" scope="session" lazy-init="true">
         <constructor-arg ref="imexCentralClient"/>
         <property name="adminUserSynchronizer" ref="intactImexAdminUserSynchronizer"/>
         <property name="adminGroupSynchronizer" ref="intactImexAdminGroupSynchronizer"/>
         <property name="identifierSynchronizer" ref="publicationIdentifierSynchronizer"/>
         <property name="statusSynchronizer" ref="intactImexStatusSynchronizer"/>
     </bean>
-    <bean id="intactPublicationAssigner" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.enrichers.IntactImexPublicationAssigner">
+    <bean id="intactPublicationAssigner" class="uk.ac.ebi.intact.dataexchange.imex.idassigner.enrichers.IntactImexPublicationAssigner" scope="session" lazy-init="true">
         <constructor-arg ref="imexCentralClient"/>
         <property name="publicationUpdater" ref="intactPublicationUpdater"/>
         <property name="publicationRegister" ref="imexCentralRegister"/>

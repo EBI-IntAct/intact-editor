@@ -12,7 +12,7 @@
     <packaging>war</packaging>
 
 
-    <version>3.0.33-SNAPSHOT</version>
+    <version>3.1.1-SNAPSHOT</version>
     <name>Service :: IntAct Editor</name>
 
     <scm>
@@ -51,8 +51,6 @@
         <db.hbm2ddl>none</db.hbm2ddl>
 
         <!-- default IMEx central client-->
-        <ic.username>${imex.username}</ic.username>
-        <ic.password>${imex.password}</ic.password>
         <ic.endpoint>${imex.endpoint}</ic.endpoint>
         <update.log.directory>target/imex-report</update.log.directory>
 
