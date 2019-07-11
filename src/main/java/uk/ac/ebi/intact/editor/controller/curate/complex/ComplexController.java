@@ -80,6 +80,7 @@ import java.util.*;
 public class ComplexController extends AnnotatedObjectController {
 
     private static final Log log = LogFactory.getLog(ComplexController.class);
+    private static final String NEW_COMPLEX_VERSION_CONSTANT = "Newer Version Created";
     private final LifecycleEventListener lifecycleEventListener = new ComplexBCLifecycleEventListener();
     private IntactComplex complex;
     private String ac;
@@ -180,8 +181,10 @@ public class ComplexController extends AnnotatedObjectController {
 
             // Ask to the database for the next available complex accession.
             // It is initialised with version 1. Call this method only for brand new complexes
-            String acValue = getComplexEditorService().retrieveNextComplexAc();
-            addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getXrefs());
+            if (!(isAcceptedOnHold() && this.complex.getOnHoldComment() != null && this.complex.getOnHoldComment().equals(NEW_COMPLEX_VERSION_CONSTANT))) {
+                String acValue = getComplexEditorService().retrieveNextComplexAc();
+                addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getIdentifiers());
+            }
 
         } catch (IllegalTransitionException e) {
             addErrorMessage("Cannot create complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
@@ -1221,7 +1224,7 @@ public class ComplexController extends AnnotatedObjectController {
                 // Ask to the database for the next available complex accession.
                 // It is initialised with version 1. Call this method only for brand new complexes
                 String acValue = getComplexEditorService().retrieveNextComplexAc();
-                addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getXrefs());
+                addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getIdentifiers());
 
             } catch (SynchronizerException e) {
                 addErrorMessage("Cannot clone the interaction evidence as a complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
@@ -1265,7 +1268,7 @@ public class ComplexController extends AnnotatedObjectController {
         // Ask to the database for the next available complex accession.
         // It is initialised with version 1. Call this method only for brand new complexes
         String acValue = getComplexEditorService().retrieveNextComplexAc();
-        addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getXrefs());
+        addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, acValue, "1", Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, complex.getIdentifiers());
 
         try {
             getLifecycleManager().getStartStatus().create(this.complex, "Created in Editor", user);
@@ -1303,7 +1306,7 @@ public class ComplexController extends AnnotatedObjectController {
             if (getAnnotatedObject() != null) {
 
                 /* Extract Complex Primary Xref - Start */
-                Collection<Xref> currentComplexXrefs = this.complex.getXrefs();
+                Collection<Xref> currentComplexXrefs = this.complex.getIdentifiers();
                 for (Xref xref : currentComplexXrefs) {
                     if (XrefUtils.isXrefFromDatabase(xref, Xref.COMPLEX_PORTAL_MI, Xref.COMPLEX_PORTAL) && XrefUtils.doesXrefHaveQualifier(xref, Xref.COMPLEX_PRIMARY_MI, Xref.COMPLEX_PRIMARY)) {
                         complex_primaryXref = xref;
@@ -1325,7 +1328,7 @@ public class ComplexController extends AnnotatedObjectController {
                 oldVersionAc = this.complex.getAc();
 
                 /* Put the previous version on hold - Start */
-                getEditorService().putOnHold(this.complex, getCurrentUser(), "Newer Version Created", isReadyForRelease(), isReleased());
+                getEditorService().putOnHold(this.complex, getCurrentUser(), NEW_COMPLEX_VERSION_CONSTANT, isReadyForRelease(), isReleased());
                 /* Put the previous version on hold  - End */
 
                 doSave(false);// save previous version
@@ -1335,7 +1338,7 @@ public class ComplexController extends AnnotatedObjectController {
                 if (clone == null) return null;
 
                 setAnnotatedObject(clone);
-                Collection<Xref> clonedComplexXrefs = clone.getXrefs();
+                Collection<Xref> clonedComplexXrefs = clone.getIdentifiers();
 
                 /* We have to add 'complex_primaryXref' here with updated version because it would be removed while cloning */
                 assert complex_primaryXref != null; //It is a requirement because the new version is based in a previous complex
@@ -1344,7 +1347,7 @@ public class ComplexController extends AnnotatedObjectController {
                 versionNumber++;
                 String newVersionNumber = "" + versionNumber;
 
-                //Internally removes the xref created by the cloner and replaces it with the new version
+                //Add the new version xref
                 addXref(Xref.COMPLEX_PORTAL, Xref.COMPLEX_PORTAL_MI, complex_primaryXref.getId(), newVersionNumber, Xref.COMPLEX_PRIMARY, Xref.COMPLEX_PRIMARY_MI, clonedComplexXrefs);
 
                 //add intact secondary acs for storing previous version accessions and the current primary
