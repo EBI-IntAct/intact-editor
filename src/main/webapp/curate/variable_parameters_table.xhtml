@@ -50,10 +50,10 @@
                 <h:outputText value="Values"/>
             </f:facet>
             <h:panelGrid id="newValueTxt" columns="5" class="intact-buttonBar">
-                <h:outputLabel value="Value: " for="valueInputTxt"/>
-                <p:inputText id="valueInputTxt" value="#{experimentController.newValue}" converter="trimmingConverter"/>
-                <h:outputLabel value="Order: " for="valueOrderTxt"/>
-                <p:inputText id="valueOrderTxt" value="#{experimentController.newValueOrder}"/>
+                <h:outputLabel value="Parameter Value: " for="valueInputTxt"/>
+                <p:inputText id="valueInputTxt" value="#{experimentController.variableParameterValue}" converter="trimmingConverter"/>
+                <h:outputLabel value="Position in the value list: " for="valueOrderTxt"/>
+                <p:inputText id="valueOrderTxt" value="#{experimentController.variableParameterValueOrder}"/>
                 <p:commandButton id="newValueBtn" value="Add New Parameter Value"
                                  actionListener="#{experimentController.newVariableParameterValue(parameter)}"
                                  process="newValueTxt"
@@ -64,10 +64,10 @@
                     <ui:repeat value="#{parameter.variableValues}" var="value">
                         <h:panelGrid columns="3" class="intact-variable-table">
 
-                        <p:inputText value="#{value.value}" required="true" requiredMessage="Parameter value is required" converter="trimmingConverter">
+                        <p:inputText value="#{value.value}" required="true" disabled="true" requiredMessage="Parameter value is required" converter="trimmingConverter">
                                 <ed:curation/>
                             </p:inputText>
-                            <p:inputText value="#{value.order}">
+                            <p:inputText value="#{value.order}" disabled="true">
                                 <ed:curation/>
                             </p:inputText>
                             <p:commandLink styleClass="ui-icon ui-icon-closethick" process="@this"

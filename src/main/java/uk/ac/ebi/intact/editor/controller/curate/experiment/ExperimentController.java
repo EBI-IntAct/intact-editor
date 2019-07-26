@@ -43,7 +43,10 @@ import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
 import uk.ac.ebi.intact.jami.model.extension.*;
 import uk.ac.ebi.intact.jami.model.lifecycle.Releasable;
 import uk.ac.ebi.intact.jami.service.PublicationService;
+import uk.ac.ebi.intact.jami.synchronizer.FinderException;
 import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
+import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
+import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
 import uk.ac.ebi.intact.jami.utils.IntactUtils;
 
 import javax.annotation.Resource;
@@ -68,6 +71,8 @@ public class ExperimentController extends AnnotatedObjectController {
     private LazyDataModel<InteractionSummary> interactionDataModel;
 
     private String reasonForRejection;
+    private String newValue;
+
     private String correctedComment;
     private String accepted;
 
@@ -97,8 +102,9 @@ public class ExperimentController extends AnnotatedObjectController {
     private String newParameterDescription;
     private CvTerm newParameterUnit;
 
-    private String newValue;
-    private Integer newValueOrder;
+    private String variableParameterValue;
+    private Integer variableParameterValueOrder;
+
     private boolean showSummaryView = false;
     private List<Annotation> annotationsForExpOverview;
     private ExperimentWrapper experimentWrapper;
@@ -798,12 +804,24 @@ public class ExperimentController extends AnnotatedObjectController {
     }
 
     public void newVariableParameterValue(VariableParameter param) {
-        if (this.newValue != null) {
-            param.getVariableValues().add(new IntactVariableParameterValue(newValue, param, newValueOrder));
+        // This way of pre saving the variableParameterValue is needed to adjust the behaviour of variableParameterValues
+        // in the editor in the same way than for the importer. It can be improved in the future if the variableParameterValue
+        // synchronizer in intact-jami get change and adapt to both editor and importer in the same way
+        if (this.variableParameterValue != null) {
+            param.getVariableValues().add(new IntactVariableParameterValue(variableParameterValue, param, variableParameterValueOrder));
+            try {
+                getEditorService().saveVariableParameterValue((IntactVariableParameter) param);
+            } catch (SynchronizerException e) {
+                e.printStackTrace();
+            } catch (FinderException e) {
+                e.printStackTrace();
+            } catch (PersisterException e) {
+                e.printStackTrace();
+            }
             doSave(false);
 
-            this.newValue = null;
-            this.newValueOrder = null;
+            this.variableParameterValue = null;
+            this.variableParameterValueOrder = null;
         } else {
             addErrorMessage("The value is required and cannot be null", "Missing parameter value");
         }
@@ -813,8 +831,21 @@ public class ExperimentController extends AnnotatedObjectController {
         experiment.removeVariableParameter(param);
     }
 
-    public void removeVariableParameterValue(IntactVariableParameterValue value, IntactVariableParameter param) {
-        param.getVariableValues().remove(value);
+    public void removeVariableParameterValue(IntactVariableParameterValue variableParameterValue, IntactVariableParameter param) {
+        // This way of pre saving the variableParameterValue is needed to adjust the behaviour of variableParameterValues
+        // in the editor in the same way than for the importer. It can be improved in the future if the variableParameterValue
+        // synchronizer in intact-jami get change and adapt to both editor and importer in the same way
+        try {
+            getEditorService().deleteVariableParameterValueFromInteractions(variableParameterValue, experiment);
+        } catch (SynchronizerException e) {
+            e.printStackTrace();
+        } catch (FinderException e) {
+            e.printStackTrace();
+        } catch (PersisterException e) {
+            e.printStackTrace();
+        }
+
+        param.getVariableValues().remove(variableParameterValue);
     }
 
     @Override
@@ -902,12 +933,20 @@ public class ExperimentController extends AnnotatedObjectController {
         this.newParameterUnit = newParameterUnit;
     }
 
-    public Integer getNewValueOrder() {
-        return newValueOrder;
+    public String getVariableParameterValue() {
+        return variableParameterValue;
     }
 
-    public void setNewValueOrder(Integer newValueOrder) {
-        this.newValueOrder = newValueOrder;
+    public void setVariableParameterValue(String variableParameterValue) {
+        this.variableParameterValue = variableParameterValue;
+    }
+
+    public Integer getVariableParameterValueOrder() {
+        return variableParameterValueOrder;
+    }
+
+    public void setVariableParameterValueOrder(Integer variableParameterValueOrder) {
+        this.variableParameterValueOrder = variableParameterValueOrder;
     }
 
     public String getNewValue() {

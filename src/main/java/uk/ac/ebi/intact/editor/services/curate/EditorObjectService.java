@@ -81,6 +81,19 @@ public class EditorObjectService extends AbstractEditorService {
             return (T)synchronizeIntactObject(object, dbSynchronizer, true);
         }
     }
+    @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
+    public void saveVariableParameterValue( IntactVariableParameter param) throws SynchronizerException,
+            FinderException, PersisterException {
+
+        if ( param == null ) {
+            log.error( "No parameter to save");
+        }
+        else{
+            // attach dao to transaction manager to clear cache
+            attachDaoToTransactionManager();
+            getIntactDao().getVariableParameterDao().persist(param);
+        }
+    }
 
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
     public void deleteVariableParameter( IntactVariableParameter param) throws SynchronizerException,
@@ -98,10 +111,10 @@ public class EditorObjectService extends AbstractEditorService {
     }
 
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
-    public void deleteVariableParameterValueFromInteractions(IntactVariableParameterValue param, IntactExperiment experiment) throws SynchronizerException,
+    public void deleteVariableParameterValueFromInteractions(IntactVariableParameterValue variableParameterValue, IntactExperiment experiment) throws SynchronizerException,
             FinderException, PersisterException {
 
-        if ( param == null ) {
+        if ( variableParameterValue == null ) {
             log.error( "No parameter to delete");
         }
         else{
@@ -116,11 +129,11 @@ public class EditorObjectService extends AbstractEditorService {
                             Iterator<VariableParameterValue> valueIterator = v.iterator();
                             while (valueIterator.hasNext()){
                                 IntactVariableParameterValue value = (IntactVariableParameterValue)valueIterator.next();
-                                if (param.getId() != null && param.getId().equals(value.getId())){
+                                if (variableParameterValue.getId() != null && variableParameterValue.getId().equals(value.getId())){
                                     valueIterator.remove();
                                     break;
                                 }
-                                else if (param.getId() == null && param == value){
+                                else if (variableParameterValue.getId() == null && variableParameterValue == value){
                                     valueIterator.remove();
                                     break;
                                 }
@@ -131,7 +144,7 @@ public class EditorObjectService extends AbstractEditorService {
                 }
             }
 
-            deleteIntactObject(param, getIntactDao().getVariableParameterValueDao());
+            deleteIntactObject(variableParameterValue, getIntactDao().getVariableParameterValueDao());
         }
     }
 
