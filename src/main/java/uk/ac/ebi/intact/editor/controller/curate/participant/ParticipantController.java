@@ -289,12 +289,14 @@ public class ParticipantController extends AbstractParticipantController<IntactP
     public void newParameter(ActionEvent evt) {
         if (this.newParameterType != null && this.newParameterFactor != null
                 && this.newParameterBase != null && this.newParameterExponent != null){
-            FeatureEvidenceParameter param = new FeatureEvidenceParameter(this.newParameterType, new ParameterValue(new BigDecimal(this.newParameterFactor), this.newParameterBase.shortValue(),
+            ParticipantEvidenceParameter param = new ParticipantEvidenceParameter(this.newParameterType, new ParameterValue(new BigDecimal(this.newParameterFactor), this.newParameterBase.shortValue(),
                     this.newParameterExponent.shortValue()));
             if (this.newParameterUncertainty != null){
                 param.setUncertainty(new BigDecimal(this.newParameterUncertainty));
             }
             param.setUnit(this.newParameterUnit);
+            //Backward compatibility for intact-core used in the release
+            param.setDbExperiment(getParticipant().getInteraction().getExperiment());
             getParticipant().getParameters().add(param);
             doSave(false);
 
@@ -537,9 +539,9 @@ public class ParticipantController extends AbstractParticipantController<IntactP
         getParticipant().getConfidences().remove(conf);
     }
 
-    public void removeParameter(Confidence conf) {
+    public void removeParameter(Parameter parameter) {
 
-        getParticipant().getConfidences().remove(conf);
+        getParticipant().getParameters().remove(parameter);
     }
 
     @Override

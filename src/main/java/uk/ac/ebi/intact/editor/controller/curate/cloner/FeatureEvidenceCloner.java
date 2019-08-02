@@ -88,7 +88,7 @@ public class FeatureEvidenceCloner extends AbstractEditorCloner<FeatureEvidence,
 
         for (Object obj : feature.getRanges()){
             Range range = (Range)obj;
-            ModelledRange r = new ModelledRange(range.getStart(), range.getEnd(), range.isLink());
+            ExperimentalRange r = new ExperimentalRange(range.getStart(), range.getEnd(), range.isLink());
             r.setResultingSequence(new ExperimentalResultingSequence(range.getResultingSequence().getOriginalSequence(),
                     range.getResultingSequence().getNewSequence()));
 

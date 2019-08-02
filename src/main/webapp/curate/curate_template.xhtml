@@ -122,7 +122,6 @@
 
             <h:panelGroup rendered="#{annotatedObjectController.annotatedObject != null}">
                 <h:panelGroup id="unsavedChangesInfo" style="float: right; margin-right: 40px">
-                    <ui:insert name="curateTopRight">
                         <h:panelGroup rendered="#{changesController.numberUnsavedChangedForCurrentUser gt 0}">
                             <ia:panelMessage level="warn" showIcon="true">
                                 <p:commandLink
@@ -134,7 +133,6 @@
 
 
                         <ui:include src="dialog_unsaved_changes.xhtml"/>
-                    </ui:insert>
                 </h:panelGroup>
 
                 <ui:insert name="breadcrumbs"/>
