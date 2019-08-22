@@ -67,8 +67,13 @@ public class ComplexEditorService extends AbstractEditorService {
     }
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public IntactComplex loadComplexByAc(String ac) {
+    public IntactComplex loadComplexByAcOrLatestCPXVersion(String ac) {
+
         IntactComplex interaction = getIntactDao().getEntityManager().find(IntactComplex.class, ac);
+
+        if(interaction == null){
+            interaction = getIntactDao().getComplexDao().getLatestComplexVersionByComplexAc(ac);
+        }
 
         if (interaction != null){
             // iniTransactionSynchtialise annotations because needs caution
@@ -149,7 +154,7 @@ public class ComplexEditorService extends AbstractEditorService {
         if (areComplexCollectionsLazy(interactor)
                 && interactor.getAc() != null
                 && !getIntactDao().getEntityManager().contains(interactor)){
-            reloaded = loadComplexByAc(interactor.getAc());
+            reloaded = loadComplexByAcOrLatestCPXVersion(interactor.getAc());
         }
 
         // we need first to merge with reloaded complex

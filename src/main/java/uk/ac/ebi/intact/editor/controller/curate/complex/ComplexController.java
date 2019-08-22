@@ -257,7 +257,8 @@ public class ComplexController extends AnnotatedObjectController {
 
             if (ac != null) {
                 if (complex == null || !ac.equals(complex.getAc())) {
-                    setComplex(getComplexEditorService().loadComplexByAc(ac));
+                    //Bring complex by CPX or EBI
+                    setComplex(getComplexEditorService().loadComplexByAcOrLatestCPXVersion(ac));
                 }
             } else {
                 if (complex != null) ac = complex.getAc();
