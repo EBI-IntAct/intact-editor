@@ -46,8 +46,8 @@ public class InteractionEvidenceCloner extends AbstractEditorCloner<InteractionE
         clone.setNegative(evidence.isNegative());
 
         for (Xref ref : evidence.getXrefs()){
-            if (!(XrefUtils.isXrefFromDatabase(ref, Xref.IMEX_MI, Xref.IMEX)
-                    && XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY))){
+            if (!(XrefUtils.doesXrefHaveQualifier(ref, Xref.IMEX_PRIMARY_MI, Xref.IMEX_PRIMARY)
+                    && XrefUtils.isXrefFromDatabase(ref, Xref.IMEX_MI, Xref.IMEX))){
                 AbstractIntactXref intactRef = new InteractionXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
                 if (ref instanceof AbstractIntactXref){
                     intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
