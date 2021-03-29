@@ -75,6 +75,12 @@
                                          required="true" requiredMessage="Shortlabel is required" valueChangeListener="#{annotatedObjectController.changed}">
                                 <ed:curation/>
                             </p:inputText>
+                            <p:commandButton rendered="#{featureController.isItOfTypeMutation()}" id="refreshLabelBtn" value="Refresh shortlabel"
+                                             actionListener="#{featureController.refreshShortLabel}" async="true"
+                                             process="shortlabelTxt"
+                                             onclick="loadDialog.show()"
+                                             oncomplete="loadDialog.hide()"
+                                             update=":editorForm:basic,:editorForm:changesPanel,:editorForm:messagesComponent,:editorForm:unsavedChangesInfo"/>
                         </td>
                         <td style="padding-left: 50px;">
                             <h:outputLabel value="AC: " for="acTxt" styleClass="intact-disabled"/>

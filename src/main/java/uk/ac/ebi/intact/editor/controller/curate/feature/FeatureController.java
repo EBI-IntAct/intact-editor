@@ -1,12 +1,12 @@
 /**
  * Copyright 2010 The European Bioinformatics Institute, and others.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,10 +34,14 @@ import uk.ac.ebi.intact.editor.controller.curate.publication.PublicationControll
 import uk.ac.ebi.intact.jami.model.extension.*;
 import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
 import uk.ac.ebi.intact.jami.utils.IntactUtils;
+import uk.ac.ebi.intact.tools.feature.shortlabel.generator.ShortlabelGenerator;
 
 import javax.faces.event.ActionEvent;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Feature controller.
@@ -46,11 +50,11 @@ import java.util.*;
  * @version $Id: ParticipantController.java 14281 2010-04-12 21:48:43Z samuel.kerrien $
  */
 @Controller
-@Scope( "conversation.access" )
-@ConversationName( "general" )
+@Scope("conversation.access")
+@ConversationName("general")
 public class FeatureController extends AbstractFeatureController<IntactFeatureEvidence> {
 
-    private static final Log log = LogFactory.getLog( FeatureController.class );
+    private static final Log log = LogFactory.getLog(FeatureController.class);
 
     @Autowired
     private PublicationController publicationController;
@@ -64,9 +68,11 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
     @Autowired
     private ParticipantController participantController;
 
+    private ShortlabelGenerator shortlabelGenerator;
+
     private boolean isParametersDisabled;
     private boolean isDetectionMethodDisabled;
-    private IntactCvTerm detectionMethodToAdd=null;
+    private IntactCvTerm detectionMethodToAdd = null;
 
     private CvTerm newParameterType;
     private Double newParameterFactor;
@@ -74,6 +80,12 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
     private Integer newParameterBase;
     private Integer newParameterExponent;
     private Double newParameterUncertainty;
+
+    public FeatureController() {
+        shortlabelGenerator = new ShortlabelGenerator();
+        shortlabelGenerator.setIntactDao(getEditorService().getIntactDao());
+        shortlabelGenerator.addListener(new FeatureShortlabelGeneratorListener(this));
+    }
 
     @Override
     public Class<IntactFeatureEvidence> getFeatureClass() {
@@ -103,41 +115,38 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
     @Override
     protected void refreshParentControllers() {
         // different loaded participant
-        if (participantController.getParticipant() != getFeature().getParticipant()){
+        if (participantController.getParticipant() != getFeature().getParticipant()) {
             // different participant to load
             if (participantController.getAc() == null ||
                     (getFeature().getParticipant() instanceof IntactParticipantEvidence
-                            && !participantController.getAc().equals(((IntactParticipantEvidence)getFeature().getParticipant()).getAc()))){
-                IntactParticipantEvidence intactParticipant = (IntactParticipantEvidence)getFeature().getParticipant();
+                            && !participantController.getAc().equals(((IntactParticipantEvidence) getFeature().getParticipant()).getAc()))) {
+                IntactParticipantEvidence intactParticipant = (IntactParticipantEvidence) getFeature().getParticipant();
                 participantController.setParticipant(intactParticipant);
 
                 // reload other parents
-                if( intactParticipant.getInteraction() instanceof IntactInteractionEvidence ) {
-                    final IntactInteractionEvidence interaction = (IntactInteractionEvidence)intactParticipant.getInteraction();
-                    interactionController.setInteraction( interaction );
+                if (intactParticipant.getInteraction() instanceof IntactInteractionEvidence) {
+                    final IntactInteractionEvidence interaction = (IntactInteractionEvidence) intactParticipant.getInteraction();
+                    interactionController.setInteraction(interaction);
 
-                    if (interaction.getExperiment() instanceof IntactExperiment){
-                        IntactExperiment exp = (IntactExperiment)interaction.getExperiment();
-                        experimentController.setExperiment( exp );
+                    if (interaction.getExperiment() instanceof IntactExperiment) {
+                        IntactExperiment exp = (IntactExperiment) interaction.getExperiment();
+                        experimentController.setExperiment(exp);
 
-                        if ( exp.getPublication() instanceof IntactPublication ) {
-                            IntactPublication publication = (IntactPublication)exp.getPublication();
-                            publicationController.setPublication( publication );
-                        }
-                        else{
+                        if (exp.getPublication() instanceof IntactPublication) {
+                            IntactPublication publication = (IntactPublication) exp.getPublication();
+                            publicationController.setPublication(publication);
+                        } else {
                             publicationController.setPublication(null);
                         }
-                    }
-                    else{
+                    } else {
                         experimentController.setExperiment(null);
                     }
-                }
-                else{
+                } else {
                     interactionController.setInteraction(null);
                 }
             }
             // replace old feature instance with new one in feature tables of participant
-            else{
+            else {
                 getFeature().setParticipant(participantController.getParticipant());
                 participantController.reloadSingleFeature(getFeature());
             }
@@ -166,25 +175,23 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
     }
 
     public int getParametersSize() {
-        if (getFeature() == null){
+        if (getFeature() == null) {
             return 0;
-        }
-        else {
+        } else {
             return getFeature().getParameters().size();
         }
     }
 
     public int getDetectionMethodsSize() {
-        if (getFeature() == null){
+        if (getFeature() == null) {
             return 0;
-        }
-        else {
+        } else {
             return getFeature().getDetectionMethods().size();
         }
     }
 
     @Override
-    public void refreshTabs(){
+    public void refreshTabs() {
         super.refreshTabs();
 
         this.isParametersDisabled = true;
@@ -194,7 +201,7 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
     @Override
     public void doPostSave() {
         // the feature was just created, add it to the list of features of the participant
-        if (getFeature().getParticipant() != null){
+        if (getFeature().getParticipant() != null) {
             participantController.reloadSingleFeature(getFeature());
         }
     }
@@ -205,7 +212,7 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
     @Override
     protected void postRevert() {
         // the feature was just created, add it to the list of features of the participant
-        if (getFeature().getParticipant() != null){
+        if (getFeature().getParticipant() != null) {
             participantController.reloadSingleFeature(getFeature());
         }
     }
@@ -231,12 +238,12 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
     }
 
     @Override
-    public Collection<String> collectParentAcsOfCurrentAnnotatedObject(){
+    public Collection<String> collectParentAcsOfCurrentAnnotatedObject() {
         Collection<String> parentAcs = new ArrayList<String>();
 
-        if (getFeature().getParticipant() instanceof IntactParticipantEvidence){
-            IntactParticipantEvidence comp = (IntactParticipantEvidence)getFeature().getParticipant();
-            if (comp.getAc() != null){
+        if (getFeature().getParticipant() instanceof IntactParticipantEvidence) {
+            IntactParticipantEvidence comp = (IntactParticipantEvidence) getFeature().getParticipant();
+            if (comp.getAc() != null) {
                 parentAcs.add(comp.getAc());
             }
 
@@ -248,28 +255,30 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
 
     /**
      * Get the publication ac of this participant if it exists, the ac of the interaction if it exists and the component ac if it exists and add it to the list or parentAcs
+     *
      * @param parentAcs
      * @param comp
      */
     private void addParentAcsTo(Collection<String> parentAcs, IntactParticipantEvidence comp) {
-        if (comp.getInteraction() instanceof IntactInteractionEvidence){
-            IntactInteractionEvidence inter = (IntactInteractionEvidence)comp.getInteraction();
+        if (comp.getInteraction() instanceof IntactInteractionEvidence) {
+            IntactInteractionEvidence inter = (IntactInteractionEvidence) comp.getInteraction();
             addParentAcsTo(parentAcs, inter);
         }
     }
 
     /**
      * Add all the parent acs of this interaction
+     *
      * @param parentAcs
      * @param inter
      */
     protected void addParentAcsTo(Collection<String> parentAcs, IntactInteractionEvidence inter) {
-        if (inter.getAc() != null){
+        if (inter.getAc() != null) {
             parentAcs.add(inter.getAc());
         }
 
-        if (inter.getExperiment() instanceof IntactExperiment){
-            addParentAcsTo(parentAcs, (IntactExperiment)inter.getExperiment());
+        if (inter.getExperiment() instanceof IntactExperiment) {
+            addParentAcsTo(parentAcs, (IntactExperiment) inter.getExperiment());
         }
     }
 
@@ -279,17 +288,15 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
         super.onTabChanged(e);
 
         // all the tabs selectOneMenu are disabled, we can process the tabs specific to interaction
-        if (isRangeDisabled() && isAliasDisabled() && isXrefDisabled() && isAnnotationTopicDisabled()){
-            if (e.getTab().getId().equals("parametersTab")){
+        if (isRangeDisabled() && isAliasDisabled() && isXrefDisabled() && isAnnotationTopicDisabled()) {
+            if (e.getTab().getId().equals("parametersTab")) {
                 isParametersDisabled = false;
                 isDetectionMethodDisabled = true;
-            }
-            else {
+            } else {
                 isParametersDisabled = true;
                 isDetectionMethodDisabled = false;
             }
-        }
-        else {
+        } else {
             isParametersDisabled = true;
             isDetectionMethodDisabled = true;
         }
@@ -316,10 +323,10 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
 
     public void newParameter(ActionEvent evt) {
         if (this.newParameterType != null && this.newParameterFactor != null
-                && this.newParameterBase != null && this.newParameterExponent != null){
+                && this.newParameterBase != null && this.newParameterExponent != null) {
             FeatureEvidenceParameter param = new FeatureEvidenceParameter(this.newParameterType, new ParameterValue(new BigDecimal(this.newParameterFactor), this.newParameterBase.shortValue(),
                     this.newParameterExponent.shortValue()));
-            if (this.newParameterUncertainty != null){
+            if (this.newParameterUncertainty != null) {
                 param.setUncertainty(new BigDecimal(this.newParameterUncertainty));
             }
             param.setUnit(this.newParameterUnit);
@@ -332,14 +339,13 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
             this.newParameterUncertainty = null;
             this.newParameterUnit = null;
             this.newParameterExponent = null;
-        }
-        else{
+        } else {
             addErrorMessage("Cannot add new parameter as it does not have any type/value", "Missing parameter type/value");
         }
     }
 
     public void newDetectionMethod(ActionEvent evt) {
-        if (this.detectionMethodToAdd != null){
+        if (this.detectionMethodToAdd != null) {
             getFeature().getDetectionMethods().add(this.detectionMethodToAdd);
             doSave(false);
 
@@ -383,7 +389,7 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
 
     @Override
     public FeatureEvidenceAnnotation newAnnotation(String topic, String topicMI, String text) {
-        return new FeatureEvidenceAnnotation(getCvService().findCvObject(IntactUtils.TOPIC_OBJCLASS, topicMI != null ? topicMI: topic), text);
+        return new FeatureEvidenceAnnotation(getCvService().findCvObject(IntactUtils.TOPIC_OBJCLASS, topicMI != null ? topicMI : topic), text);
     }
 
     @Override
@@ -410,6 +416,28 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
         super.newRange(evt);
         changed();
         participantController.reloadSingleFeature(getFeature());
+    }
+
+    public boolean isItOfTypeMutation() {
+        try {
+            if (shortlabelGenerator.getAllowedFeatureTypes().contains(getFeature().getType().getMIIdentifier())) {
+                return true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return false;
+    }
+
+    public void refreshShortLabel(ActionEvent evt) {
+        if (getFeature() != null) {
+            updateShortLabel(getFeature());
+        }
+    }
+
+    private void updateShortLabel(IntactFeatureEvidence featureEvidence) {
+        String oldLabel = getFeature().getShortName();
+        shortlabelGenerator.generateNewShortLabel(getFeature());
     }
 
     /*public void unloadFacesMessages(){
@@ -472,5 +500,11 @@ public class FeatureController extends AbstractFeatureController<IntactFeatureEv
         this.newParameterType = newParameterType;
     }
 
+    public ShortlabelGenerator getShortlabelGenerator() {
+        return shortlabelGenerator;
+    }
 
+    public void setShortlabelGenerator(ShortlabelGenerator shortlabelGenerator) {
+        this.shortlabelGenerator = shortlabelGenerator;
+    }
 }
