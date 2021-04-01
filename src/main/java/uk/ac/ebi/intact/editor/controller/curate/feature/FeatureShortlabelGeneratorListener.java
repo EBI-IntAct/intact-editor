@@ -47,7 +47,7 @@ public class FeatureShortlabelGeneratorListener implements ShortlabelGeneratorLi
     @Override
     public void onAnnotationFound(AnnotationFoundEvent event) {
         // validated
-        featureController.addInfoMessage(SHORTLABEL_NOT_GENERATED_MSG, "Because of annotation" +event.getMessage());
+        featureController.addInfoMessage(SHORTLABEL_NOT_GENERATED_MSG, "Because of annotation: " +event.getMessage());
     }
 
     @Override
