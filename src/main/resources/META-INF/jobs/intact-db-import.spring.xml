@@ -106,6 +106,7 @@
     <bean id="complexDataAdditionProcessor" class="uk.ac.ebi.intact.dataexchange.dbimporter.processor.IntactComplexDataAdditionProcessor"
           lazy-init="true" scope="step">
         <property name="errorResource" value="file://#{jobParameters['error.file']}"/>
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
         <property name="complexService" ref="complexService"/>
     </bean>
     <bean id="complexEnricherProcessor" class="uk.ac.ebi.intact.dataexchange.dbimporter.processor.IntactEnricherProcessor"
