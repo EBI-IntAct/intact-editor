@@ -150,6 +150,9 @@ public class EditorSynchronizerContext implements SynchronizerContext {
     // complex xref synchronizer
     private XrefSynchronizer<InteractorXref> complexXrefSynchronizer;
 
+    // complex xref synchronizer
+    private XrefSynchronizer<InteractorXref> complexGOXrefSynchronizer;
+
     // db info snchronizer
     private IntactDbSynchronizer<DbInfo,DbInfo> dbInfoSynchronizer;
     // application synchronizer
@@ -940,6 +943,15 @@ public class EditorSynchronizerContext implements SynchronizerContext {
     }
 
     @Override
+    public XrefSynchronizer<InteractorXref> getComplexGOXrefSynchronizer() {
+        if (this.complexGOXrefSynchronizer == null){
+            this.complexGOXrefSynchronizer = new ComplexXrefSynchronizerTemplate(this,ComplexGOXref.class);
+            this.complexGOXrefSynchronizer.setListener(listener);
+        }
+        return complexGOXrefSynchronizer;
+    }
+
+    @Override
     public IntactDbSynchronizer<DbInfo, DbInfo> getDbInfoSynchronizer() {
         if (this.dbInfoSynchronizer == null){
             this.dbInfoSynchronizer = new DbInfoSynchronizer(this);
@@ -1005,6 +1017,7 @@ public class EditorSynchronizerContext implements SynchronizerContext {
         initListener(this.annotationSynchronizer);
         initListener(this.xrefSynchronizer);
         initListener(this.complexXrefSynchronizer);
+        initListener(this.complexGOXrefSynchronizer);
         initListener(this.cooperativeEffectSynchronizer);
         initListener(this.preAssemblySynchronizer);
         initListener(this.allosterySynchronizer);
@@ -1070,6 +1083,7 @@ public class EditorSynchronizerContext implements SynchronizerContext {
         clearCache(this.annotationSynchronizer);
         clearCache(this.xrefSynchronizer);
         clearCache(this.complexXrefSynchronizer);
+        clearCache(this.complexGOXrefSynchronizer);
         clearCache(this.cooperativeEffectSynchronizer);
         clearCache(this.preAssemblySynchronizer);
         clearCache(this.allosterySynchronizer);
