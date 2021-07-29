@@ -1,12 +1,12 @@
 /**
  * Copyright 2010 The European Bioinformatics Institute, and others.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
 import psidev.psi.mi.jami.bridges.fetcher.ProteinFetcher;
+import psidev.psi.mi.jami.listener.comparator.impl.ComplexComparatorListenerImpl;
 import psidev.psi.mi.jami.model.*;
 import psidev.psi.mi.jami.utils.XrefUtils;
 import uk.ac.ebi.intact.editor.controller.curate.UnsavedChange;
@@ -44,6 +45,7 @@ import uk.ac.ebi.intact.jami.synchronizer.FinderException;
 import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
 import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
 import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
+import uk.ac.ebi.intact.jami.synchronizer.impl.ComplexSynchronizer;
 import uk.ac.ebi.intact.jami.utils.IntactUtils;
 import uk.ac.ebi.intact.jami.utils.ReleasableUtils;
 
@@ -55,10 +57,10 @@ import java.util.*;
  */
 
 @Service
-@Scope( BeanDefinition.SCOPE_PROTOTYPE )
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 public class EditorObjectService extends AbstractEditorService {
 
-    private static final Log log = LogFactory.getLog( EditorObjectService.class );
+    private static final Log log = LogFactory.getLog(EditorObjectService.class);
 
     @Resource(name = "proteinFetcher")
     private ProteinFetcher proteinFetcher;
@@ -66,29 +68,28 @@ public class EditorObjectService extends AbstractEditorService {
     private transient LifeCycleManager lifecycleManager;
 
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
-    public <T extends IntactPrimaryObject> T doSave( IntactPrimaryObject object,
-                                                     IntactDbSynchronizer dbSynchronizer) throws SynchronizerException,
+    public <T extends IntactPrimaryObject> T doSave(IntactPrimaryObject object,
+                                                    IntactDbSynchronizer dbSynchronizer) throws SynchronizerException,
             FinderException, PersisterException {
 
-        if ( object == null ) {
-            log.error( "No annotated object to save");
+        if (object == null) {
+            log.error("No annotated object to save");
             return null;
-        }
-        else{
+        } else {
             // attach dao to transaction manager to clear cache
             attachDaoToTransactionManager();
 
-            return (T)synchronizeIntactObject(object, dbSynchronizer, true);
+            return (T) synchronizeIntactObject(object, dbSynchronizer, true);
         }
     }
+
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
-    public void saveVariableParameterValue( IntactVariableParameter param) throws SynchronizerException,
+    public void saveVariableParameterValue(IntactVariableParameter param) throws SynchronizerException,
             FinderException, PersisterException {
 
-        if ( param == null ) {
-            log.error( "No parameter to save");
-        }
-        else{
+        if (param == null) {
+            log.error("No parameter to save");
+        } else {
             // attach dao to transaction manager to clear cache
             attachDaoToTransactionManager();
             getIntactDao().getVariableParameterDao().persist(param);
@@ -96,13 +97,12 @@ public class EditorObjectService extends AbstractEditorService {
     }
 
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
-    public void deleteVariableParameter( IntactVariableParameter param) throws SynchronizerException,
+    public void deleteVariableParameter(IntactVariableParameter param) throws SynchronizerException,
             FinderException, PersisterException {
 
-        if ( param == null ) {
-            log.error( "No parameter to delete");
-        }
-        else{
+        if (param == null) {
+            log.error("No parameter to delete");
+        } else {
             // attach dao to transaction manager to clear cache
             attachDaoToTransactionManager();
 
@@ -114,26 +114,24 @@ public class EditorObjectService extends AbstractEditorService {
     public void deleteVariableParameterValueFromInteractions(IntactVariableParameterValue variableParameterValue, IntactExperiment experiment) throws SynchronizerException,
             FinderException, PersisterException {
 
-        if ( variableParameterValue == null ) {
-            log.error( "No parameter to delete");
-        }
-        else{
+        if (variableParameterValue == null) {
+            log.error("No parameter to delete");
+        } else {
             // attach dao to transaction manager to clear cache
             attachDaoToTransactionManager();
 
-            if (experiment.areInteractionEvidencesInitialized()){
-                for (InteractionEvidence ev : experiment.getInteractionEvidences()){
-                    IntactInteractionEvidence intactEv = (IntactInteractionEvidence)ev;
-                    if (intactEv.areVariableParameterValuesInitialized()){
-                        for (VariableParameterValueSet v : intactEv.getVariableParameterValues()){
+            if (experiment.areInteractionEvidencesInitialized()) {
+                for (InteractionEvidence ev : experiment.getInteractionEvidences()) {
+                    IntactInteractionEvidence intactEv = (IntactInteractionEvidence) ev;
+                    if (intactEv.areVariableParameterValuesInitialized()) {
+                        for (VariableParameterValueSet v : intactEv.getVariableParameterValues()) {
                             Iterator<VariableParameterValue> valueIterator = v.iterator();
-                            while (valueIterator.hasNext()){
-                                IntactVariableParameterValue value = (IntactVariableParameterValue)valueIterator.next();
-                                if (variableParameterValue.getId() != null && variableParameterValue.getId().equals(value.getId())){
+                            while (valueIterator.hasNext()) {
+                                IntactVariableParameterValue value = (IntactVariableParameterValue) valueIterator.next();
+                                if (variableParameterValue.getId() != null && variableParameterValue.getId().equals(value.getId())) {
                                     valueIterator.remove();
                                     break;
-                                }
-                                else if (variableParameterValue.getId() == null && variableParameterValue == value){
+                                } else if (variableParameterValue.getId() == null && variableParameterValue == value) {
                                     valueIterator.remove();
                                     break;
                                 }
@@ -151,7 +149,8 @@ public class EditorObjectService extends AbstractEditorService {
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
     public <T extends IntactPrimaryObject> T doRevert(IntactPrimaryObject intactObject) {
         if (intactObject.getAc() != null) {
-            if (log.isDebugEnabled()) log.debug("Reverting: " + intactObject.getClass()+", Ac="+intactObject.getAc());
+            if (log.isDebugEnabled())
+                log.debug("Reverting: " + intactObject.getClass() + ", Ac=" + intactObject.getAc());
 
             // clear manager first to avaoid to have remaining objects from other transactions
             getIntactDao().getEntityManager().clear();
@@ -159,13 +158,13 @@ public class EditorObjectService extends AbstractEditorService {
             intactObject = getIntactDao().getEntityManager().find(intactObject.getClass(), intactObject.getAc());
         }
 
-        return (T)intactObject;
+        return (T) intactObject;
     }
 
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
     public boolean doDelete(IntactPrimaryObject intactObject, IntactDbSynchronizer dbSynchronizer) {
         if (intactObject.getAc() != null) {
-            if (log.isDebugEnabled()) log.debug("Deleting " + intactObject.getClass()+", Ac="+intactObject.getAc());
+            if (log.isDebugEnabled()) log.debug("Deleting " + intactObject.getClass() + ", Ac=" + intactObject.getAc());
             // attach dao to transaction manager to clear cache
             attachDaoToTransactionManager();
             getIntactDao().getEntityManager().clear();
@@ -179,11 +178,11 @@ public class EditorObjectService extends AbstractEditorService {
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
     public void saveAll(Collection<UnsavedChange> changes, Collection<UnsavedChange> currentChangesForUser) throws SynchronizerException, FinderException, PersisterException {
 
-        for (UnsavedChange unsaved : changes){
+        for (UnsavedChange unsaved : changes) {
             IntactPrimaryObject object = unsaved.getUnsavedObject();
 
             // checks that the current unsaved change is not obsolete because of a previous change (when saving/deleting, some unsaved change became obsolete and have been removed from the unsaved changes)
-            if (currentChangesForUser.contains(unsaved)){
+            if (currentChangesForUser.contains(unsaved)) {
                 doSave(object, unsaved.getDbSynchronizer());
 
             }
@@ -192,12 +191,13 @@ public class EditorObjectService extends AbstractEditorService {
 
     /**
      * Save a master protein and update the cross reference of a protein transcript which will be created later
+     *
      * @param intactObject
      */
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
     public void doSaveMasterProteins(IntactPrimaryObject intactObject) throws BridgeFailedException, SynchronizerException, FinderException, PersisterException {
 
-        if (intactObject instanceof Protein){
+        if (intactObject instanceof Protein) {
             attachDaoToTransactionManager();
             getIntactDao().getEntityManager().clear();
 
@@ -207,39 +207,35 @@ public class EditorObjectService extends AbstractEditorService {
             for (Xref xref : transcriptXrefs) {
                 CvTerm qualifier = xref.getQualifier();
 
-                if (qualifier != null){
+                if (qualifier != null) {
                     if (XrefUtils.doesXrefHaveQualifier(xref, Xref.CHAIN_PARENT_MI, Xref.CHAIN_PARENT) ||
                             XrefUtils.doesXrefHaveQualifier(xref, Xref.ISOFORM_PARENT_MI, Xref.ISOFORM_PARENT)) {
                         String primaryId = xref.getId().replaceAll("\\?", "");
 
                         Collection<Protein> proteins = proteinFetcher.fetchByIdentifier(primaryId);
 
-                        if (proteins.size() > 0){
+                        if (proteins.size() > 0) {
                             xrefsToDelete.add(xref);
 
                             IntactConfiguration intactConfig = ApplicationContextProvider.getBean("intactJamiConfiguration");
-                            for (Protein prot : proteins){
-                                try{
+                            for (Protein prot : proteins) {
+                                try {
                                     IntactInteractor intactprotein = getIntactDao().getSynchronizerContext().getProteinSynchronizer().synchronize(prot, true);
                                     ((Protein) intactObject).getXrefs().add(new InteractorXref(IntactUtils.createMIDatabase(intactConfig.getDefaultInstitution().getShortName(),
                                             intactConfig.getDefaultInstitution().getMIIdentifier()), intactprotein.getAc(), xref.getQualifier()));
-                                }
-                                catch (SynchronizerException e){
+                                } catch (SynchronizerException e) {
                                     getIntactDao().getSynchronizerContext().clearCache();
                                     getIntactDao().getEntityManager().clear();
                                     throw e;
-                                }
-                                catch (FinderException e){
+                                } catch (FinderException e) {
                                     getIntactDao().getSynchronizerContext().clearCache();
                                     getIntactDao().getEntityManager().clear();
                                     throw e;
-                                }
-                                catch (PersisterException e){
+                                } catch (PersisterException e) {
                                     getIntactDao().getSynchronizerContext().clearCache();
                                     getIntactDao().getEntityManager().clear();
                                     throw e;
-                                }
-                                catch (Throwable e){
+                                } catch (Throwable e) {
                                     getIntactDao().getSynchronizerContext().clearCache();
                                     getIntactDao().getEntityManager().clear();
                                     throw new PersisterException(e.getMessage(), e);
@@ -252,25 +248,21 @@ public class EditorObjectService extends AbstractEditorService {
 
             proteinTranscript.getXrefs().removeAll(xrefsToDelete);
 
-            try{
-                getIntactDao().getProteinDao().update((IntactProtein)intactObject);
-            }
-            catch (SynchronizerException e){
+            try {
+                getIntactDao().getProteinDao().update((IntactProtein) intactObject);
+            } catch (SynchronizerException e) {
                 getIntactDao().getSynchronizerContext().clearCache();
                 getIntactDao().getEntityManager().clear();
                 throw e;
-            }
-            catch (FinderException e){
+            } catch (FinderException e) {
                 getIntactDao().getSynchronizerContext().clearCache();
                 getIntactDao().getEntityManager().clear();
                 throw e;
-            }
-            catch (PersisterException e){
+            } catch (PersisterException e) {
                 getIntactDao().getSynchronizerContext().clearCache();
                 getIntactDao().getEntityManager().clear();
                 throw e;
-            }
-            catch (Throwable e){
+            } catch (Throwable e) {
                 getIntactDao().getSynchronizerContext().clearCache();
                 getIntactDao().getEntityManager().clear();
                 throw new PersisterException(e.getMessage(), e);
@@ -281,17 +273,26 @@ public class EditorObjectService extends AbstractEditorService {
     @Transactional(value = "jamiTransactionManager", propagation = Propagation.REQUIRED)
     public void revertAll(Collection<UnsavedChange> jamiChanges) {
 
-        for (UnsavedChange unsaved : jamiChanges){
+        for (UnsavedChange unsaved : jamiChanges) {
             doRevert(unsaved.getUnsavedObject());
         }
     }
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public Collection<String> findObjectDuplicates(IntactPrimaryObject jamiObject, IntactDbSynchronizer dbSynchronizer){
-        // if the annotated object does not have an ac, check if another one similar exists in the db
-        if (jamiObject.getAc() == null) {
-            return dbSynchronizer.findAllMatchingAcs(jamiObject);
-        }
+    public Collection<String> findObjectDuplicates(IntactPrimaryObject jamiObject, IntactDbSynchronizer dbSynchronizer) {
+        if (jamiObject instanceof IntactComplex && dbSynchronizer instanceof ComplexSynchronizer) {
+            IntactComplex intactComplex = (IntactComplex) jamiObject;
+            ComplexSynchronizer complexSynchronizer = (ComplexSynchronizer) dbSynchronizer;
+            complexSynchronizer.setComplexComparatorListener(new ComplexComparatorListenerImpl());
+            Collection<String> allComplexAcs = complexSynchronizer.findAllMatchingComplexAcs(intactComplex);
+            if(intactComplex.getAc()!=null) {
+                allComplexAcs.remove(intactComplex.getAc());
+            } // we don't want to get the mirror ac.
+            return allComplexAcs;
+        } else  // for non complexes, if the annotated object does not have an ac, check if another one similar exists in the db
+            if (jamiObject.getAc() == null) {
+                return dbSynchronizer.findAllMatchingAcs(jamiObject);
+            }
         return Collections.EMPTY_LIST;
     }
 
@@ -301,82 +302,71 @@ public class EditorObjectService extends AbstractEditorService {
         ac = ac.trim();
 
         IntactPrimaryObject primary = getIntactDao().getEntityManager().find(IntactPublication.class, ac);
-        if (primary == null){
+        if (primary == null) {
             primary = getIntactDao().getEntityManager().find(IntactExperiment.class, ac);
-            if (primary == null){
+            if (primary == null) {
                 primary = getIntactDao().getEntityManager().find(IntactInteractionEvidence.class, ac);
 
-                if (primary == null){
+                if (primary == null) {
                     primary = getIntactDao().getEntityManager().find(IntactComplex.class, ac);
 
-                    if (primary == null){
+                    if (primary == null) {
                         primary = getIntactDao().getEntityManager().find(IntactParticipantEvidence.class, ac);
 
-                        if (primary == null){
+                        if (primary == null) {
                             primary = getIntactDao().getEntityManager().find(IntactModelledParticipant.class, ac);
 
-                            if (primary == null){
+                            if (primary == null) {
                                 primary = getIntactDao().getEntityManager().find(IntactFeatureEvidence.class, ac);
 
-                                if (primary == null){
+                                if (primary == null) {
                                     primary = getIntactDao().getEntityManager().find(IntactModelledFeature.class, ac);
 
-                                    if (primary == null){
+                                    if (primary == null) {
                                         primary = getIntactDao().getEntityManager().find(IntactInteractor.class, ac);
 
-                                        if (primary == null){
+                                        if (primary == null) {
                                             primary = getIntactDao().getEntityManager().find(IntactOrganism.class, ac);
 
-                                            if (primary == null){
+                                            if (primary == null) {
                                                 primary = getIntactDao().getEntityManager().find(IntactCvTerm.class, ac);
 
-                                                if (primary == null){
+                                                if (primary == null) {
                                                     primary = getIntactDao().getEntityManager().find(IntactSource.class, ac);
 
-                                                    return (T)primary;
+                                                    return (T) primary;
+                                                } else {
+                                                    return (T) primary;
                                                 }
-                                                else{
-                                                    return (T)primary;
-                                                }
+                                            } else {
+                                                return (T) primary;
                                             }
-                                            else{
-                                                return (T)primary;
-                                            }
+                                        } else {
+                                            return (T) primary;
                                         }
-                                        else{
-                                            return (T)primary;
-                                        }
+                                    } else {
+                                        return (T) primary;
                                     }
-                                    else{
-                                        return (T)primary;
-                                    }
+                                } else {
+                                    return (T) primary;
                                 }
-                                else{
-                                    return (T)primary;
-                                }
+                            } else {
+                                return (T) primary;
                             }
-                            else{
-                                return (T)primary;
-                            }
+                        } else {
+                            return (T) primary;
                         }
-                        else{
-                            return (T)primary;
-                        }
+                    } else {
+                        return (T) primary;
                     }
-                    else{
-                        return (T)primary;
-                    }
+                } else {
+                    return (T) primary;
                 }
-                else{
-                    return (T)primary;
-                }
+            } else {
+                return (T) primary;
             }
-            else{
-                return (T)primary;
-            }
-        }
-        else{
-            return (T)primary;
+        } else {
+            return (T) primary;
         }
     }
 
@@ -388,7 +378,7 @@ public class EditorObjectService extends AbstractEditorService {
         return getIntactDao().getEntityManager().find(clazz, ac);
     }
 
-    public void setUser(User user){
+    public void setUser(User user) {
         getIntactDao().getUserContext().setUser(user);
     }
 
@@ -397,15 +387,15 @@ public class EditorObjectService extends AbstractEditorService {
         // reload complex without flushing changes
         Releasable reloaded = releasable;
         // merge current user because detached
-        if (((IntactPrimaryObject)releasable).getAc() != null && !getIntactDao().getEntityManager().contains(releasable)){
+        if (((IntactPrimaryObject) releasable).getAc() != null && !getIntactDao().getEntityManager().contains(releasable)) {
             reloaded = getIntactDao().getEntityManager().find(releasable.getClass(), ((IntactPrimaryObject) releasable).getAc());
-            if (reloaded == null){
+            if (reloaded == null) {
                 reloaded = releasable;
             }
         }
 
         Collection<LifeCycleEvent> events = reloaded.getLifecycleEvents();
-        if (((IntactPrimaryObject) releasable).getAc() != null){
+        if (((IntactPrimaryObject) releasable).getAc() != null) {
             Hibernate.initialize(events);
         }
         return reloaded.getLifecycleEvents();
@@ -431,11 +421,11 @@ public class EditorObjectService extends AbstractEditorService {
         getIntactDao().getEntityManager().clear();
         T reloaded = ao;
         // merge current user because detached
-        if (ao.getAc() != null){
-            reloaded = (T)getIntactDao().getEntityManager().find(ao.getClass(), ao.getAc());
+        if (ao.getAc() != null) {
+            reloaded = (T) getIntactDao().getEntityManager().find(ao.getClass(), ao.getAc());
         }
 
-        T clone = (T)cloner.clone(reloaded, getIntactDao());
+        T clone = (T) cloner.clone(reloaded, getIntactDao());
 
         return clone;
     }
@@ -443,15 +433,15 @@ public class EditorObjectService extends AbstractEditorService {
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public <T extends IntactPrimaryObject> void detachObject(T ao) {
         // detach current object if necessary
-        if (ao.getAc() != null && getIntactDao().getEntityManager().contains(ao)){
+        if (ao.getAc() != null && getIntactDao().getEntityManager().contains(ao)) {
             getIntactDao().getEntityManager().detach(ao);
         }
     }
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void claimOwnership(Releasable releasable, User user, boolean isAssigned) {
-        if (releasable != null){
-            detachObject((IntactPrimaryObject)releasable);
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
 
             lifecycleManager.getGlobalStatus().changeOwnership(releasable, user, "Ownership Claimed");
 
@@ -464,8 +454,8 @@ public class EditorObjectService extends AbstractEditorService {
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void markAsCurationInProgress(Releasable releasable, User user) {
-        if (releasable != null){
-            detachObject((IntactPrimaryObject)releasable);
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
 
             lifecycleManager.getAssignedStatus().startCuration(releasable, user);
         }
@@ -473,8 +463,8 @@ public class EditorObjectService extends AbstractEditorService {
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void markAsReadyForChecking(Releasable releasable, User user, String reasonForReadyForChecking) {
-        if (releasable != null){
-            detachObject((IntactPrimaryObject)releasable);
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
 
             lifecycleManager.getCurationInProgressStatus().readyForChecking(releasable, reasonForReadyForChecking, true, user);
         }
@@ -482,8 +472,8 @@ public class EditorObjectService extends AbstractEditorService {
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void revertReadyForChecking(Releasable releasable, User user) {
-        if (releasable != null){
-            detachObject((IntactPrimaryObject)releasable);
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
 
             lifecycleManager.getReadyForCheckingStatus().revert(releasable, user);
         }
@@ -491,13 +481,12 @@ public class EditorObjectService extends AbstractEditorService {
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void revertAccepted(Releasable releasable, User user, boolean isReadyForReleased) {
-        if (releasable != null){
-            detachObject((IntactPrimaryObject)releasable);
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
 
-            if (isReadyForReleased){
+            if (isReadyForReleased) {
                 lifecycleManager.getReadyForReleaseStatus().revert(releasable, user);
-            }
-            else {
+            } else {
                 LifeCycleEvent acceptedEvt = ReleasableUtils.getLastEventOfType(releasable, LifeCycleEventType.ACCEPTED);
                 releasable.getLifecycleEvents().remove(acceptedEvt);
                 releasable.setStatus(LifeCycleStatus.READY_FOR_CHECKING);
@@ -507,8 +496,8 @@ public class EditorObjectService extends AbstractEditorService {
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void putOnHold(Releasable releasable, User user, String reasonForOnHold, boolean isReadyForReleased, boolean isReleased) {
-        if (releasable != null){
-            detachObject((IntactPrimaryObject)releasable);
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
 
             if (isReadyForReleased) {
                 lifecycleManager.getReadyForReleaseStatus().putOnHold(releasable, reasonForOnHold, user);
@@ -526,8 +515,8 @@ public class EditorObjectService extends AbstractEditorService {
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void readyForReleaseFromOnHold(Releasable releasable, User user) {
-        if (releasable != null){
-            detachObject((IntactPrimaryObject)releasable);
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
 
             lifecycleManager.getAcceptedOnHoldStatus().onHoldRemoved(releasable, null, user);
         }
@@ -535,8 +524,8 @@ public class EditorObjectService extends AbstractEditorService {
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void accept(Releasable releasable, User user, String message) {
-        if (releasable != null){
-            detachObject((IntactPrimaryObject)releasable);
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
 
             lifecycleManager.getReadyForCheckingStatus().accept(releasable, message, user);
 
@@ -548,8 +537,8 @@ public class EditorObjectService extends AbstractEditorService {
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void reject(Releasable releasable, User user, String message) {
-        if (releasable != null){
-            detachObject((IntactPrimaryObject)releasable);
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
 
             lifecycleManager.getReadyForCheckingStatus().reject(releasable, message, user);
         }
@@ -557,8 +546,8 @@ public class EditorObjectService extends AbstractEditorService {
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void markAsAssignedToMe(Releasable releasable, User user) {
-        if (releasable != null){
-            detachObject((IntactPrimaryObject)releasable);
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
 
             lifecycleManager.getNewStatus().assignToCurator(releasable, user, user);
 
