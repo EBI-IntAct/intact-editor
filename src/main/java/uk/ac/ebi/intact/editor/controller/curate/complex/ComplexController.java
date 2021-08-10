@@ -376,6 +376,7 @@ public class ComplexController extends AnnotatedObjectController {
             }
             getChangesController().markToDelete(component, this.complex, getEditorService().getIntactDao().getSynchronizerContext().getModelledParticipantSynchronizer(),
                     "participant " + component.getAc(), parents);
+            complex.removeParticipant(component);
         }
     }
 
