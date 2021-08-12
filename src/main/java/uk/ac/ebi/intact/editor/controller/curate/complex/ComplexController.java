@@ -363,20 +363,15 @@ public class ComplexController extends AnnotatedObjectController {
         ((ComplexSynchronizer) getDbSynchronizer()).setComplexComparatorListener(null);
     }
 
-    public void markParticipantToDelete(IntactModelledParticipant component) {
+    public void deleteParticipant(IntactModelledParticipant component) {
         if (component == null) return;
 
         if (component.getAc() == null) {
             complex.removeParticipant(component);
             refreshParticipants();
         } else {
-            Collection<String> parents = collectParentAcsOfCurrentAnnotatedObject();
-            if (this.complex.getAc() != null) {
-                parents.add(this.complex.getAc());
-            }
-            getChangesController().markToDelete(component, this.complex, getEditorService().getIntactDao().getSynchronizerContext().getModelledParticipantSynchronizer(),
-                    "participant " + component.getAc(), parents);
             complex.removeParticipant(component);
+            doSave(false);
         }
     }
 
