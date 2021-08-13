@@ -368,6 +368,10 @@ public class ComplexController extends AnnotatedObjectController {
 
         complex.removeParticipant(component);
         refreshParticipants();
+
+        if (component.getAc() != null) {
+            setUnsavedChanges(true);
+        }
     }
 
     public void refreshParticipants() {
