@@ -366,13 +366,8 @@ public class ComplexController extends AnnotatedObjectController {
     public void deleteParticipant(IntactModelledParticipant component) {
         if (component == null) return;
 
-        if (component.getAc() == null) {
-            complex.removeParticipant(component);
-            refreshParticipants();
-        } else {
-            complex.removeParticipant(component);
-            doSave(false);
-        }
+        complex.removeParticipant(component);
+        refreshParticipants();
     }
 
     public void refreshParticipants() {

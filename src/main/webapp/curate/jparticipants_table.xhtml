@@ -143,7 +143,7 @@
                     <p:commandLink id="markDeletedBtn" process="markDeletedBtn" title="Delete" styleClass="ui-icon ui-icon-closethick"
                                    actionListener="#{complexController.deleteParticipant(participant)}"
                                    onstart="delParticipantDialog.show()" oncomplete="delParticipantDialog.hide();markAsUnsaved()"
-                                   update=":editorForm:unsavedChangesInfo :editorForm:changesPanel :editorForm:messagesComponent :editorForm:complexTabs:participantsTab"
+                                   update=":editorForm:unsavedChangesInfo :editorForm:changesPanel :editorForm:messagesComponent :editorForm:complexTabs:jparticipantsPanel"
                                    rendered="#{not changesController.isDeletedAc(participant.ac)}"/>
                 </div>
                 <div style="float:right">
