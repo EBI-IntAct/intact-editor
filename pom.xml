@@ -445,8 +445,8 @@
             <version>2.0</version>
             <exclusions>
                 <exclusion>
-                    <groupId>javax.xml.stream</groupId>
-                    <artifactId>stax-api</artifactId>
+                    <groupId>com.sun.xml.ws</groupId>
+                    <artifactId>jaxws-rt</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
