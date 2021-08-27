@@ -15,6 +15,7 @@
  */
 package uk.ac.ebi.intact.editor.controller.curate.complex;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,6 +27,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
 import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
+import psidev.psi.mi.jami.listener.comparator.ComplexComparatorListener;
+import psidev.psi.mi.jami.listener.comparator.analyzer.ComplexComparatorListenerAnalyzer;
+import psidev.psi.mi.jami.listener.comparator.event.ComplexComparisonEvent;
 import psidev.psi.mi.jami.model.*;
 import psidev.psi.mi.jami.utils.AliasUtils;
 import psidev.psi.mi.jami.utils.AnnotationUtils;
@@ -58,6 +62,7 @@ import uk.ac.ebi.intact.jami.synchronizer.FinderException;
 import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
 import uk.ac.ebi.intact.jami.synchronizer.PersisterException;
 import uk.ac.ebi.intact.jami.synchronizer.SynchronizerException;
+import uk.ac.ebi.intact.jami.synchronizer.impl.ComplexSynchronizer;
 import uk.ac.ebi.intact.jami.utils.IntactUtils;
 import uk.ac.ebi.intact.jami.utils.ReleasableUtils;
 
@@ -329,21 +334,43 @@ public class ComplexController extends AnnotatedObjectController {
                 getChangesController().removeFromHiddenChanges(unsaved);
             }
         }
+
+        // this complex comparator listener was set in EditorObjectService.findObjectDuplicates
+        // we want to relay it's observations even if no exact duplicates were found
+        if (((ComplexSynchronizer) getDbSynchronizer()).getComplexComparatorListener() != null) {
+            relayListenersObservations(((ComplexSynchronizer) getDbSynchronizer()).getComplexComparatorListener());
+        }
     }
 
-    public void markParticipantToDelete(IntactModelledParticipant component) {
+    private void relayListenersObservations(ComplexComparatorListener complexComparatorListener) {
+        // remove any old complex comparator caution annotation
+        AnnotationUtils.removeAllAnnotationsWithTopicAndValueLike
+                (this.complex.getAnnotations(), Annotation.CAUTION_MI, Annotation.CAUTION,
+                        ComplexComparisonEvent.EventType.ONLY_STOICHIOMETRY_DIFFERENT.getMessage());
+
+        // add any new complex comparator cautions available
+        Collection<String> complexesDiffOnlyByStoichiometry = ComplexComparatorListenerAnalyzer.getComplexAcsDifferentOnlyByStoichiometry
+                (((ComplexSynchronizer) getDbSynchronizer()).getComplexComparatorListener());
+        if (!complexesDiffOnlyByStoichiometry.isEmpty()) {
+            Annotation annotation = AnnotationUtils.
+                    createCaution("This complex" +
+                            " is almost duplicate " +
+                            "(" + ComplexComparisonEvent.EventType.ONLY_STOICHIOMETRY_DIFFERENT.getMessage() + ")" +
+                            " with complex acs:: " + StringUtils.join(complexesDiffOnlyByStoichiometry, ", "));
+            this.complex.getAnnotations().add(annotation);
+        }
+        // listener job is done, so removing it's reference
+        ((ComplexSynchronizer) getDbSynchronizer()).setComplexComparatorListener(null);
+    }
+
+    public void deleteParticipant(IntactModelledParticipant component) {
         if (component == null) return;
 
-        if (component.getAc() == null) {
-            complex.removeParticipant(component);
-            refreshParticipants();
-        } else {
-            Collection<String> parents = collectParentAcsOfCurrentAnnotatedObject();
-            if (this.complex.getAc() != null) {
-                parents.add(this.complex.getAc());
-            }
-            getChangesController().markToDelete(component, this.complex, getEditorService().getIntactDao().getSynchronizerContext().getModelledParticipantSynchronizer(),
-                    "participant " + component.getAc(), parents);
+        complex.removeParticipant(component);
+        refreshParticipants();
+
+        if (component.getAc() != null) {
+            setUnsavedChanges(true);
         }
     }
 

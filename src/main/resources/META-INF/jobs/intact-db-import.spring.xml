@@ -98,6 +98,27 @@
         <property name="errorResource" value="file://#{jobParameters['error.file']}"/>
         <property name="enricher" ref="editorComplexEnricher"/>
     </bean>
+    <bean id="intactComplexEnricherCompositeProcessor" class="uk.ac.ebi.intact.dataexchange.dbimporter.processor.IntactComplexEnricherCompositeProcessor" lazy-init="true" scope="step">
+        <property name="intactComplexDataAdditionProcessor" ref="complexDataAdditionProcessor"/>
+        <property name="complexEnricherProcessor" ref="complexEnricherProcessor"/>
+        <property name="complexValidationProcessor" ref="complexValidationProcessor"/>
+    </bean>
+    <bean id="complexDataAdditionProcessor" class="uk.ac.ebi.intact.dataexchange.dbimporter.processor.IntactComplexDataAdditionProcessor"
+          lazy-init="true" scope="step">
+        <property name="errorResource" value="file://#{jobParameters['error.file']}"/>
+        <property name="importTag" value="#{jobParameters['MIJobId']}"/>
+        <property name="complexService" ref="complexService"/>
+    </bean>
+    <bean id="complexEnricherProcessor" class="uk.ac.ebi.intact.dataexchange.dbimporter.processor.IntactEnricherProcessor"
+          lazy-init="true" scope="step">
+        <property name="errorResource" value="file://#{jobParameters['error.file']}"/>
+        <property name="enricher" ref="intactComplexEnricher"/>
+    </bean>
+    <bean id="complexValidationProcessor" class="uk.ac.ebi.intact.dataexchange.dbimporter.processor.IntactComplexValidationProcessor"
+          lazy-init="true" scope="step">
+        <property name="errorResource" value="file://#{jobParameters['error.file']}"/>
+        <property name="complexService" ref="complexService"/>
+    </bean>
     <bean id="interactionMixProcessor" class="uk.ac.ebi.intact.dataexchange.dbimporter.processor.IntactInteractionEnricherCompositeProcessor" lazy-init="true" scope="step">
         <property name="interactionEvidenceProcessor" ref="interactionEvidenceProcessor"/>
         <property name="complexProcessor" ref="complexProcessor"/>
@@ -129,12 +150,14 @@
             </batch:listeners>
 
             <batch:chunk reader="complexReader"
-                         processor="complexProcessor"
+                         processor="intactComplexEnricherCompositeProcessor"
                          writer="complexImporter"
                          commit-interval="50">
                 <batch:streams>
                     <batch:stream ref="complexReader"/>
-                    <batch:stream ref="complexProcessor"/>
+                    <batch:stream ref="complexEnricherProcessor"/>
+                    <batch:stream ref="complexValidationProcessor"/>
+                    <batch:stream ref="complexDataAdditionProcessor"/>
                     <batch:stream ref="complexImporter"/>
                 </batch:streams>
             </batch:chunk>

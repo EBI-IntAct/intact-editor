@@ -140,10 +140,10 @@
 
             <p:column headerText="Options">
                 <div style="float:right">
-                    <p:commandLink id="markDeletedBtn" process="markDeletedBtn" title="Mark to be deleted" styleClass="ui-icon ui-icon-closethick"
-                                   actionListener="#{complexController.markParticipantToDelete(participant)}"
+                    <p:commandLink id="markDeletedBtn" process="markDeletedBtn" title="Delete" styleClass="ui-icon ui-icon-closethick"
+                                   actionListener="#{complexController.deleteParticipant(participant)}"
                                    onstart="delParticipantDialog.show()" oncomplete="delParticipantDialog.hide();markAsUnsaved()"
-                                   update=":editorForm:unsavedChangesInfo :editorForm:changesPanel :editorForm:messagesComponent :editorForm:complexTabs:participantsTab"
+                                   update=":editorForm:unsavedChangesInfo :editorForm:changesPanel :editorForm:messagesComponent :editorForm:complexTabs:jparticipantsPanel"
                                    rendered="#{not changesController.isDeletedAc(participant.ac)}"/>
                 </div>
                 <div style="float:right">
@@ -164,7 +164,7 @@
         </p:dataTable>
 
         <ia:loadingDialog widgetVar="load_participant" message="Loading participant..."/>
-        <ia:loadingDialog widgetVar="delParticipantDialog" message="Marking participant to be deleted..."/>
+        <ia:loadingDialog widgetVar="delParticipantDialog" message="Deleting participant..."/>
         <ia:loadingDialog widgetVar="revdelParticipantDialog" message="Reverting participant..."/>
         <ia:loadingDialog widgetVar="clone_articipant_dialog" message="Cloning participant..."/>
 
