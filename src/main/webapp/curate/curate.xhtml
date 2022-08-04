@@ -17,21 +17,25 @@
                     You may want to:
                 </p>
            <ul>
-               <li>
-                   <p:commandLink value="Create a new publication" onclick="newPublicationDlg.show();"
-                                  rendered="#{curateController.publicationCurationEnabled}"/>
-               </li>
-               <li>
-                   <p:commandLink value="Load a publication by PMID" onclick="openByPmidDlg.show();"
-                                  rendered="#{curateController.publicationCurationEnabled}"/>
-               </li>
+               <c:if test="#{curateController.publicationCurationEnabled}">
+                   <li>
+                       <p:commandLink value="Create a new publication" onclick="newPublicationDlg.show();"/>
+                   </li>
+                   <li>
+                       <p:commandLink value="Load a publication by PMID" onclick="openByPmidDlg.show();"/>
+                   </li>
+               </c:if>
+
                <li>
                    <p:commandLink value="Load any annotated object by AC" onclick="openByAcDlg.show();"/>
                </li>
-               <li>
-                   <p:commandLink value="Create a new biological complex" action="#{complexController.newComplex}" ajax="false"
-                                  rendered="#{curateController.complexCurationEnabled}"/>
-               </li>
+
+               <c:if test="#{curateController.complexCurationEnabled}">
+                   <li>
+                       <p:commandLink value="Create a new biological complex" action="#{complexController.newComplex}" ajax="false"/>
+                   </li>
+               </c:if>
+
            </ul>
 
     </ui:define>
