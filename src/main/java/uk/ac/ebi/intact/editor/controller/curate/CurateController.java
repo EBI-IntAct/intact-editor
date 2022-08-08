@@ -324,10 +324,7 @@ public class CurateController extends BaseController {
     }
     public boolean isHostOrganismCurationEnabled(){
         UserSessionController userSessionController = ApplicationContextProvider.getBean("userSessionController");
-        if (userSessionController.hasRole(Role.ROLE_HOST_ORGANISM_MANAGER)){
-            return false;
-        }
-        return false;
+        return userSessionController.hasRole(Role.ROLE_HOST_ORGANISM_MANAGER);
     }
 
 
