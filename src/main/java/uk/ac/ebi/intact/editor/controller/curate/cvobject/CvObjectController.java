@@ -51,7 +51,7 @@ public class CvObjectController extends AnnotatedObjectController {
 
     private DualListModel<IntactCvTerm> parents;
     private Map<String, String> classMap;
-    private Map<String, String> objClassToRequiredRole;
+    private Set<String> objClassRequiringRole;
 
     private String definition;
 
@@ -76,9 +76,9 @@ public class CvObjectController extends AnnotatedObjectController {
         classMap.put(IntactUtils.FEATURE_TYPE_OBJCLASS, "MOD:00000");
         classMap.put(IntactUtils.DATABASE_OBJCLASS, "ECO:0000000");
 
-        objClassToRequiredRole = new HashMap<>();
-        objClassToRequiredRole.put(IntactUtils.CELL_TYPE_OBJCLASS, Role.ROLE_HOST_ORGANISM_MANAGER);
-        objClassToRequiredRole.put(IntactUtils.TISSUE_OBJCLASS, Role.ROLE_HOST_ORGANISM_MANAGER);
+        objClassRequiringRole = new HashSet<>();
+        objClassRequiringRole.add(IntactUtils.CELL_TYPE_OBJCLASS);
+        objClassRequiringRole.add(IntactUtils.TISSUE_OBJCLASS);
     }
 
     @Override
@@ -228,14 +228,14 @@ public class CvObjectController extends AnnotatedObjectController {
 
     @Override
     public boolean canSave() {
-        if (cvObject == null) return false;
-        if (objClassToRequiredRole.containsKey(cvObject.getObjClass())) {
             UserSessionController userSessionController = ApplicationContextProvider.getBean("userSessionController");
-            if (userSessionController == null) return false;
-            return userSessionController.hasRole(objClassToRequiredRole.get(cvObject.getObjClass()));
-        } else {
-            return true;
-        }
+            if (userSessionController == null) return true;
+            if (userSessionController.hasRole(Role.ROLE_HOST_ORGANISM_MANAGER)) {
+                return true;
+            } else {
+                if (cvObject == null) loadData(null);
+                return !objClassRequiringRole.contains(cvObject.getObjClass());
+            }
     }
 
     @Override
