@@ -1,12 +1,12 @@
 /**
  * Copyright 2010 The European Bioinformatics Institute, and others.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,21 +15,19 @@
  */
 package uk.ac.ebi.intact.editor.services.curate.publication;
 
-import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import psidev.psi.mi.jami.model.*;
-import uk.ac.ebi.intact.editor.controller.curate.cloner.ComplexCloner;
 import uk.ac.ebi.intact.editor.controller.curate.cloner.ExperimentCloner;
 import uk.ac.ebi.intact.editor.controller.curate.cloner.PublicationCloner;
 import uk.ac.ebi.intact.editor.controller.curate.publication.PublicationController;
 import uk.ac.ebi.intact.editor.services.AbstractEditorService;
-import uk.ac.ebi.intact.jami.model.IntactPrimaryObject;
 import uk.ac.ebi.intact.jami.model.extension.*;
 import uk.ac.ebi.intact.jami.model.lifecycle.*;
 
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -61,14 +59,29 @@ public class PublicationEditorService extends AbstractEditorService {
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public IntactPublication loadPublicationByAc(String ac) {
         IntactPublication publication = getIntactDao().getEntityManager().find(IntactPublication.class, ac);
+        return init(publication);
+    }
 
-        if (publication != null){
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRES_NEW)
+    public IntactPublication loadPublicationByImexId(String imexId) {
+        TypedQuery<IntactPublication> query = getIntactDao().getEntityManager().createQuery(
+                "select p from IntactPublication p join p.dbXrefs as pXref join pXref.qualifier as qualifier " +
+                        "where qualifier.shortName = :qualifier and pXref.id = :imexId", IntactPublication.class);
+        query.setParameter("qualifier", Xref.IMEX_PRIMARY);
+        query.setParameter("imexId", imexId);
+
+        IntactPublication publication = query.getSingleResult();
+        return init(publication);
+    }
+
+    private IntactPublication init(IntactPublication publication) {
+        if (publication != null) {
             if (publication.getPubmedId() != null && (
                     "14681455".equals(publication.getPubmedId()) ||
                             "unassigned638".equals(publication.getPubmedId()) ||
                             "24288376".equals(publication.getPubmedId()) ||
                             "24214965".equals(publication.getPubmedId())
-            )){
+            )) {
                 return null;
             }
             // initialise annotations because needs caution
@@ -76,7 +89,7 @@ public class PublicationEditorService extends AbstractEditorService {
             // initialise xrefs because needs pubmed
             initialiseXrefs(publication.getDbXrefs());
             // initialise status
-            if (publication.getCvStatus() != null){
+            if (publication.getCvStatus() != null) {
                 initialiseCv(publication.getCvStatus());
             }
             // initialise experiments
@@ -84,29 +97,28 @@ public class PublicationEditorService extends AbstractEditorService {
             // initialise lifecycle events
             initialiseEvents(publication.getLifecycleEvents());
         }
-
         return publication;
     }
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public IntactPublication reloadFullyInitialisedPublication(IntactPublication publication) {
-        if (publication == null){
+        if (publication == null) {
             return null;
         }
 
         IntactPublication reloaded = null;
         if (arePublicationCollectionsLazy(publication)
                 && publication.getAc() != null
-                && !getIntactDao().getEntityManager().contains(publication)){
+                && !getIntactDao().getEntityManager().contains(publication)) {
             reloaded = loadPublicationByAc(publication.getAc());
         }
 
         // we need first to merge with reloaded complex
-        if (reloaded != null){
+        if (reloaded != null) {
             // detach reloaded now so not changes will be committed
             getIntactDao().getEntityManager().detach(reloaded);
             PublicationCloner cloner = new PublicationCloner();
-            cloner.copyInitialisedProperties((IntactPublication)publication, reloaded);
+            cloner.copyInitialisedProperties(publication, reloaded);
             publication = reloaded;
         }
         if (publication.getPubmedId() != null && (
@@ -114,7 +126,7 @@ public class PublicationEditorService extends AbstractEditorService {
                         "unassigned638".equals(publication.getPubmedId()) ||
                         "24288376".equals(publication.getPubmedId()) ||
                         "24214965".equals(publication.getPubmedId())
-        )){
+        )) {
             return null;
         }
         // initialise annotations because needs caution
@@ -122,9 +134,9 @@ public class PublicationEditorService extends AbstractEditorService {
         // initialise xrefs because needs pubmed
         initialiseXrefs(publication.getDbXrefs());
         // initialise status
-        if (publication.getCvStatus() != null && !isCvInitialised(publication.getCvStatus())){
+        if (publication.getCvStatus() != null && !isCvInitialised(publication.getCvStatus())) {
             CvTerm cv = initialiseCv(publication.getCvStatus());
-            if (cv != publication.getCvStatus()){
+            if (cv != publication.getCvStatus()) {
                 publication.setCvStatus(cv);
             }
         }
@@ -137,8 +149,8 @@ public class PublicationEditorService extends AbstractEditorService {
     }
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public boolean isPublicationFullyLoaded(IntactPublication publication){
-        if (publication == null){
+    public boolean isPublicationFullyLoaded(IntactPublication publication) {
+        if (publication == null) {
             return true;
         }
         if (!publication.areAnnotationsInitialized()
@@ -146,7 +158,7 @@ public class PublicationEditorService extends AbstractEditorService {
                 || !publication.areAnnotationsInitialized()
                 || !publication.areXrefsInitialized()
                 || (publication.getCvStatus() != null && !isCvInitialised(publication.getCvStatus()))
-                || !areExperimentsInitialised(publication)){
+                || !areExperimentsInitialised(publication)) {
             return false;
         }
         return true;
@@ -157,9 +169,9 @@ public class PublicationEditorService extends AbstractEditorService {
         // reload complex without flushing changes
         IntactPublication reloaded = releasable;
         // merge current user because detached
-        if (releasable.getAc() != null && !getIntactDao().getEntityManager().contains(releasable)){
+        if (releasable.getAc() != null && !getIntactDao().getEntityManager().contains(releasable)) {
             reloaded = getIntactDao().getEntityManager().find(IntactPublication.class, releasable.getAc());
-            if (reloaded == null){
+            if (reloaded == null) {
                 reloaded = releasable;
             }
         }
@@ -180,34 +192,11 @@ public class PublicationEditorService extends AbstractEditorService {
     public IntactPublication loadPublicationByAcOrPubmedId(String id) {
 
         IntactPublication pub = getIntactDao().getEntityManager().find(IntactPublication.class, id);
-        if (pub == null){
+        if (pub == null) {
             pub = getIntactDao().getPublicationDao().getByPubmedId(id);
         }
 
-        if (pub != null){
-            if (pub.getPubmedId() != null && (
-                    "14681455".equals(pub.getPubmedId()) ||
-                            "unassigned638".equals(pub.getPubmedId()) ||
-                            "24288376".equals(pub.getPubmedId()) ||
-                            "24214965".equals(pub.getPubmedId())
-            )){
-                return null;
-            }
-            // initialise annotations because needs caution
-            initialiseAnnotations(pub.getDbAnnotations());
-            // initialise xrefs because needs pubmed
-            initialiseXrefs(pub.getDbXrefs());
-            // initialise status
-            if (pub.getCvStatus() != null){
-                initialiseCv(pub.getCvStatus());
-            }
-            // initialise experiments
-            initialiseEvidences(pub, pub.getExperiments());
-            // initialise lifecycle events
-            initialiseEvents(pub.getLifecycleEvents());
-        }
-
-        return pub;
+        return init(pub);
     }
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
@@ -217,16 +206,12 @@ public class PublicationEditorService extends AbstractEditorService {
         query.setParameter("dataset", PublicationController.DATASET);
         query.setParameter("name", datasetName.toLowerCase() + " -%");
 
-        if (!query.getResultList().isEmpty()) {
-            return true;
-        }
-
-        return false;
+        return !query.getResultList().isEmpty();
     }
 
-    private boolean isExperimentInitialised(Experiment exp){
-        if (exp instanceof IntactExperiment){
-            IntactExperiment intactExp = (IntactExperiment)exp;
+    private boolean isExperimentInitialised(Experiment exp) {
+        if (exp instanceof IntactExperiment) {
+            IntactExperiment intactExp = (IntactExperiment) exp;
             return intactExp.areAnnotationsInitialized() && intactExp.areXrefsInitialized();
         }
         return true;
@@ -237,25 +222,25 @@ public class PublicationEditorService extends AbstractEditorService {
     }
 
     private boolean areExperimentsInitialised(IntactPublication pub) {
-        if (!pub.areExperimentsInitialized()){
+        if (!pub.areExperimentsInitialized()) {
             return false;
         }
 
-        for (Experiment part : pub.getExperiments()){
-            if (!isExperimentInitialised(part)){
+        for (Experiment part : pub.getExperiments()) {
+            if (!isExperimentInitialised(part)) {
                 return false;
             }
         }
         return true;
     }
 
-    private Experiment initialiseExperiment(Experiment det){
-        if (det instanceof IntactExperiment){
+    private Experiment initialiseExperiment(Experiment det) {
+        if (det instanceof IntactExperiment) {
             if (areExperimentCollectionsLazy((IntactExperiment) det)
-                    && ((IntactExperiment)det).getAc() != null
-                    && !getIntactDao().getEntityManager().contains(det)){
+                    && ((IntactExperiment) det).getAc() != null
+                    && !getIntactDao().getEntityManager().contains(det)) {
                 IntactExperiment reloaded = getIntactDao().getEntityManager().find(IntactExperiment.class, ((IntactExperiment) det).getAc());
-                if (reloaded != null){
+                if (reloaded != null) {
                     // initialise properties freshly loaded from db
                     initialiseAnnotations(reloaded.getAnnotations());
                     initialiseXrefs(reloaded.getXrefs());
@@ -263,7 +248,7 @@ public class PublicationEditorService extends AbstractEditorService {
                     // detach relaoded object so no changes will be flushed
                     getIntactDao().getEntityManager().detach(reloaded);
                     ExperimentCloner cloner = new ExperimentCloner(false);
-                    cloner.copyInitialisedProperties((IntactExperiment)det, reloaded);
+                    cloner.copyInitialisedProperties((IntactExperiment) det, reloaded);
                     // will return reloaded object
                     det = reloaded;
                 }
@@ -277,10 +262,10 @@ public class PublicationEditorService extends AbstractEditorService {
 
     private void initialiseEvidences(Publication parent, Collection<Experiment> evidences) {
         Collection<Experiment> originalExperiments = new ArrayList<Experiment>(evidences);
-        for (Experiment exp : originalExperiments){
-            if (!isExperimentInitialised(exp)){
+        for (Experiment exp : originalExperiments) {
+            if (!isExperimentInitialised(exp)) {
                 Experiment reloaded = initialiseExperiment(exp);
-                if (reloaded != exp){
+                if (reloaded != exp) {
                     evidences.remove(exp);
                     parent.addExperiment(reloaded);
                 }
@@ -289,12 +274,12 @@ public class PublicationEditorService extends AbstractEditorService {
     }
 
     private void initialiseEvents(Collection<LifeCycleEvent> evidences) {
-        for (LifeCycleEvent evt : evidences){
+        for (LifeCycleEvent evt : evidences) {
             if (evt instanceof AbstractLifeCycleEvent
-                    && !isCvInitialised(((AbstractLifeCycleEvent) evt).getCvEvent())){
-                CvTerm cvEvent = initialiseCv(((AbstractLifeCycleEvent)evt).getCvEvent());
-                if (cvEvent != ((AbstractLifeCycleEvent)evt).getCvEvent()){
-                    ((AbstractLifeCycleEvent)evt).setCvEvent(cvEvent);
+                    && !isCvInitialised(((AbstractLifeCycleEvent) evt).getCvEvent())) {
+                CvTerm cvEvent = initialiseCv(((AbstractLifeCycleEvent) evt).getCvEvent());
+                if (cvEvent != ((AbstractLifeCycleEvent) evt).getCvEvent()) {
+                    ((AbstractLifeCycleEvent) evt).setCvEvent(cvEvent);
                 }
             }
         }
