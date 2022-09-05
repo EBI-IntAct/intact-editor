@@ -5,7 +5,7 @@
                 xmlns:f="http://java.sun.com/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ia="http://java.sun.com/jsf/composite/intact-components"
-                xmlns:ot="http://myfaces.apache.org/orchestra"
+                xmlns:ot="http://myfaces.apache.org/orchestra" xmlns:c="http://java.sun.com/jsp/jstl/core"
                 template="/main_template.xhtml">
 
     <ui:param name="title" value="#{annotatedObjectController.title}"/>
@@ -20,10 +20,16 @@
         <div class="ui-widget-content top-actions">
             <h:panelGroup rendered="#{annotatedObjectController.annotatedObject != null}">
                 <ui:insert name="topActionsPanel"/>
-
                 <h:panelGroup id="topSavePanel" style="padding: 10px">
-                    <p:commandButton type="button" id="topSaveButton" value="Save" styleClass="important-button"
-                                     onclick="save(); return false"/>
+                    <c:choose>
+                        <c:when test="#{annotatedObjectController.canSave()}">
+                            <p:commandButton type="button" id="topSaveButton" value="Save" styleClass="important-button"
+                                             onclick="save(); return false"/>
+                        </c:when>
+                        <c:otherwise>
+                            <b>NOT ALLOWED TO SAVE</b>
+                        </c:otherwise>
+                    </c:choose>
 
                     <h:panelGroup rendered="#{annotatedObjectController.lastSaved != null}" style="color: #AAAAAA">
                         <h:outputText value=" Last Saved: "/>
@@ -122,17 +128,28 @@
 
             <h:panelGroup rendered="#{annotatedObjectController.annotatedObject != null}">
                 <h:panelGroup id="unsavedChangesInfo" style="float: right; margin-right: 40px">
-                        <h:panelGroup rendered="#{changesController.numberUnsavedChangedForCurrentUser gt 0}">
-                            <ia:panelMessage level="warn" showIcon="true">
-                                <p:commandLink
-                                        value="#{changesController.numberUnsavedChangedForCurrentUser} unsaved changes"
-                                        update=":editorForm:unsavedTable"
-                                        onclick="unsavedChangesDialog.show()"/>
-                            </ia:panelMessage>
-                        </h:panelGroup>
+                    <h:panelGroup rendered="#{changesController.numberUnsavedChangedForCurrentUser gt 0}">
+                        <ia:panelMessage level="warn" showIcon="true">
+
+                            <c:choose>
+                                <c:when test="#{annotatedObjectController.canSave()}">
+                                    <p:commandLink
+                                            value="#{changesController.numberUnsavedChangedForCurrentUser} unsaved changes"
+                                            update=":editorForm:unsavedTable"
+                                            onclick="unsavedChangesDialog.show()"/>
+                                </c:when>
+                                <c:otherwise>
+                                    <p:commandLink
+                                            value="#{changesController.numberUnsavedChangedForCurrentUser} unsaved changes (NOT ALLOWED TO SAVE)"/>
+                                </c:otherwise>
+                            </c:choose>
 
 
-                        <ui:include src="dialog_unsaved_changes.xhtml"/>
+                        </ia:panelMessage>
+                    </h:panelGroup>
+
+
+                    <ui:include src="dialog_unsaved_changes.xhtml"/>
                 </h:panelGroup>
 
                 <ui:insert name="breadcrumbs"/>
@@ -151,12 +168,18 @@
 
                     <div class="intact-notSavedPanel">
                         Changes not yet saved &#160;
-
-                        <p:commandButton ajax="false" type="button" id="unsavedSaveButton"
-                                         styleClass="important-button"
-                                         style="opacity: 1.0; font-weight: bold"
-                                         value="Save" onclick="save(); return false">
-                        </p:commandButton>
+                        <c:choose>
+                            <c:when test="#{annotatedObjectController.canSave()}">
+                                <p:commandButton ajax="false" type="button" id="unsavedSaveButton"
+                                                 styleClass="important-button"
+                                                 style="opacity: 1.0; font-weight: bold"
+                                                 value="Save" onclick="save(); return false">
+                                </p:commandButton>
+                            </c:when>
+                            <c:otherwise>
+                                <b>NOT ALLOWED TO SAVE</b>
+                            </c:otherwise>
+                        </c:choose>
 
 
                         &#160;-&#160;
@@ -242,7 +265,7 @@
             <ia:panelDialogLayout>
                 <f:facet name="buttonBar">
                     <p:commandLink id="createCv" value="Create" action="#{cvObjectController.newCvObject}"
-                                     ajax="false"/>
+                                   ajax="false"/>
                 </f:facet>
 
                 <h:outputLabel for="cvType" value="Type: "/>
@@ -250,7 +273,7 @@
                     <f:selectItem itemLabel="-- Select --" noSelectionOption="true"/>
                     <f:selectItem itemLabel="Alias type" itemValue="uk.ac.ebi.intact.model.CvAliasType"/>
                     <f:selectItem itemLabel="Biological role" itemValue="uk.ac.ebi.intact.model.CvBiologicalRole"/>
-                    <f:selectItem itemLabel="Cell type" itemValue="uk.ac.ebi.intact.model.CvCellType"/>
+
                     <f:selectItem itemLabel="Confidence type" itemValue="uk.ac.ebi.intact.model.CvConfidenceType"/>
                     <f:selectItem itemLabel="Database" itemValue="uk.ac.ebi.intact.model.CvDatabase"/>
                     <f:selectItem itemLabel="Experimental role" itemValue="uk.ac.ebi.intact.model.CvExperimentalRole"/>
@@ -266,11 +289,15 @@
                                   itemValue="uk.ac.ebi.intact.model.CvIdentification"/>
                     <f:selectItem itemLabel="Parameter type" itemValue="uk.ac.ebi.intact.model.CvParameterType"/>
                     <f:selectItem itemLabel="Parameter unit" itemValue="uk.ac.ebi.intact.model.CvParameterUnit"/>
-                    <f:selectItem itemLabel="Tissue" itemValue="uk.ac.ebi.intact.model.CvTissue"/>
                     <f:selectItem itemLabel="Topic" itemValue="uk.ac.ebi.intact.model.CvTopic"/>
                     <f:selectItem itemLabel="Xref qualifier" itemValue="uk.ac.ebi.intact.model.CvXrefQualifier"/>
                     <f:selectItem itemLabel="Feature detection method"
                                   itemValue="uk.ac.ebi.intact.model.CvFeatureIdentification"/>
+                    <c:if test="#{curateController.hostOrganismCurationEnabled}">
+                        <f:selectItem itemLabel="Cell type" itemValue="uk.ac.ebi.intact.model.CvCellType"/>
+                        <f:selectItem itemLabel="Tissue" itemValue="uk.ac.ebi.intact.model.CvTissue"/>
+                    </c:if>
+
                 </h:selectOneMenu>
 
             </ia:panelDialogLayout>
@@ -308,7 +335,8 @@
                   widgetVar="imexCentralActionDlg" draggable="false"
                   modal="true" position="center">
             <h:panelGroup style="margin-bottom:10px">
-                <h:outputText value="This publication is already curated by a IMEx partner. Please consult with original Imex Partner before deciding What do you want to do?"/>
+                <h:outputText
+                        value="This publication is already curated by a IMEx partner. Please consult with original Imex Partner before deciding What do you want to do?"/>
 
                 <br/>
                 <br/>
@@ -329,7 +357,8 @@
                   widgetVar="imexCentralUnassignedActionDlg" draggable="false"
                   modal="true" position="center">
             <h:panelGroup style="margin-bottom:10px">
-                <h:outputText value="This publication is already curated by a IMEx partner. Please consult with original Imex Partner before deciding What do you want to do?"/>
+                <h:outputText
+                        value="This publication is already curated by a IMEx partner. Please consult with original Imex Partner before deciding What do you want to do?"/>
 
                 <br/>
                 <br/>

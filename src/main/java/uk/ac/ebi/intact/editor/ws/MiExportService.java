@@ -40,6 +40,11 @@ public interface MiExportService {
     String FORMAT_FEBS_SDA = "sda";
 
     @GET
+    @Path("/publication-imex")
+    Object exportPublicationFromImexId(@QueryParam("imex") String imexId,
+                             @DefaultValue("tab25") @QueryParam("format") String format);
+
+    @GET
     @Path("/publication")
     Object exportPublication(@QueryParam("ac") String id,
                              @DefaultValue("tab25") @QueryParam("format") String format);
