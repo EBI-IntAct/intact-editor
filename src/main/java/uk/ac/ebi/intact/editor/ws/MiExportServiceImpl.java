@@ -91,7 +91,7 @@ public class MiExportServiceImpl implements MiExportService {
             if (!IMEX_EXPORT_STATUS_WHITELIST.contains(publication.getStatus())) {
                 return Response.status(Response.Status.FORBIDDEN.getStatusCode())
                         .type("text/plain")
-                        .entity("This publication is not available yet.")
+                        .entity("This dataset is not available yet.")
                         .build();
             }
 
@@ -114,7 +114,7 @@ public class MiExportServiceImpl implements MiExportService {
         } catch (NoResultException e) {
             response = Response.status(Response.Status.NOT_FOUND.getStatusCode())
                     .type("text/plain")
-                    .entity("No publication was found with imex id = " + imexId)
+                    .entity("No dataset was found with imex id = " + imexId)
                     .build();
         } catch (Throwable e) {
             throw new RuntimeException("Problem exporting publication: " + imexId, e);
