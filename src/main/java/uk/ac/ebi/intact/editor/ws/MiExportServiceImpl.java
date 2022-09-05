@@ -89,7 +89,10 @@ public class MiExportServiceImpl implements MiExportService {
 
             IntactPublication publication = publicationEditorService.loadPublicationByImexId(imexId);
             if (!IMEX_EXPORT_STATUS_WHITELIST.contains(publication.getStatus())) {
-                return Response.status(Response.Status.FORBIDDEN).type("text/plain").entity("This publication is not available yet.").build();
+                return Response.status(Response.Status.FORBIDDEN.getStatusCode())
+                        .type("text/plain")
+                        .entity("This publication is not available yet.")
+                        .build();
             }
 
             //language=JPAQL
@@ -104,9 +107,15 @@ public class MiExportServiceImpl implements MiExportService {
             parameters.put("imexId", imexId);
             output = new IntactEntryStreamingOutput(format, query, countQuery, parameters, true);
 
-            response = Response.status(Response.Status.OK).type(responseType).entity(output).build();
+            response = Response.status(Response.Status.OK.getStatusCode())
+                    .type(responseType)
+                    .entity(output)
+                    .build();
         } catch (NoResultException e) {
-            response = Response.status(Response.Status.NOT_FOUND).type("text/plain").entity("No publication was found with imex id = " + imexId).build();
+            response = Response.status(Response.Status.NOT_FOUND.getStatusCode())
+                    .type("text/plain")
+                    .entity("No publication was found with imex id = " + imexId)
+                    .build();
         } catch (Throwable e) {
             throw new RuntimeException("Problem exporting publication: " + imexId, e);
         } finally {
