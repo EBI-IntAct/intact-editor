@@ -3,8 +3,6 @@ package uk.ac.ebi.intact.editor.controller.curate.feature;
 import uk.ac.ebi.intact.tools.feature.shortlabel.generator.events.*;
 import uk.ac.ebi.intact.tools.feature.shortlabel.generator.listener.ShortlabelGeneratorListener;
 
-import javax.xml.ws.Feature;
-
 /**
  * Created by Maximilian Koch (mkoch@ebi.ac.uk).
  */
