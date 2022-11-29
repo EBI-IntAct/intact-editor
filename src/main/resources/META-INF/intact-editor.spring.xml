@@ -2,7 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-3..xsd">
+           http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
 
     <bean id="defaultApp" class="uk.ac.ebi.intact.jami.model.meta.Application">
         <property name="key" value="editor:${intact.instance.name}"/>

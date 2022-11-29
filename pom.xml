@@ -30,6 +30,7 @@
         <timestamp>${maven.build.timestamp}</timestamp>
 
         <spring.version>4.3.30.RELEASE</spring.version>
+        <spring.security.version>3.2.10.RELEASE</spring.security.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
         <psi.jami.version>3.3.0-SNAPSHOT</psi.jami.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
@@ -37,6 +38,7 @@
         <dataexchange.version>3.1.0-SNAPSHOT</dataexchange.version>
         <intact.tools.version>1.1.0-SNAPSHOT</intact.tools.version>
         <intact.primefaces.version>3.1.1-intact-SNAPSHOT</intact.primefaces.version>
+        <myfaces.version>2.1.12</myfaces.version>
 
         <!-- configurable bits -->
         <jetty.port>9192</jetty.port>
@@ -72,7 +74,6 @@
         <projectStage>Development</projectStage>
         <user.context.id>EDITOR_USER</user.context.id>
         <jami.user.context.id>EDITOR_USER</jami.user.context.id>
-
     </properties>
 
     <build>
@@ -156,8 +157,8 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
             </plugin>
 
@@ -413,17 +414,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!--These dependencies are pulled by intact-dataexchange-->
-        <!--<dependency>-->
-            <!--<groupId>psidev.psi.mi.jami</groupId>-->
-            <!--<artifactId>jami-xml</artifactId>-->
-            <!--<version>${psi.jami.version}</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>psidev.psi.mi.jami</groupId>-->
-            <!--<artifactId>jami-mitab</artifactId>-->
-            <!--<version>${psi.jami.version}</version>-->
-        <!--</dependency>-->
 
         <dependency>
             <groupId>uk.ac.ebi.intact.dataexchange.imex</groupId>
@@ -525,12 +515,12 @@
         <dependency>
             <groupId>org.apache.myfaces.core</groupId>
             <artifactId>myfaces-api</artifactId>
-            <version>2.1.12</version>
+            <version>${myfaces.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.myfaces.core</groupId>
             <artifactId>myfaces-impl</artifactId>
-            <version>2.1.12</version>
+            <version>${myfaces.version}</version>
         </dependency>
 
         <dependency>
@@ -617,8 +607,13 @@
         <!-- Spring -->
         <dependency>
             <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-config</artifactId>
+            <version>${spring.security.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-taglibs</artifactId>
-            <version>2.0.5.RELEASE</version>
+            <version>${spring.security.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework</groupId>
@@ -655,42 +650,8 @@
         <!-- JAX RS -->
         <dependency>
             <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-bundle-jaxrs</artifactId>
-            <version>2.4.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-server</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-asm</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-expression</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.geronimo.specs</groupId>
-                    <artifactId>geronimo-javamail_1.4_spec</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.geronimo.specs</groupId>
-                    <artifactId>geronimo-activation_1.1_spec</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.xml.bind</groupId>
-                    <artifactId>jaxb-impl</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+            <version>3.2.14</version>
         </dependency>
 
         <dependency>
@@ -718,8 +679,7 @@
             </exclusions>
         </dependency>
 
-
-        <!--&lt;!&ndash; H2 for user management &ndash;&gt;-->
+        <!-- H2 for user management -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -731,7 +691,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.10</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -769,6 +729,16 @@
             <groupId>xalan</groupId>
             <artifactId>xalan</artifactId>
             <version>2.7.2</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.websocket</groupId>
+            <artifactId>javax.websocket-api</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>3.0.2</version>
         </dependency>
     </dependencies>
 

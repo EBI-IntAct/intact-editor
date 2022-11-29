@@ -4,24 +4,24 @@
              xsi:schemaLocation="http://www.springframework.org/schema/beans
              http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
              http://www.springframework.org/schema/security
-             http://www.springframework.org/schema/security/spring-security-2.0.xsd">
+             http://www.springframework.org/schema/security/spring-security-3.2.xsd">
 
-    <http auto-config="false" session-fixation-protection="none">
+    <http pattern="/login.xhtml" security="none"/>
+    <http pattern="/error" security="none"/>
+    <http pattern="/test" security="none"/>
+    <http pattern="/viewExpired*" security="none"/>
+    <http pattern="/javax.faces.resource/**" security="none"/>
+    <http pattern="/primefaces_resource/**" security="none"/>
+    <http pattern="/resources/**" security="none"/>
+    <http pattern="/service/export/**" security="none"/>
 
+    <http auto-config="false">
         <!--
              We have stopped using session-fixation-protection="migrateSession" as it interferes with the login of
              users since we implemented that upon session destroyed (AppSessionListener) users are logged
              automatically logged out (UserManagerController).
           -->
-
-        <intercept-url pattern="/login.xhtml" filters="none"/>
-        <intercept-url pattern="/error" filters="none"/>
-        <intercept-url pattern="/test" filters="none"/>
-        <intercept-url pattern="/viewExpired*" filters="none"/>
-        <intercept-url pattern="/javax.faces.resource/**" filters="none"/>
-        <intercept-url pattern="/primefaces_resource/**" filters="none" />
-        <intercept-url pattern="/resources/**" filters="none" />
-        <intercept-url pattern="/service/export/**" filters="none" />
+        <session-management session-fixation-protection="none"/>
 
         <!-- Role-based restrictions -->
         <intercept-url pattern="/admin/**" access="ROLE_ADMIN"/>
@@ -47,19 +47,23 @@
         <form-login login-page="/login.xhtml" default-target-url="/dashboard/" authentication-failure-url="/"/>
         <!--<logout logout-url="/logout" invalidate-session="true"/>-->
 
-        <concurrent-session-control max-sessions="2" />
+        <session-management>
+            <concurrency-control max-sessions="2"/>
+        </session-management>
+
+        <custom-filter position="LOGOUT_FILTER" ref="logoutFilter"/>
     </http>
 
-    <beans:bean class="uk.ac.ebi.intact.editor.security.EditorAuthenticationProvider">
-        <custom-authentication-provider/>
-    </beans:bean>
+    <beans:bean id="customAuthenticationProvider" class="uk.ac.ebi.intact.editor.security.EditorAuthenticationProvider" />
+    <authentication-manager>
+        <authentication-provider ref="customAuthenticationProvider"/>
+    </authentication-manager>
 
     <beans:bean id="appLogoutHandler" class="uk.ac.ebi.intact.editor.security.AppLogoutHandler" />
 
-    <beans:bean id="securityContextLogoutHandler" class="org.springframework.security.ui.logout.SecurityContextLogoutHandler"/>
+    <beans:bean id="securityContextLogoutHandler" class="org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler"/>
 
-    <beans:bean id="logoutFilter" class="org.springframework.security.ui.logout.LogoutFilter">
-        <custom-filter position="LOGOUT_FILTER"/>
+    <beans:bean id="logoutFilter" class="org.springframework.security.web.authentication.logout.LogoutFilter">
         <!--position was LOGOUT_FILTER-->
         <beans:constructor-arg index="0" value="/login.xhtml"/>
         <beans:constructor-arg index="1">
