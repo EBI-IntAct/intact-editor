@@ -322,6 +322,11 @@ public class CurateController extends BaseController {
         }
         return editorObjectService;
     }
+    public boolean isHostOrganismCurationEnabled(){
+        UserSessionController userSessionController = ApplicationContextProvider.getBean("userSessionController");
+        return userSessionController.hasRole(Role.ROLE_HOST_ORGANISM_MANAGER);
+    }
+
 
     public boolean isComplexCurationEnabled(){
         UserSessionController userSessionController = ApplicationContextProvider.getBean("userSessionController");

@@ -58,6 +58,7 @@ import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ActionEvent;
 import javax.faces.event.AjaxBehaviorEvent;
+import javax.faces.event.ComponentSystemEvent;
 import javax.faces.event.ValueChangeEvent;
 import javax.faces.validator.ValidatorException;
 import java.text.SimpleDateFormat;
@@ -267,6 +268,14 @@ public abstract class AnnotatedObjectController extends BaseController implement
         } else if (evt.getNewValue() != null && !evt.getNewValue().equals(evt.getOldValue())) {
             setUnsavedChanges(true);
         }
+    }
+
+
+    public boolean canSave() {
+        return true;
+    }
+
+    public void loadData(ComponentSystemEvent evt) {
     }
 
     public String doSave() {

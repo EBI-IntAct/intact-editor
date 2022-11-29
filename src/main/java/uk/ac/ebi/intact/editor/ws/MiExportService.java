@@ -40,6 +40,15 @@ public interface MiExportService {
     String FORMAT_FEBS_SDA = "sda";
 
     @GET
+    @Path("/publication-imex/ac")
+    Object getPublicationAcFromImexId(@QueryParam("imex") String imexId);
+
+    @GET
+    @Path("/publication-imex")
+    Object exportPublicationFromImexId(@QueryParam("imex") String imexId,
+                             @DefaultValue("tab25") @QueryParam("format") String format);
+
+    @GET
     @Path("/publication")
     Object exportPublication(@QueryParam("ac") String id,
                              @DefaultValue("tab25") @QueryParam("format") String format);
@@ -59,9 +68,9 @@ public interface MiExportService {
     Object exportComplex(@QueryParam("ac") String id,
                              @DefaultValue("xml254") @QueryParam("format") String format);
 
-    public void writeEvidences(OutputStream outputStream, String format, String countQuery, String query,
+    void writeEvidences(OutputStream outputStream, String format, String countQuery, String query,
                       Map<String, Object> parameters) throws IOException;
-    public void writeComplexes(OutputStream outputStream, String format, String countQuery, String query,
+    void writeComplexes(OutputStream outputStream, String format, String countQuery, String query,
                                Map<String, Object> parameters) throws IOException;
 
 }
