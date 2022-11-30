@@ -15,7 +15,6 @@
  */
 package uk.ac.ebi.intact.editor.ws;
 
-import org.joda.time.DateTime;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import psidev.psi.mi.jami.binary.expansion.InteractionEvidenceSpokeExpansion;
@@ -39,15 +38,12 @@ import uk.ac.ebi.intact.dataexchange.structuredabstract.IntactStructuredAbstract
 import uk.ac.ebi.intact.dataexchange.structuredabstract.StructuredAbstractOptionFactory;
 import uk.ac.ebi.intact.editor.services.curate.publication.PublicationEditorService;
 import uk.ac.ebi.intact.jami.model.extension.IntactPublication;
-import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleEventType;
 import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleStatus;
 import uk.ac.ebi.intact.jami.service.ComplexService;
 import uk.ac.ebi.intact.jami.service.InteractionEvidenceService;
-import uk.ac.ebi.intact.jami.service.PublicationService;
 
 import javax.annotation.Resource;
 import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -62,7 +58,7 @@ import java.util.*;
  * @version $Id$
  */
 public class MiExportServiceImpl implements MiExportService {
-    private final static String RELEASED_EVT_ID = "PL:0028";
+
     public static final List<LifeCycleStatus> IMEX_EXPORT_STATUS_WHITELIST = Arrays.asList(
             LifeCycleStatus.READY_FOR_RELEASE,
             LifeCycleStatus.RELEASED
@@ -79,20 +75,39 @@ public class MiExportServiceImpl implements MiExportService {
 
     @Override
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public Object getPublicationAcFromImexId(String imexId) {
+        Response response;
+
+        try {
+            IntactPublication publication = publicationEditorService.loadPublicationByImexId(imexId);
+            if (!IMEX_EXPORT_STATUS_WHITELIST.contains(publication.getStatus())) {
+                return datasetNotAvailableYet();
+            }
+            response = Response.status(Response.Status.OK.getStatusCode())
+                    .type("text/plain")
+                    .entity(publication.getAc())
+                    .build();
+        } catch (NoResultException e) {
+            response = datasetNotFound(imexId);
+        } catch (Throwable e) {
+            throw new RuntimeException("Problem getting publication: " + imexId, e);
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public Object exportPublicationFromImexId(String imexId, String format) {
-        Response response = null;
+        Response response;
         InteractionWriter writer = null;
 
         try {
             String responseType = getResponseType(format);
-            StreamingOutput output = null;
 
             IntactPublication publication = publicationEditorService.loadPublicationByImexId(imexId);
             if (!IMEX_EXPORT_STATUS_WHITELIST.contains(publication.getStatus())) {
-                return Response.status(Response.Status.FORBIDDEN.getStatusCode())
-                        .type("text/plain")
-                        .entity("This dataset is not available yet.")
-                        .build();
+                return datasetNotAvailableYet();
             }
 
             //language=JPAQL
@@ -105,17 +120,14 @@ public class MiExportServiceImpl implements MiExportService {
             final Map<String, Object> parameters = new HashMap<String, Object>();
             parameters.put("qualifier", Xref.IMEX_PRIMARY);
             parameters.put("imexId", imexId);
-            output = new IntactEntryStreamingOutput(format, query, countQuery, parameters, true);
+            StreamingOutput output = new IntactEntryStreamingOutput(format, query, countQuery, parameters, true);
 
             response = Response.status(Response.Status.OK.getStatusCode())
                     .type(responseType)
                     .entity(output)
                     .build();
         } catch (NoResultException e) {
-            response = Response.status(Response.Status.NOT_FOUND.getStatusCode())
-                    .type("text/plain")
-                    .entity("No dataset was found with imex id = " + imexId)
-                    .build();
+            response = datasetNotFound(imexId);
         } catch (Throwable e) {
             throw new RuntimeException("Problem exporting publication: " + imexId, e);
         } finally {
@@ -413,5 +425,19 @@ public class MiExportServiceImpl implements MiExportService {
             return "text/plain";
         }
 
+    }
+
+    private Response datasetNotAvailableYet() {
+        return Response.status(Response.Status.FORBIDDEN.getStatusCode())
+                .type("text/plain")
+                .entity("This dataset is not available yet.")
+                .build();
+    }
+
+    private Response datasetNotFound(String imexId) {
+        return Response.status(Response.Status.NOT_FOUND.getStatusCode())
+                .type("text/plain")
+                .entity("No dataset was found with imex id = " + imexId)
+                .build();
     }
 }

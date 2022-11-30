@@ -26,7 +26,7 @@
         <!-- UTF-8 encoding to generate the build-->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.build.timestam00p.format>yyyyMMdd-HHmm</maven.build.timestam00p.format>
+        <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
 
         <spring.version>4.3.30.RELEASE</spring.version>
