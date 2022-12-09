@@ -30,7 +30,7 @@
         <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
 
-        <spring.version>3.2.9.RELEASE</spring.version>
+        <spring.version>6.0.0</spring.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
         <psi.jami.version>3.2.12</psi.jami.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
