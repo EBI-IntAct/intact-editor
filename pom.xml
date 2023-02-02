@@ -37,7 +37,7 @@
         <intact.jami.version>2.1.0</intact.jami.version>
         <dataexchange.version>3.1.0</dataexchange.version>
         <intact.tools.version>1.1.0</intact.tools.version>
-        <intact.primefaces.version>3.1.1</intact.primefaces.version> <!-- TODO -->
+        <intact.primefaces.version>3.1.1</intact.primefaces.version>
         <myfaces.version>2.1.12</myfaces.version>
 
         <!-- configurable bits -->
