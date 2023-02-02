@@ -19,9 +19,14 @@ import com.google.common.collect.Lists;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.*;
-import org.springframework.security.providers.AuthenticationProvider;
-import org.springframework.security.providers.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import uk.ac.ebi.intact.editor.controller.UserListener;
 import uk.ac.ebi.intact.editor.controller.admin.UserManagerController;
 import uk.ac.ebi.intact.editor.services.UserSessionService;
@@ -69,12 +74,10 @@ public class EditorAuthenticationProvider implements AuthenticationProvider {
         for ( Role role : user.getRoles() ) {
             final String authorityName = "ROLE_" + role.getName();
             log.info( "Adding GrantedAuthority: '" + authorityName + "'" );
-            authorities.add( new GrantedAuthorityImpl( authorityName ) );
+            authorities.add(new SimpleGrantedAuthority(authorityName));
         }
 
-        return new UsernamePasswordAuthenticationToken( authentication.getPrincipal(),
-                                                        authentication.getCredentials(),
-                                                        authorities.toArray( new GrantedAuthority[authorities.size()] ) );
+        return new UsernamePasswordAuthenticationToken(authentication.getPrincipal(), authentication.getCredentials(), authorities);
     }
 
     public User loadIntactUser(Authentication authentication) {

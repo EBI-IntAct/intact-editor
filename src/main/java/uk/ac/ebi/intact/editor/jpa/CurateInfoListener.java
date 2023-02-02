@@ -3,6 +3,7 @@ package uk.ac.ebi.intact.editor.jpa;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.event.spi.*;
+import org.hibernate.persister.entity.EntityPersister;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import uk.ac.ebi.intact.editor.controller.curate.ChangesController;
@@ -40,6 +41,10 @@ public class CurateInfoListener implements PostUpdateEventListener, PostInsertEv
         }
     }
 
+    @Override
+    public boolean requiresPostCommitHanding(EntityPersister persister) {
+        return false;
+    }
 
 
     @Override
