@@ -20,8 +20,6 @@ import org.primefaces.event.TabChangeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
 import psidev.psi.mi.jami.bridges.fetcher.OntologyTermFetcher;
 import psidev.psi.mi.jami.bridges.ols.CachedOlsOntologyTermFetcher;
@@ -304,7 +302,6 @@ public abstract class AnnotatedObjectController extends BaseController implement
      * the CorePersister's save(), it invokes the doSaveDetails() callback that can be used to handle whatever is not handled
      * by the CorePersister (ie. wrapped components). At the end, the current object is refreshed from the database.
      */
-    @Transactional(value = "jamiTransactionManager")
     public void doSave(boolean refreshCurrentView) {
         if (getAnnotatedObject() != null){
             doSaveIntact(refreshCurrentView, changesController);
