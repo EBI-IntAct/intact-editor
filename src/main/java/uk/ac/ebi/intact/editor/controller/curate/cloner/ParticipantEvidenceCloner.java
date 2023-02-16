@@ -39,7 +39,9 @@ public class ParticipantEvidenceCloner extends AbstractEditorCloner<ParticipantE
         clone.setExperimentalRole(participant.getExperimentalRole());
         clone.setExpressedInOrganism(participant.getExpressedInOrganism());
         clone.setInteraction(participant.getInteraction());
-        clone.setStoichiometry(new IntactStoichiometry(participant.getStoichiometry().getMinValue(), participant.getStoichiometry().getMaxValue()));
+        if (participant.getStoichiometry() != null) {
+            clone.setStoichiometry(new IntactStoichiometry(participant.getStoichiometry().getMinValue(), participant.getStoichiometry().getMaxValue()));
+        }
         clone.getExperimentalPreparations().addAll(participant.getExperimentalPreparations());
         clone.getIdentificationMethods().addAll(participant.getIdentificationMethods());
 
