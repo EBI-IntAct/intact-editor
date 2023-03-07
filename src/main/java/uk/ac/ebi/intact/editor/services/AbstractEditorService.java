@@ -152,7 +152,7 @@ public abstract class AbstractEditorService implements EditorService {
     protected <T extends Auditable,I> T synchronizeIntactObject(I intactObject, IntactDbSynchronizer<I,T> synchronizer, boolean persist) throws SynchronizerException,
             FinderException, PersisterException {
         try{
-            // clear manager first to avaoid to have remaining objects from other transactions
+            // clear manager first to avoid to have remaining objects from other transactions
             getIntactDao().getEntityManager().clear();
 
             return synchronizer.synchronize(intactObject, persist);
