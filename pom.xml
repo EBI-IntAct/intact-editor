@@ -4,14 +4,14 @@
     <parent>
         <groupId>uk.ac.ebi.intact.maven</groupId>
         <artifactId>intact-hibernate-master</artifactId>
-        <version>46</version>
+        <version>46.1</version>
     </parent>
 
     <groupId>uk.ac.ebi.intact.service</groupId>
     <artifactId>editor</artifactId>
     <packaging>war</packaging>
 
-    <version>3.2.0</version>
+    <version>3.2.1</version>
     <name>Service :: IntAct Editor</name>
 
     <scm>
@@ -32,11 +32,11 @@
         <spring.version>4.3.30.RELEASE</spring.version>
         <spring.security.version>3.2.10.RELEASE</spring.security.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
-        <psi.jami.version>3.3.0</psi.jami.version>
+        <psi.jami.version>3.3.1</psi.jami.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
-        <intact.jami.version>2.1.0</intact.jami.version>
-        <dataexchange.version>3.1.0</dataexchange.version>
-        <intact.tools.version>1.1.0</intact.tools.version>
+        <intact.jami.version>2.1.1</intact.jami.version>
+        <dataexchange.version>3.1.1</dataexchange.version>
+        <intact.tools.version>1.1.1</intact.tools.version>
         <intact.primefaces.version>3.1.1</intact.primefaces.version>
         <myfaces.version>2.1.12</myfaces.version>
 
@@ -295,7 +295,21 @@
                     <artifactId>jaxb-impl</artifactId>
                     <groupId>com.sun.xml.bind</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>com.sun.xml.ws</artifactId>
+                    <groupId>jaxws-rt</groupId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.xml.ws</groupId>
+                    <artifactId>jaxws-tools</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sun.xml.ws</groupId>
+            <artifactId>jaxws-rt</artifactId>
+            <version>2.3.5</version>
         </dependency>
 
         <dependency>

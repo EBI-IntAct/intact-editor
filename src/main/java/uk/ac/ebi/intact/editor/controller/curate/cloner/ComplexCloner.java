@@ -114,9 +114,8 @@ public class ComplexCloner extends AbstractEditorCloner<Complex, IntactComplex> 
             if (!XrefUtils.isXrefFromDatabase(ref, Xref.IMEX_MI, Xref.IMEX)
                     && !XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY)){
                 if (ref instanceof ComplexGOXref){
-                    ComplexGOXref intactRef = new ComplexGOXref(ref.getId(), ref.getVersion(), ref.getQualifier());
+                    ComplexGOXref intactRef = new ComplexGOXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
                     intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
-                    intactRef.setDatabase(ref.getDatabase());
                     intactRef.setPubmed(((ComplexGOXref)ref).getPubmed());
                     intactRef.setEvidenceType(((ComplexGOXref)ref).getEvidenceType());
                     clone.getXrefs().add(intactRef);
@@ -183,9 +182,8 @@ public class ComplexCloner extends AbstractEditorCloner<Complex, IntactComplex> 
                     && !XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY)
                     && !XrefUtils.doesXrefHaveQualifier(ref, Xref.COMPLEX_PRIMARY_MI, Xref.COMPLEX_PRIMARY)){
                 if (ref instanceof ComplexGOXref){
-                    ComplexGOXref intactRef = new ComplexGOXref(ref.getId(), ref.getVersion(), ref.getQualifier());
+                    ComplexGOXref intactRef = new ComplexGOXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
                     intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
-                    intactRef.setDatabase(ref.getDatabase());
                     intactRef.setPubmed(((ComplexGOXref)ref).getPubmed());
                     intactRef.setEvidenceType(((ComplexGOXref)ref).getEvidenceType());
                     clone.getXrefs().add(intactRef);
