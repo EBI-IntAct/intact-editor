@@ -26,6 +26,7 @@ import uk.ac.ebi.intact.editor.services.AbstractEditorService;
 import uk.ac.ebi.intact.jami.model.extension.*;
 import uk.ac.ebi.intact.jami.model.lifecycle.*;
 
+import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -70,8 +71,13 @@ public class PublicationEditorService extends AbstractEditorService {
         query.setParameter("qualifier", Xref.IMEX_PRIMARY);
         query.setParameter("imexId", imexId);
 
-        IntactPublication publication = query.getSingleResult();
-        return init(publication);
+        try {
+            IntactPublication publication = query.getSingleResult();
+            return init(publication);
+        } catch (NoResultException e) {
+            // Nothing to do, the query did not find any result
+            return null;
+        }
     }
 
     private IntactPublication init(IntactPublication publication) {

@@ -4,7 +4,7 @@
     <parent>
         <groupId>uk.ac.ebi.intact.maven</groupId>
         <artifactId>intact-hibernate-master</artifactId>
-        <version>47</version>
+        <version>47-SNAPSHOT</version>
     </parent>
 
     <groupId>uk.ac.ebi.intact.service</groupId>
@@ -32,7 +32,7 @@
         <spring.version>4.3.30.RELEASE</spring.version>
         <spring.security.version>3.2.10.RELEASE</spring.security.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
-        <psi.jami.version>3.3.1-SNAPSHOT</psi.jami.version>
+        <psi.jami.version>3.3.1</psi.jami.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
         <intact.jami.version>2.2.0-SNAPSHOT</intact.jami.version>
         <dataexchange.version>3.2.0-SNAPSHOT</dataexchange.version>
@@ -295,7 +295,21 @@
                     <artifactId>jaxb-impl</artifactId>
                     <groupId>com.sun.xml.bind</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>com.sun.xml.ws</artifactId>
+                    <groupId>jaxws-rt</groupId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.xml.ws</groupId>
+                    <artifactId>jaxws-tools</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sun.xml.ws</groupId>
+            <artifactId>jaxws-rt</artifactId>
+            <version>2.3.5</version>
         </dependency>
 
         <dependency>

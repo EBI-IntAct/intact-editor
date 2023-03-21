@@ -666,11 +666,10 @@ public class ComplexController extends AnnotatedObjectController {
     @Override
     protected InteractorXref newXref(CvTerm db, String id, String secondaryId, String version, CvTerm qualifier) {
         if (CvTermUtils.isCvTerm(db, Xref.GO_MI, Xref.GO)) {
-            ComplexGOXref goRef = new ComplexGOXref(id, version, qualifier);
+            ComplexGOXref goRef = new ComplexGOXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, Xref.GO_MI), id, version, qualifier);
             goRef.setSecondaryId(secondaryId);
             goRef.setPubmed(this.newXrefPubmed);
             goRef.setEvidenceType(this.newXrefEvidenceCode);
-            goRef.setDatabase(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, Xref.GO_MI));
             return goRef;
         } else {
             InteractorXref ref = new InteractorXref(db, id, version, qualifier);

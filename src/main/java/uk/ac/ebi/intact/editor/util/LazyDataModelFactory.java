@@ -23,6 +23,7 @@ import org.primefaces.model.SortOrder;
 import uk.ac.ebi.intact.jami.service.IntactService;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import java.util.*;
 
@@ -103,7 +104,11 @@ public class LazyDataModelFactory {
                 }
             }
 
-            totalNumRows = ( ( Long ) q.getSingleResult() ).intValue();
+            try {
+                totalNumRows = ((Long) q.getSingleResult()).intValue();
+            } catch (NoResultException e) {
+                log.error("No results found for query: " + countQuery, e);
+            }
 
             log.debug( "HQL Count: " + totalNumRows );
 
