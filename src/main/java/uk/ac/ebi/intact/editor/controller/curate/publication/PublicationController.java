@@ -160,8 +160,8 @@ public class PublicationController extends AnnotatedObjectController {
     private String onHold;
     private String accepted;
     private String toBeReviewed = null;
-    private String imexId=null;
-    private String newValue;
+    private String imexId = null;
+    private String toBeReviewedTxt = null;
 
     private List<ExperimentSummary> experiments = Collections.EMPTY_LIST;
 
@@ -1558,26 +1558,30 @@ public class PublicationController extends AnnotatedObjectController {
         List<String> rejectionComments = new ArrayList<String>();
 
         for (Experiment exp : publication.getExperiments()) {
-            Annotation toBeReviewed = AnnotationUtils.collectFirstAnnotationWithTopic(exp.getAnnotations(), null, Releasable.TO_BE_REVIEWED);
-            if (toBeReviewed != null) {
-                rejectionComments.add("[" + ((IntactExperiment)exp).getShortLabel() + ": " + toBeReviewed.getValue() + "]");
+            Annotation annotationToBeReviewed = AnnotationUtils.collectFirstAnnotationWithTopic(exp.getAnnotations(), null, Releasable.TO_BE_REVIEWED);
+            if (annotationToBeReviewed != null) {
+                rejectionComments.add("[" + ((IntactExperiment)exp).getShortLabel() + ": " + annotationToBeReviewed.getValue() + "]");
             }
         }
-        if (newValue != null) {
-            rejectionComments.add(newValue);
+        if (toBeReviewedTxt != null) {
+            rejectionComments.add(toBeReviewedTxt);
         }
 
-        if (rejectionComments.isEmpty() && this.toBeReviewed == null) {
-            addErrorMessage("Cannot reject publication without a correction comment", "");
+        if (!rejectionComments.isEmpty()) {
+            rejectPublication(rejectionComments);
         } else {
-            rejectPublication(" - " + StringUtils.join(rejectionComments, ", "));
+            addErrorMessage("Cannot reject publication without a correction comment", "");
         }
     }
 
-    public void rejectPublication(String reasonForRejection) {
-        String date = "Rejected " + new SimpleDateFormat("yyyy-MMM-dd 'at' HH:mm z").format(new Date()).toUpperCase() + " by " + userSessionController.getCurrentUser().getLogin().toUpperCase();
+    private void rejectPublication(List<String> rejectionComments) {
+        String reasonForRejection = String.format(
+                "Rejected %s by %s. - %s",
+                new SimpleDateFormat("yyyy-MMM-dd 'at' HH:mm z").format(new Date()).toUpperCase(),
+                userSessionController.getCurrentUser().getLogin().toUpperCase(),
+                StringUtils.join(rejectionComments, ", "));
 
-        setToBeReviewed(this.toBeReviewed == null ? date + ". " + reasonForRejection : this.toBeReviewed + " " + date + ". " + reasonForRejection);
+        setToBeReviewed(reasonForRejection);
 
         try{
             getEditorService().reject(publication, getCurrentUser(), this.toBeReviewed);
@@ -2036,11 +2040,11 @@ public class PublicationController extends AnnotatedObjectController {
         }
     }
 
-    public String getNewValue() {
-        return newValue;
+    public String getToBeReviewedTxt() {
+        return toBeReviewedTxt;
     }
 
-    public void setNewValue(String newValue) {
-        this.newValue = newValue;
+    public void setToBeReviewedTxt(String toBeReviewedTxt) {
+        this.toBeReviewedTxt = toBeReviewedTxt;
     }
 }
