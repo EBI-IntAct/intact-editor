@@ -474,7 +474,7 @@
               modal="true" position="center">
         <h:panelGrid columns="3" style="margin-bottom:10px">
             <h:outputLabel for="putToBeReviewedTxt" value="Reason for rejection:"/>
-            <p:inputTextarea id="putToBeReviewedTxt" value="#{publicationController.newValue}" rows="4" cols="60"
+            <p:inputTextarea id="putToBeReviewedTxt" value="#{publicationController.toBeReviewedTxt}" rows="4" cols="60"
                              converter="trimmingConverter"/>
 
             <p:commandButton value="Send Back to Curation" actionListener="#{publicationController.rejectPublication}"
