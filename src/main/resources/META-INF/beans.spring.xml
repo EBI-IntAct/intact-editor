@@ -96,6 +96,8 @@
     <!-- jami fetchers -->
     <bean id="proteinFetcher" class="psidev.psi.mi.jami.bridges.uniprot.UniprotProteinFetcher"/>
     <bean id="bioactiveEntityFetcher" class="psidev.psi.mi.jami.bridges.chebi.ChebiFetcher"/>
-    <bean id="geneFetcher" class="psidev.psi.mi.jami.bridges.uniprot.UniprotGeneFetcher"/>
+    <bean id="uniprotGeneFetcher" class="psidev.psi.mi.jami.bridges.uniprot.UniprotGeneFetcher"/>
+    <bean id="rnaCentralFetcher" class="psidev.psi.mi.jami.bridges.rna.central.RNACentralFetcher"/>
+    <bean id="ensemblFetcher" class="psidev.psi.mi.jami.bridges.ensembl.EnsemblFetcher"/>
 
 </beans>

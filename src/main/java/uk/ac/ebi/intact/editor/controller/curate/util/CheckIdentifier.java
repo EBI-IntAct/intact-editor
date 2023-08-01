@@ -1,5 +1,8 @@
 package uk.ac.ebi.intact.editor.controller.curate.util;
 
+import psidev.psi.mi.jami.bridges.ensembl.EnsemblFetcher;
+import psidev.psi.mi.jami.bridges.rna.central.RNACentralFetcher;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,7 +39,11 @@ public class CheckIdentifier {
      *         ^ENS[A-Z]*[FPTG]\d{11}(\.\d+)?$
      */
     public static boolean checkEnsembleId(String identifier) {
-         return checkIdentifier(identifier, ENSEMBLE_ID_REGEX);
+         return EnsemblFetcher.identifierPattern.matcher(identifier).find();
+    }
+
+    public static boolean checkRNACentralId(String identifier) {
+        return RNACentralFetcher.identifierPattern.matcher(identifier).find();
     }
 
     private static boolean checkIdentifier(String identifier, String regex){
