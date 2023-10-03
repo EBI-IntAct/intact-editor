@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import psidev.psi.mi.jami.bridges.chebi.ChebiFetcher;
-import psidev.psi.mi.jami.bridges.ensembl.EnsemblFetcher;
+import psidev.psi.mi.jami.bridges.ensembl.EnsemblInteractorFetcher;
 import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
 import psidev.psi.mi.jami.bridges.rna.central.RNACentralFetcher;
 import psidev.psi.mi.jami.bridges.uniprot.UniprotGeneFetcher;
@@ -64,7 +64,7 @@ public class ParticipantImportService extends AbstractEditorService {
     private UniprotGeneFetcher uniprotGeneFetcher;
 
     @Resource(name = "ensemblFetcher")
-    private EnsemblFetcher ensemblFetcher;
+    private EnsemblInteractorFetcher ensemblFetcher;
 
     @Resource(name = "rnaCentralFetcher")
     private RNACentralFetcher rnaCentralFetcher;
