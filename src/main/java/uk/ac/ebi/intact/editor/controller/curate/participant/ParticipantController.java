@@ -185,7 +185,8 @@ public class ParticipantController extends AbstractParticipantController<IntactP
         return new ParticipantEvidenceCloner();
     }
 
-    public String newParticipant(InteractionEvidence interaction) throws InvocationTargetException, NoSuchMethodException,
+    @Override
+    public String newParticipant(Interaction interaction) throws InvocationTargetException, NoSuchMethodException,
             InstantiationException, IllegalAccessException {
         String value = super.newParticipant(interaction);
 
