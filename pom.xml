@@ -36,7 +36,7 @@
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
         <intact.jami.version>2.2.6-SNAPSHOT</intact.jami.version>
         <dataexchange.version>3.3.0-SNAPSHOT</dataexchange.version>
-        <intact.tools.version>1.2.4-SNAPSHOT</intact.tools.version>
+        <intact.tools.version>1.2.5-SNAPSHOT</intact.tools.version>
         <intact.primefaces.version>3.1.1</intact.primefaces.version>
         <myfaces.version>2.1.12</myfaces.version>
 
