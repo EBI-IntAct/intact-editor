@@ -11,7 +11,7 @@
     <artifactId>editor</artifactId>
     <packaging>war</packaging>
 
-    <version>3.3.1-SNAPSHOT</version>
+    <version>3.4.0</version>
     <name>Service :: IntAct Editor</name>
 
     <scm>
@@ -32,11 +32,11 @@
         <spring.version>4.3.30.RELEASE</spring.version>
         <spring.security.version>3.2.10.RELEASE</spring.security.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
-        <psi.jami.version>3.4.2-SNAPSHOT</psi.jami.version>
+        <psi.jami.version>3.5.0</psi.jami.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
-        <intact.jami.version>2.2.5-SNAPSHOT</intact.jami.version>
-        <dataexchange.version>3.2.3-SNAPSHOT</dataexchange.version>
-        <intact.tools.version>1.2.3-SNAPSHOT</intact.tools.version>
+        <intact.jami.version>2.2.6</intact.jami.version>
+        <dataexchange.version>3.3.1</dataexchange.version>
+        <intact.tools.version>1.2.5</intact.tools.version>
         <intact.primefaces.version>3.1.1</intact.primefaces.version>
         <myfaces.version>2.1.12</myfaces.version>
 
@@ -304,6 +304,20 @@
                     <artifactId>jaxws-tools</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>psidev.psi.mi.jami.bridges</groupId>
+            <artifactId>jami-ensembl</artifactId>
+            <version>${psi.jami.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>psidev.psi.mi.jami.bridges</groupId>
+            <artifactId>jami-rna-central</artifactId>
+            <version>${psi.jami.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
@@ -587,6 +601,7 @@
         </dependency>
 
         <!-- Primefaces -->
+
         <dependency>
             <groupId>org.primefaces</groupId>
             <artifactId>primefaces</artifactId>
@@ -597,27 +612,23 @@
             <artifactId>commons-fileupload</artifactId>
             <version>1.2.2</version>
         </dependency>
-
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>1.4</version>
         </dependency>
-
         <!-- Atmosphere (Comet) -->
         <dependency>
             <groupId>org.atmosphere</groupId>
             <artifactId>atmosphere-runtime</artifactId>
             <version>0.5</version>
         </dependency>
-
         <!-- PrettyFaces -->
         <dependency>
             <groupId>com.ocpsoft</groupId>
             <artifactId>prettyfaces-jsf2</artifactId>
             <version>3.3.2</version>
         </dependency>
-
         <!-- Spring -->
         <dependency>
             <groupId>org.springframework.security</groupId>
@@ -660,26 +671,22 @@
             <artifactId>spring-test</artifactId>
             <version>${spring.version}</version>
         </dependency>
-
         <!-- JAX RS -->
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-frontend-jaxrs</artifactId>
             <version>3.2.14</version>
         </dependency>
-
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
             <version>1.4.7</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.xmlbeans</groupId>
             <artifactId>xmlbeans</artifactId>
             <version>2.4.0</version>
         </dependency>
-
         <!-- Google -->
         <dependency>
             <groupId>com.google.gdata</groupId>
@@ -692,7 +699,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
         <!-- H2 for user management -->
         <dependency>
             <groupId>com.h2database</groupId>
@@ -700,7 +706,6 @@
             <version>${h2.version}</version>
             <scope>test</scope>
         </dependency>
-
         <!-- Tests -->
         <dependency>
             <groupId>junit</groupId>
@@ -718,7 +723,6 @@
             <artifactId>selenium-server</artifactId>
             <version>2.31.0</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-aspects</artifactId>

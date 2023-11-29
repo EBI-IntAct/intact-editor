@@ -10,5 +10,6 @@ package uk.ac.ebi.intact.editor.controller.curate.interaction;
 public enum CandidateType {
     BIO_ACTIVE_ENTITY,
     GENE,
-    PROTEIN
+    PROTEIN,
+    NUCLEIC_ACID
 }

@@ -1,12 +1,12 @@
 /**
  * Copyright 2010 The European Bioinformatics Institute, and others.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,7 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import psidev.psi.mi.jami.bridges.chebi.ChebiFetcher;
+import psidev.psi.mi.jami.bridges.ensembl.EnsemblInteractorFetcher;
 import psidev.psi.mi.jami.bridges.exception.BridgeFailedException;
+import psidev.psi.mi.jami.bridges.rna.central.RNACentralFetcher;
 import psidev.psi.mi.jami.bridges.uniprot.UniprotGeneFetcher;
 import psidev.psi.mi.jami.bridges.uniprot.UniprotProteinFetcher;
 import psidev.psi.mi.jami.model.*;
@@ -47,7 +49,7 @@ import java.util.*;
 
 
 @Service
-@Scope( BeanDefinition.SCOPE_PROTOTYPE )
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 public class ParticipantImportService extends AbstractEditorService {
 
     private static final Log log = LogFactory.getLog(ParticipantImportService.class);
@@ -58,8 +60,14 @@ public class ParticipantImportService extends AbstractEditorService {
     @Resource(name = "bioactiveEntityFetcher")
     private ChebiFetcher chebiFetcher;
 
-    @Resource(name = "geneFetcher")
+    @Resource(name = "uniprotGeneFetcher")
     private UniprotGeneFetcher uniprotGeneFetcher;
+
+    @Resource(name = "ensemblFetcher")
+    private EnsemblInteractorFetcher ensemblFetcher;
+
+    @Resource(name = "rnaCentralFetcher")
+    private RNACentralFetcher rnaCentralFetcher;
 
     @Resource(name = "intactJamiConfiguration")
     private IntactConfiguration intactConfig;
@@ -83,7 +91,10 @@ public class ParticipantImportService extends AbstractEditorService {
                     candidates = importFromChebi(participantToImport.toUpperCase());
                     break;
                 case GENE:
-                    candidates = importFromSwissProtWithEnsemblId(participantToImport.toUpperCase());
+                    candidates = importFromEnsembl(participantToImport.toUpperCase());
+                    break;
+                case NUCLEIC_ACID:
+                    candidates = importFromRNACentral(participantToImport.toUpperCase());
                     break;
                 case PROTEIN:
                     candidates = importFromUniprot(participantToImport.toUpperCase());
@@ -125,6 +136,8 @@ public class ParticipantImportService extends AbstractEditorService {
             return CandidateType.BIO_ACTIVE_ENTITY;
         } else if (CheckIdentifier.checkEnsembleId(candidateId)) {
             return CandidateType.GENE;
+        } else if (CheckIdentifier.checkRNACentralId(candidateId)) {
+            return CandidateType.NUCLEIC_ACID;
         } else { //If the identifier is not one of the previous we suppose that is a UniprotKB
             return CandidateType.PROTEIN;
         }
@@ -146,13 +159,13 @@ public class ParticipantImportService extends AbstractEditorService {
                 Participant component = getIntactDao().getParticipantEvidenceDao().getByAc(participantToImport);
 
                 if (component != null) {
-                    candidates.add(toImportCandidate(participantToImport, (IntactParticipantEvidence)component));
+                    candidates.add(toImportCandidate(participantToImport, (IntactParticipantEvidence) component));
                 }
 
                 component = getIntactDao().getModelledParticipantDao().getByAc(participantToImport);
 
                 if (component != null) {
-                    candidates.add(toImportCandidate(participantToImport, (IntactModelledParticipant)component));
+                    candidates.add(toImportCandidate(participantToImport, (IntactModelledParticipant) component));
                 }
             }
         } else {
@@ -162,8 +175,8 @@ public class ParticipantImportService extends AbstractEditorService {
             for (IntactInteractor interactorByXref : interactorsByXref) {
                 Collection<IntactInteractorPool> pools = poolDao.getByInteractorAc(interactorByXref.getAc());
                 candidates.add(toImportCandidate(participantToImport, interactorByXref));
-                if (!pools.isEmpty()){
-                    for (IntactInteractorPool pool : pools){
+                if (!pools.isEmpty()) {
+                    for (IntactInteractorPool pool : pools) {
                         candidates.add(toImportCandidate(participantToImport, pool));
                     }
                 }
@@ -198,12 +211,39 @@ public class ParticipantImportService extends AbstractEditorService {
         return candidates;
     }
 
+    private Set<ImportCandidate> importFromEnsembl(String participantToImport) throws BridgeFailedException, FinderException, SynchronizerException, PersisterException {
+        Set<ImportCandidate> candidates = new HashSet<ImportCandidate>();
+
+        final Collection<Interactor> interactors = ensemblFetcher.fetchByIdentifier(participantToImport);
+        for (Interactor interactor : interactors) {
+            IntactInteractor i = interactor instanceof Gene ? toGene((Gene) interactor) : toNucleicAcid((NucleicAcid) interactor);
+            ImportCandidate candidate = toImportCandidate(participantToImport, i);
+            candidate.setSource("ensembl");
+            candidates.add(candidate);
+        }
+
+        return candidates;
+    }
+
+    private Set<ImportCandidate> importFromRNACentral(String participantToImport) throws BridgeFailedException, FinderException, SynchronizerException, PersisterException {
+        Set<ImportCandidate> candidates = new HashSet<ImportCandidate>();
+
+        final Collection<NucleicAcid> nucleicAcids = rnaCentralFetcher.fetchByIdentifier(participantToImport);
+        for (NucleicAcid nucleicAcid : nucleicAcids) {
+            ImportCandidate candidate = toImportCandidate(participantToImport, toNucleicAcid(nucleicAcid));
+            candidate.setSource("RNA-Central");
+            candidates.add(candidate);
+        }
+
+        return candidates;
+    }
+
 
     private Set<ImportCandidate> importFromChebi(String participantToImport) throws BridgeFailedException, SynchronizerException, FinderException, PersisterException {
         Set<ImportCandidate> candidates = new HashSet<ImportCandidate>();
 
         final Collection<BioactiveEntity> smallMolecules = chebiFetcher.fetchByIdentifier(participantToImport);
-        for (BioactiveEntity entity : smallMolecules){
+        for (BioactiveEntity entity : smallMolecules) {
             ImportCandidate candidate = toImportCandidate(participantToImport, toBioactiveEntity(entity));
             candidate.setSource("chebi");
             candidates.add(candidate);
@@ -219,7 +259,7 @@ public class ParticipantImportService extends AbstractEditorService {
 
         for (Gene gene : genes) {
             ImportCandidate candidate = toImportCandidate(participantToImport, toGene(gene));
-            candidate.setSource("ensembl");
+            candidate.setSource("uniprot - ensembl");
             candidates.add(candidate);
         }
         return candidates;
@@ -231,7 +271,7 @@ public class ParticipantImportService extends AbstractEditorService {
         candidate.setSource(intactConfig.getDefaultInstitution().getShortName());
 
         // initialise some properties
-        if (interactor.getAc() != null){
+        if (interactor.getAc() != null) {
             initialiseXrefs(interactor.getDbXrefs());
             initialiseAnnotations(interactor.getDbAnnotations());
             initialiseAliases(interactor.getDbAliases());
@@ -248,12 +288,11 @@ public class ParticipantImportService extends AbstractEditorService {
                 boolean isIntact = XrefUtils.isXrefFromDatabase(xref,
                         intactConfig.getDefaultInstitution().getMIIdentifier(), intactConfig.getDefaultInstitution().getShortName());
                 // exclude intact acs
-                if (XrefUtils.doesXrefHaveQualifier(xref, Xref.IDENTITY_MI, Xref.IDENTITY)){
-                    if (!isIntact){
+                if (XrefUtils.doesXrefHaveQualifier(xref, Xref.IDENTITY_MI, Xref.IDENTITY)) {
+                    if (!isIntact) {
                         ids.add(xref.getId());
                     }
-                }
-                else{
+                } else {
                     secondaryAcs.add(xref.getId());
                 }
             }
@@ -266,19 +305,19 @@ public class ParticipantImportService extends AbstractEditorService {
     }
 
     private ImportCandidate toImportCandidate(String participantToImport, IntactParticipantEvidence p) {
-        IntactInteractor interactor = (IntactInteractor)p.getInteractor();
+        IntactInteractor interactor = (IntactInteractor) p.getInteractor();
         ImportCandidate candidate = toImportCandidate(participantToImport, interactor);
 
-        if (interactor.getAc() != null){
+        if (interactor.getAc() != null) {
             initialiseXrefs(interactor.getDbXrefs());
             initialiseAnnotations(interactor.getDbAnnotations());
             initialiseAliases(interactor.getDbAliases());
             initialiseCv(interactor.getInteractorType());
         }
 
-        if (!p.getFeatures().isEmpty()){
+        if (!p.getFeatures().isEmpty()) {
             FeatureEvidenceCloner cloner = new FeatureEvidenceCloner();
-            for (FeatureEvidence f : p.getFeatures()){
+            for (FeatureEvidence f : p.getFeatures()) {
                 candidate.getClonedFeatures().add(cloner.clone(f, getIntactDao()));
             }
         }
@@ -287,19 +326,19 @@ public class ParticipantImportService extends AbstractEditorService {
     }
 
     private ImportCandidate toImportCandidate(String participantToImport, IntactModelledParticipant p) {
-        IntactInteractor interactor = (IntactInteractor)p.getInteractor();
+        IntactInteractor interactor = (IntactInteractor) p.getInteractor();
         ImportCandidate candidate = toImportCandidate(participantToImport, interactor);
 
-        if (interactor.getAc() != null){
+        if (interactor.getAc() != null) {
             initialiseXrefs(interactor.getDbXrefs());
             initialiseAnnotations(interactor.getDbAnnotations());
             initialiseAliases(interactor.getDbAliases());
             initialiseCv(interactor.getInteractorType());
         }
 
-        if (!p.getFeatures().isEmpty()){
+        if (!p.getFeatures().isEmpty()) {
             ModelledFeatureCloner cloner = new ModelledFeatureCloner();
-            for (ModelledFeature f : p.getFeatures()){
+            for (ModelledFeature f : p.getFeatures()) {
                 candidate.getClonedFeatures().add(cloner.clone(f, getIntactDao()));
             }
         }
@@ -313,18 +352,18 @@ public class ParticipantImportService extends AbstractEditorService {
         List<String> ids = new ArrayList<String>();
         List<String> secondaryAcs = new ArrayList<String>();
 
-        if (interactor.getAc() != null){
+        if (interactor.getAc() != null) {
             initialiseXrefs(interactor.getDbXrefs());
             initialiseAnnotations(interactor.getDbAnnotations());
             initialiseAliases(interactor.getDbAliases());
             initialiseCv(interactor.getInteractorType());
         }
-        for (Interactor member : interactor){
+        for (Interactor member : interactor) {
             // initialise some properties
-            if (((IntactInteractor)member).getAc() != null){
-                initialiseXrefs(((IntactInteractor)member).getDbXrefs());
-                initialiseAnnotations(((IntactInteractor)member).getDbAnnotations());
-                initialiseAliases(((IntactInteractor)member).getDbAliases());
+            if (((IntactInteractor) member).getAc() != null) {
+                initialiseXrefs(((IntactInteractor) member).getDbXrefs());
+                initialiseAnnotations(((IntactInteractor) member).getDbAnnotations());
+                initialiseAliases(((IntactInteractor) member).getDbAliases());
                 initialiseCv(member.getInteractorType());
             }
 
@@ -335,12 +374,11 @@ public class ParticipantImportService extends AbstractEditorService {
                 for (Xref xref : identityXrefs) {
                     boolean isIntact = XrefUtils.isXrefFromDatabase(xref,
                             intactConfig.getDefaultInstitution().getMIIdentifier(), intactConfig.getDefaultInstitution().getShortName());
-                    if (XrefUtils.doesXrefHaveQualifier(xref, Xref.IDENTITY_MI, Xref.IDENTITY)){
-                        if (!isIntact){
+                    if (XrefUtils.doesXrefHaveQualifier(xref, Xref.IDENTITY_MI, Xref.IDENTITY)) {
+                        if (!isIntact) {
                             ids.add(xref.getId());
                         }
-                    }
-                    else{
+                    } else {
                         secondaryAcs.add(xref.getId());
                     }
                 }
@@ -354,7 +392,7 @@ public class ParticipantImportService extends AbstractEditorService {
     }
 
     private IntactProtein toProtein(ImportCandidate candidate) throws SynchronizerException, FinderException, PersisterException {
-        IntactProtein protein=null;
+        IntactProtein protein = null;
 
         // use the protein service to create proteins (not persist!)
         if (candidate.getUniprotProtein() != null) {
@@ -365,7 +403,7 @@ public class ParticipantImportService extends AbstractEditorService {
     }
 
     private IntactBioactiveEntity toBioactiveEntity(BioactiveEntity candidate) throws SynchronizerException, FinderException, PersisterException {
-        IntactBioactiveEntity entity=null;
+        IntactBioactiveEntity entity = null;
 
         if (candidate != null) {
             entity = convertToPersistentIntactObject(candidate, getIntactDao().getSynchronizerContext().getBioactiveEntitySynchronizer());
@@ -375,10 +413,20 @@ public class ParticipantImportService extends AbstractEditorService {
     }
 
     private IntactGene toGene(Gene candidate) throws SynchronizerException, FinderException, PersisterException {
-        IntactGene entity=null;
+        IntactGene entity = null;
 
         if (candidate != null) {
             entity = convertToPersistentIntactObject(candidate, getIntactDao().getSynchronizerContext().getGeneSynchronizer());
+        }
+
+        return entity;
+    }
+
+    private IntactNucleicAcid toNucleicAcid(NucleicAcid candidate) throws FinderException, SynchronizerException, PersisterException {
+        IntactNucleicAcid entity = null;
+
+        if (candidate != null) {
+            entity = convertToPersistentIntactObject(candidate, getIntactDao().getSynchronizerContext().getNucleicAcidSynchronizer());
         }
 
         return entity;
