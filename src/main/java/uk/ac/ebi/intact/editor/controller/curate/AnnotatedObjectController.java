@@ -50,7 +50,7 @@ import uk.ac.ebi.intact.jami.model.lifecycle.Releasable;
 import uk.ac.ebi.intact.jami.synchronizer.IntactDbSynchronizer;
 import uk.ac.ebi.intact.jami.utils.IntactUtils;
 import uk.ac.ebi.pride.utilities.ols.web.service.client.OLSClient;
-import uk.ac.ebi.pride.utilities.ols.web.service.config.OLSWsConfigProd;
+import uk.ac.ebi.pride.utilities.ols.web.service.config.OLSWsConfig;
 import uk.ac.ebi.pride.utilities.ols.web.service.model.Identifier;
 
 import javax.annotation.Resource;
@@ -682,7 +682,7 @@ public abstract class AnnotatedObjectController extends BaseController implement
                         CvTerm qualifier = null;
                         //Find the needed annotation. Using the ols_client directly.. Not good pratice, but otherwise
                         //we need to re-release everything again. Issue #14 psi-jami
-                        OLSClient olsClient = new OLSClient(new OLSWsConfigProd());
+                        OLSClient olsClient = new OLSClient(new OLSWsConfig("www.ebi.ac.uk/ols4/"));
                         Map<String, List<String>> annotations = olsClient.getAnnotations(new Identifier(xref.getId(), Identifier.IdentifierType.OBO), "go");
                         String namespace = annotations.get("has_obo_namespace").get(0);
 
