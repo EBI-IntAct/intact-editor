@@ -69,4 +69,10 @@ public class FeatureShortlabelGeneratorListener implements ShortlabelGeneratorLi
         // validated
         featureController.addErrorMessage(SHORTLABEL_NOT_GENERATED_MSG, event.getMessage());
     }
+
+    @Override
+    public void onOtherErrorEvent(OtherErrorEvent event) {
+        // validated
+        featureController.addErrorMessage(event.getErrorType().getMessage(), event.getErrorDetails());
+    }
 }
