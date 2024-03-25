@@ -439,7 +439,7 @@ public class SearchQueryService extends AbstractEditorService {
                                                                         "left join e.interactionDetectionMethod as d " +
                                                                 "where  d.shortName <> :inferred and  (e.ac = :ac " +
                                                                 "      or lower(e.shortLabel) like :query " +
-                                                                "      or lower(x.id) like :query)) ",
+                                                                "      or lower(x.id) like :query) ",
 
                                                                 "select count(distinct e) " +
                                                                 "from IntactExperiment e left join e.xrefs as x " +

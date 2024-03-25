@@ -256,6 +256,14 @@ public class InteractorController extends AnnotatedObjectController {
             this.typeSelectItems = getCvService().getNucleicAcidSelectItems();
             this.topicRootTerm = NucleicAcid.NULCEIC_ACID_MI;
             return new IntactNucleicAcid("to set");
+        } else if (interactorType.equals(NucleicAcid.MRNA)) {
+            this.typeSelectItems = getCvService().getNucleicAcidSelectItems();
+            this.topicRootTerm = NucleicAcid.MRNA_MI;
+            return new IntactNucleicAcid("to set", IntactUtils.createMIInteractorType(NucleicAcid.MRNA, NucleicAcid.MRNA_MI));
+        } else if (interactorType.equals(NucleicAcid.MIRNA)) {
+            this.typeSelectItems = getCvService().getNucleicAcidSelectItems();
+            this.topicRootTerm = NucleicAcid.MIRNA_MI;
+            return new IntactNucleicAcid("to set", IntactUtils.createMIInteractorType(NucleicAcid.MIRNA, NucleicAcid.MIRNA_MI));
         } else if (interactorType.equals(Complex.COMPLEX)) {
             this.typeSelectItems = getCvService().getComplexTypeSelectItems();
             this.topicRootTerm = Complex.COMPLEX_MI;
