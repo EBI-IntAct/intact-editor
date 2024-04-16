@@ -8,8 +8,10 @@
     <!-- basic job repository WARNING: the isolation has to be the default one so JPATransactionManager can work fine-->
     <bean id="basicBatchJobRepository"
           class="org.springframework.batch.core.repository.support.JobRepositoryFactoryBean"
+          p:tablePrefix="ia_meta.BATCH_"
           p:isolationLevelForCreate="ISOLATION_DEFAULT"
-          p:dataSource-ref="${jami.db.datasource}" p:transactionManager-ref="jamiTransactionManager" />
+          p:dataSource-ref="${jami.db.datasource}"
+          p:transactionManager-ref="jamiTransactionManager" />
 
     <!-- basic batch job launcher -->
     <bean id="basicBatchJobLauncher"
@@ -23,6 +25,7 @@
 
     <!-- Basic job explorer -->
     <bean id="basicBatchJobExplorer" class="org.springframework.batch.core.explore.support.JobExplorerFactoryBean"
+          p:tablePrefix="ia_meta.BATCH_"
           p:dataSource-ref="${jami.db.datasource}" />
 
     <!-- Simple job registry -->
@@ -69,7 +72,9 @@
     <bean id="editorAsyncTaskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor"/>
 
     <bean id="intactJobExplorer" class="org.springframework.batch.core.explore.support.JobExplorerFactoryBean"
+          p:tablePrefix="ia_meta.BATCH_"
           p:dataSource-ref="${jami.db.datasource}" />
+
     <bean id="intactJobLauncher"
           class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
         <property name="jobRepository" ref="basicBatchJobRepository" />
