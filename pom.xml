@@ -35,7 +35,7 @@
         <psi.jami.version>3.5.1-SNAPSHOT</psi.jami.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
         <intact.jami.version>2.2.7-SNAPSHOT</intact.jami.version>
-        <dataexchange.version>3.3.2-SNAPSHOT</dataexchange.version>
+        <dataexchange.version>3.4.0-SNAPSHOT</dataexchange.version>
         <intact.tools.version>1.2.6-SNAPSHOT</intact.tools.version>
         <intact.primefaces.version>3.1.1</intact.primefaces.version>
         <myfaces.version>2.1.12</myfaces.version>
