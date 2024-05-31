@@ -4,14 +4,14 @@
     <parent>
         <groupId>uk.ac.ebi.intact.maven</groupId>
         <artifactId>intact-hibernate-master</artifactId>
-        <version>47</version>
+        <version>48-SNAPSHOT</version>
     </parent>
 
     <groupId>uk.ac.ebi.intact.service</groupId>
     <artifactId>editor</artifactId>
     <packaging>war</packaging>
 
-    <version>3.4.1-SNAPSHOT</version>
+    <version>4.0.0-SNAPSHOT</version>
     <name>Service :: IntAct Editor</name>
 
     <scm>
@@ -34,9 +34,9 @@
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
         <psi.jami.version>3.5.1-SNAPSHOT</psi.jami.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
-        <intact.jami.version>2.2.7-SNAPSHOT</intact.jami.version>
-        <dataexchange.version>3.4.0-SNAPSHOT</dataexchange.version>
-        <intact.tools.version>1.2.6-SNAPSHOT</intact.tools.version>
+        <intact.jami.version>3.0.0-SNAPSHOT</intact.jami.version>
+        <dataexchange.version>4.0.0-SNAPSHOT</dataexchange.version>
+        <intact.tools.version>2.0.0-SNAPSHOT</intact.tools.version>
         <intact.primefaces.version>3.1.1</intact.primefaces.version>
         <myfaces.version>2.1.12</myfaces.version>
 

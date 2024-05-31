@@ -444,7 +444,7 @@ public class PublicationController extends AnnotatedObjectController {
     public String newEmptyUnassigned() {
         SequenceManager sequenceManager = (SequenceManager) getSpringContext().getBean("jamiSequenceManager");
         try {
-            sequenceManager.createSequenceIfNotExists("unassigned_seq");
+            sequenceManager.createSequenceIfNotExists(IntactUtils.UNASSIGNED_SEQ);
             String nextIntegerAsString = String.valueOf(sequenceManager.getNextValueForSequence(IntactUtils.UNASSIGNED_SEQ));
             identifier = "unassigned" + nextIntegerAsString;
         } catch (Exception e) {
