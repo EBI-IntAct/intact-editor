@@ -144,55 +144,70 @@ public class ParticipantImportService extends AbstractEditorService {
     }
 
     private Set<ImportCandidate> importFromIntAct(String participantToImport) {
-        Set<ImportCandidate> candidates = new HashSet<ImportCandidate>();
+        Map<String, ImportCandidate> candidates = new HashMap<>();
 
         final InteractorDao<IntactInteractor> interactorDao = getIntactDao().getInteractorDao(IntactInteractor.class);
-        final InteractorPoolDao poolDao = getIntactDao().getInteractorPoolDao();
 
         // id
         if (participantToImport.startsWith(intactConfig.getAcPrefix())) {
             IntactInteractor interactor = interactorDao.getByAc(participantToImport);
 
             if (interactor != null) {
-                candidates.add(toImportCandidate(participantToImport, interactor));
+                candidates.put(interactor.getAc(), toImportCandidate(participantToImport, interactor));
             } else {
-                Participant component = getIntactDao().getParticipantEvidenceDao().getByAc(participantToImport);
+                IntactParticipantEvidence participantEvidence = getIntactDao().getParticipantEvidenceDao().getByAc(participantToImport);
 
-                if (component != null) {
-                    candidates.add(toImportCandidate(participantToImport, (IntactParticipantEvidence) component));
+                if (participantEvidence != null) {
+                    candidates.put(participantEvidence.getAc(), toImportCandidate(participantToImport, participantEvidence));
                 }
 
-                component = getIntactDao().getModelledParticipantDao().getByAc(participantToImport);
+                IntactModelledParticipant modelledParticipant = getIntactDao().getModelledParticipantDao().getByAc(participantToImport);
 
-                if (component != null) {
-                    candidates.add(toImportCandidate(participantToImport, (IntactModelledParticipant) component));
+                if (modelledParticipant != null) {
+                    candidates.put(modelledParticipant.getAc(), toImportCandidate(participantToImport, modelledParticipant));
                 }
             }
         } else {
             // identity xref
             Collection<IntactInteractor> interactorsByXref = interactorDao.getByXrefQualifier(Xref.IDENTITY, Xref.IDENTITY_MI, participantToImport);
-
-            for (IntactInteractor interactorByXref : interactorsByXref) {
-                Collection<IntactInteractorPool> pools = poolDao.getByInteractorAc(interactorByXref.getAc());
-                candidates.add(toImportCandidate(participantToImport, interactorByXref));
-                if (!pools.isEmpty()) {
-                    for (IntactInteractorPool pool : pools) {
-                        candidates.add(toImportCandidate(participantToImport, pool));
-                    }
-                }
-            }
+            addCandidatesWithoutDuplicates(participantToImport, candidates, interactorsByXref);
 
             if (candidates.isEmpty()) {
                 // shortLabel
                 final Collection<IntactInteractor> interactorsByLabel = interactorDao.getByShortNameLike(participantToImport);
-
-                for (IntactInteractor interactor : interactorsByLabel) {
-                    candidates.add(toImportCandidate(participantToImport, interactor));
-                }
+                addCandidatesWithoutDuplicates(participantToImport, candidates, interactorsByLabel);
             }
         }
 
-        return candidates;
+        return new HashSet<>(candidates.values());
+    }
+
+    private void addCandidatesWithoutDuplicates(String participantToImport, Map<String, ImportCandidate> candidates, Collection<IntactInteractor> interactors) {
+        final InteractorPoolDao poolDao = getIntactDao().getInteractorPoolDao();
+
+        for (IntactInteractor interactor : interactors) {
+            addCandidate(candidates, interactor.getAc(), toImportCandidate(participantToImport, interactor));
+            Collection<IntactInteractorPool> pools = poolDao.getByInteractorAc(interactor.getAc());
+            for (IntactInteractorPool pool : pools) {
+                addCandidate(candidates, pool.getAc(), toImportCandidate(participantToImport, pool));
+            }
+        }
+    }
+
+    private void addCandidate(Map<String, ImportCandidate> candidates, String ac, ImportCandidate newCandidate) {
+        if (candidates.containsKey(ac)) {
+            ImportCandidate existingCandidate = candidates.get(ac);
+            // Merge list of primary ACs
+            Set<String> primaryAcs = new HashSet<>(existingCandidate.getPrimaryAcs());
+            primaryAcs.addAll(newCandidate.getPrimaryAcs());
+            existingCandidate.setPrimaryAcs(new ArrayList<>(primaryAcs));
+            // Merge list of secondary ACs
+            Set<String> secondaryAcs = new HashSet<>(existingCandidate.getSecondaryAcs());
+            secondaryAcs.addAll(newCandidate.getSecondaryAcs());
+            existingCandidate.setSecondaryAcs(new ArrayList<>(secondaryAcs));
+        } else {
+            candidates.put(ac, newCandidate);
+        }
     }
 
 
@@ -281,8 +296,8 @@ public class ParticipantImportService extends AbstractEditorService {
         final Collection<Xref> identityXrefs = interactor.getIdentifiers();
 
         if (!identityXrefs.isEmpty()) {
-            List<String> ids = new ArrayList<String>(identityXrefs.size());
-            List<String> secondaryAcs = new ArrayList<String>();
+            Set<String> ids = new HashSet<>(identityXrefs.size());
+            Set<String> secondaryAcs = new HashSet<>();
 
             for (Xref xref : identityXrefs) {
                 boolean isIntact = XrefUtils.isXrefFromDatabase(xref,
@@ -297,8 +312,8 @@ public class ParticipantImportService extends AbstractEditorService {
                 }
             }
 
-            candidate.setPrimaryAcs(ids);
-            candidate.setSecondaryAcs(secondaryAcs);
+            candidate.setPrimaryAcs(new ArrayList<>(ids));
+            candidate.setSecondaryAcs(new ArrayList<>(secondaryAcs));
         }
 
         return candidate;
@@ -349,8 +364,8 @@ public class ParticipantImportService extends AbstractEditorService {
     private ImportCandidate toImportCandidate(String participantToImport, IntactInteractorPool interactor) {
         ImportCandidate candidate = new ImportCandidate(participantToImport, interactor);
         candidate.setSource(intactConfig.getDefaultInstitution().getShortName());
-        List<String> ids = new ArrayList<String>();
-        List<String> secondaryAcs = new ArrayList<String>();
+        Set<String> ids = new HashSet<>();
+        Set<String> secondaryAcs = new HashSet<String>();
 
         if (interactor.getAc() != null) {
             initialiseXrefs(interactor.getDbXrefs());
@@ -382,11 +397,10 @@ public class ParticipantImportService extends AbstractEditorService {
                         secondaryAcs.add(xref.getId());
                     }
                 }
-
-                candidate.setPrimaryAcs(ids);
-                candidate.setSecondaryAcs(secondaryAcs);
             }
         }
+        candidate.setPrimaryAcs(new ArrayList<>(ids));
+        candidate.setSecondaryAcs(new ArrayList<>(secondaryAcs));
 
         return candidate;
     }
