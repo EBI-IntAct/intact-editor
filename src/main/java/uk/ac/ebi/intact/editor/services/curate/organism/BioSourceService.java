@@ -200,8 +200,8 @@ public class BioSourceService extends AbstractEditorService {
 
         Query jpaQuery = getIntactDao().getEntityManager()
                 .createQuery("select b from IntactOrganism b " +
-                        "where lower(b.commonName) like lower(:commonName) or " +
-                        "lower(b.scientificName) like lower(:scientificName) or " +
+                        "where lower(b.commonName) like lower(cast(:commonName) as text) or " +
+                        "lower(b.scientificName) like lower(cast(:scientificName) as text) or " +
                         "b.dbTaxid = :taxId");
         jpaQuery.setParameter("commonName", query+"%");
         jpaQuery.setParameter("scientificName", query+"%");
@@ -221,8 +221,8 @@ public class BioSourceService extends AbstractEditorService {
 
         Query jpaQuery = getIntactDao().getEntityManager()
                 .createQuery("select b from IntactOrganism b " +
-                        "where (lower(b.commonName) like lower(:commonName) or " +
-                        "lower(b.scientificName) like lower(:scientificName) or " +
+                        "where (lower(b.commonName) like lower(cast(:commonName) as text) or " +
+                        "lower(b.scientificName) like lower(cast(:scientificName) as text) or " +
                         "b.dbTaxid = :taxId) and b.cellType is null and b.tissue is null");
         jpaQuery.setParameter("commonName", query+"%");
         jpaQuery.setParameter("scientificName", query+"%");
