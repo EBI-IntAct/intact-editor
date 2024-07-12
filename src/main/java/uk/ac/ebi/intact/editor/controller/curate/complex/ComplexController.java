@@ -671,6 +671,11 @@ public class ComplexController extends AnnotatedObjectController {
             goRef.setPubmed(this.newXrefPubmed);
             goRef.setEvidenceType(this.newXrefEvidenceCode);
             return goRef;
+        } else if (CvTermUtils.isCvTerm(db, ComplexHumapXref.HUMAP_DATABASE_MI, ComplexHumapXref.HUMAP_DATABASE)) {
+            ComplexHumapXref humapRef = new ComplexHumapXref(getCvService().findCvObject(IntactUtils.DATABASE_OBJCLASS, ComplexHumapXref.HUMAP_DATABASE_MI), id, version, qualifier);
+            humapRef.setSecondaryId(secondaryId);
+            humapRef.setEvidenceType(this.newXrefEvidenceCode);
+            return humapRef;
         } else {
             InteractorXref ref = new InteractorXref(db, id, version, qualifier);
             ref.setSecondaryId(secondaryId);
@@ -782,6 +787,11 @@ public class ComplexController extends AnnotatedObjectController {
     public boolean isComplexGoRef(Xref ref) {
         return ref instanceof ComplexGOXref;
     }
+
+    public boolean isHumapGoRef(Xref ref) {
+        return ref instanceof ComplexHumapXref;
+    }
+
 
     @Override
     public List<Xref> collectXrefs() {

@@ -113,14 +113,18 @@ public class ComplexCloner extends AbstractEditorCloner<Complex, IntactComplex> 
         for (Xref ref : evidence.getXrefs()){
             if (!XrefUtils.isXrefFromDatabase(ref, Xref.IMEX_MI, Xref.IMEX)
                     && !XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY)){
-                if (ref instanceof ComplexGOXref){
+                if (ref instanceof ComplexGOXref) {
                     ComplexGOXref intactRef = new ComplexGOXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
                     intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
                     intactRef.setPubmed(((ComplexGOXref)ref).getPubmed());
                     intactRef.setEvidenceType(((ComplexGOXref)ref).getEvidenceType());
                     clone.getXrefs().add(intactRef);
-                }
-                else{
+                } else if (ref instanceof ComplexHumapXref) {
+                    ComplexHumapXref intactRef = new ComplexHumapXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+                    intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                    intactRef.setEvidenceType(((ComplexHumapXref)ref).getEvidenceType());
+                    clone.getXrefs().add(intactRef);
+                } else {
                     AbstractIntactXref intactRef = new InteractorXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
                     if (ref instanceof AbstractIntactXref){
                         intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
@@ -181,14 +185,18 @@ public class ComplexCloner extends AbstractEditorCloner<Complex, IntactComplex> 
             if (!XrefUtils.isXrefFromDatabase(ref, Xref.IMEX_MI, Xref.IMEX)
                     && !XrefUtils.doesXrefHaveQualifier(ref, Xref.PRIMARY_MI, Xref.PRIMARY)
                     && !XrefUtils.doesXrefHaveQualifier(ref, Xref.COMPLEX_PRIMARY_MI, Xref.COMPLEX_PRIMARY)){
-                if (ref instanceof ComplexGOXref){
+                if (ref instanceof ComplexGOXref) {
                     ComplexGOXref intactRef = new ComplexGOXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
                     intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
                     intactRef.setPubmed(((ComplexGOXref)ref).getPubmed());
                     intactRef.setEvidenceType(((ComplexGOXref)ref).getEvidenceType());
                     clone.getXrefs().add(intactRef);
-                }
-                else{
+                } else if (ref instanceof ComplexHumapXref) {
+                    ComplexHumapXref intactRef = new ComplexHumapXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
+                    intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());
+                    intactRef.setEvidenceType(((ComplexHumapXref) ref).getEvidenceType());
+                    clone.getXrefs().add(intactRef);
+                } else {
                     AbstractIntactXref intactRef = new InteractorXref(ref.getDatabase(), ref.getId(), ref.getVersion(), ref.getQualifier());
                     if (ref instanceof AbstractIntactXref){
                         intactRef.setSecondaryId(((AbstractIntactXref) ref).getSecondaryId());

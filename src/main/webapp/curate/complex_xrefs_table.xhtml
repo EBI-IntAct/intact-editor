@@ -98,7 +98,8 @@
                         </f:facet>
                         <h:selectOneMenu id="databaseSel" value="#{xref.database}" required="true"
                                          requiredMessage="Database for xref is required" disabled="#{annotatedObjectController.isXrefDisabled()
-                                 or annotatedObjectController.isXrefNotEditable(xref) or complexController.isComplexGoRef(xref)}"
+                                 or annotatedObjectController.isXrefNotEditable(xref) or complexController.isComplexGoRef(xref)}
+                                 or complexController.isHumapGoRef(xref)}"
                                          converter="cvObjectConverter">
                             <f:selectItems value="#{cvObjectService.databaseSelectItems}"/>
                             <ed:curation/>
@@ -202,11 +203,11 @@
                         <h:selectOneMenu id="evidenceCodeSel" value="#{xref.evidenceType}"
                                          converter="cvObjectConverter" disabled="#{annotatedObjectController.isXrefDisabled()
                                  or annotatedObjectController.isXrefNotEditable(xref) or complexController.isXrefNotEditable(xref)}"
-                                         rendered="#{complexController.isComplexGoRef(xref)}">
+                                         rendered="#{complexController.isComplexGoRef(xref) or complexController.isHumapGoRef(xref)}">
                             <f:selectItems value="#{cvObjectService.evidenceTypeSelectItems}"/>
                             <ed:curation/>
                         </h:selectOneMenu>
-                        <h:outputText value="-" rendered="#{!complexController.isComplexGoRef(xref)}"/>
+                        <h:outputText value="-" rendered="#{!complexController.isComplexGoRef(xref) or complexController.isHumapGoRef(xref)}"/>
                     </p:column>
                     <p:column>
                         <f:facet name="header">
