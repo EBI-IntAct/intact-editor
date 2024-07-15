@@ -147,10 +147,11 @@ public class EditorSynchronizerContext implements SynchronizerContext {
     private ParticipantSynchronizer<ModelledParticipant, IntactModelledParticipant> modelledParticipantSynchronizer;
     private ParticipantSynchronizer<ParticipantEvidence, IntactParticipantEvidence> participantEvidenceSynchronizer;
 
-    // complex xref synchronizers
+    // complex xref synchronizer
     private XrefSynchronizer<InteractorXref> complexXrefSynchronizer;
+
+    // complex xref synchronizer
     private XrefSynchronizer<InteractorXref> complexGOXrefSynchronizer;
-    private XrefSynchronizer<InteractorXref> complexHumapXrefSynchronizer;
 
     // db info snchronizer
     private IntactDbSynchronizer<DbInfo,DbInfo> dbInfoSynchronizer;
@@ -951,15 +952,6 @@ public class EditorSynchronizerContext implements SynchronizerContext {
     }
 
     @Override
-    public XrefSynchronizer<InteractorXref> getComplexHumapXrefSynchronizer() {
-        if (this.complexHumapXrefSynchronizer == null){
-            this.complexHumapXrefSynchronizer = new ComplexXrefSynchronizerTemplate(this,ComplexHumapXref.class);
-            this.complexHumapXrefSynchronizer.setListener(listener);
-        }
-        return complexHumapXrefSynchronizer;
-    }
-
-    @Override
     public IntactDbSynchronizer<DbInfo, DbInfo> getDbInfoSynchronizer() {
         if (this.dbInfoSynchronizer == null){
             this.dbInfoSynchronizer = new DbInfoSynchronizer(this);
@@ -1026,7 +1018,6 @@ public class EditorSynchronizerContext implements SynchronizerContext {
         initListener(this.xrefSynchronizer);
         initListener(this.complexXrefSynchronizer);
         initListener(this.complexGOXrefSynchronizer);
-        initListener(this.complexHumapXrefSynchronizer);
         initListener(this.cooperativeEffectSynchronizer);
         initListener(this.preAssemblySynchronizer);
         initListener(this.allosterySynchronizer);
@@ -1093,7 +1084,6 @@ public class EditorSynchronizerContext implements SynchronizerContext {
         clearCache(this.xrefSynchronizer);
         clearCache(this.complexXrefSynchronizer);
         clearCache(this.complexGOXrefSynchronizer);
-        clearCache(this.complexHumapXrefSynchronizer);
         clearCache(this.cooperativeEffectSynchronizer);
         clearCache(this.preAssemblySynchronizer);
         clearCache(this.allosterySynchronizer);
