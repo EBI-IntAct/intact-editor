@@ -462,6 +462,17 @@ public class EditorObjectService extends AbstractEditorService {
     }
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public void markAsCurationInProgressFromReadyToRelease(Releasable releasable, User user, boolean isReadyForReleased) {
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
+
+            if (isReadyForReleased) {
+                lifecycleManager.getReadyForReleaseStatus().startCuration(releasable, user);
+            }
+        }
+    }
+
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void markAsReadyForChecking(Releasable releasable, User user, String reasonForReadyForChecking) {
         if (releasable != null) {
             detachObject((IntactPrimaryObject) releasable);

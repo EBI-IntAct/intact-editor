@@ -910,6 +910,20 @@ public class ComplexController extends AnnotatedObjectController {
         }
     }
 
+    public void curatePredictedComplex(ActionEvent evt) {
+        try {
+            getEditorService().claimOwnership(complex, getCurrentUser(), false);
+            getEditorService().markAsCurationInProgressFromReadyToRelease(complex, getCurrentUser(), isReadyForRelease());
+            complex.setPredictedComplex(false);
+
+            addInfoMessage("Manually curated complex", "Complex is now being manually curated");
+            addInfoMessage("Claimed complex ownership", "You are now the owner of this complex");
+            addInfoMessage("Curation started", "Curation is now in progress");
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot start curation of complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        }
+    }
+
     public void markAsAssignedToMe(ActionEvent evt) {
         try {
             getEditorService().markAsAssignedToMe(complex, getCurrentUser());

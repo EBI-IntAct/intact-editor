@@ -125,6 +125,9 @@
             </ui:include>
         </p:submenu>
         <p:menuitem value="Claim ownership" actionListener="#{complexController.claimOwnership}" ajax="false"/>
+        <p:menuitem value="Curate predicted complex"
+                    rendered="#{complexController.complex.predictedComplex}"
+                    actionListener="#{complexController.curatePredictedComplex}" ajax="false"/>
     </ui:define>
 
     <ui:define name="curateContent">
