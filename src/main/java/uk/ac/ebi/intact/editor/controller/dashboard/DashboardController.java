@@ -30,6 +30,9 @@ import uk.ac.ebi.intact.jami.model.user.Role;
 import javax.annotation.Resource;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ComponentSystemEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Bruno Aranda (baranda@ebi.ac.uk)
@@ -38,8 +41,8 @@ import javax.faces.event.ComponentSystemEvent;
 @Controller
 @Scope( "session" )
 public class DashboardController extends BaseController {
-    public static final String[] DEFAULT_STATUS_SHOWN = new String[]{"new", "curation in progress", "ready for checking"};
-    public static final String[] DEFAULT_COMPLEXES_SHOWN = new String[]{"curated"};
+    public static final List<String> DEFAULT_STATUS_SHOWN = List.of("new", "curation in progress", "ready for checking");
+    public static final List<String> DEFAULT_COMPLEX_TYPES_SHOWN = List.of("curated");
     private LazyDataModel<PublicationSummary> allPublications;
     private LazyDataModel<PublicationSummary> ownedByUser;
     private LazyDataModel<PublicationSummary> reviewedByUser;
@@ -48,8 +51,9 @@ public class DashboardController extends BaseController {
     private LazyDataModel<ComplexSummary> complexesReviewedByUser;
 
     private boolean hideAcceptedAndReleased;
-    private String[] statusToShow;
-    private String[] complexesToShow;
+    private List<String> publicationStatusToShow;
+    private List<String> complexStatusToShow;
+    private List<String> complexTypesToShow;
 
     private boolean isPublicationTableEnabled = false;
     private boolean isComplexTableEnabled = false;
@@ -63,8 +67,9 @@ public class DashboardController extends BaseController {
     public DashboardController() {
         hideAcceptedAndReleased = true;
 
-        statusToShow = DEFAULT_STATUS_SHOWN;
-        complexesToShow = DEFAULT_COMPLEXES_SHOWN;
+        publicationStatusToShow = DEFAULT_STATUS_SHOWN;
+        complexStatusToShow = DEFAULT_STATUS_SHOWN;
+        complexTypesToShow = DEFAULT_COMPLEX_TYPES_SHOWN;
     }
 
     public void loadData( ComponentSystemEvent event ) {
@@ -86,23 +91,22 @@ public class DashboardController extends BaseController {
     }
 
     public void refreshAllTables() {
+        this.refreshPublicationsTable();
+        this.refreshComplexesTable();
+    }
+
+    public void refreshPublicationsTable() {
         final String userId = userSessionController.getCurrentUser().getLogin().toUpperCase();
 
         if (isPublicationTableEnabled){
-            String additionalSql = getStatusToShowSql();
+            String additionalSql = getStatusToShowSql(publicationStatusToShow, DEFAULT_STATUS_SHOWN);
             allPublications = getQueryService().loadAllPublications(additionalSql);
             ownedByUser = getQueryService().loadPublicationsOwnedBy(userId, additionalSql);
             reviewedByUser = getQueryService().loadPublicationsReviewedBy(userId, additionalSql);
         }
-        if (isComplexTableEnabled){
-            String additionalSql = getAdditionalSqlForComplexes();
-            allComplexes = getQueryService().loadAllComplexes(additionalSql);
-            complexesOwnedByUser = getQueryService().loadComplexesOwnedBy(userId, additionalSql);
-            complexesReviewedByUser = getQueryService().loadComplexesReviewedBy(userId, additionalSql);
-        }
     }
 
-    public void refreshComplexesTables() {
+    public void refreshComplexesTable() {
         final String userId = userSessionController.getCurrentUser().getLogin().toUpperCase();
 
         if (isComplexTableEnabled){
@@ -133,20 +137,36 @@ public class DashboardController extends BaseController {
         this.hideAcceptedAndReleased = hideAcceptedAndReleased;
     }
 
-    public String[] getStatusToShow() {
-        return statusToShow;
+    public String[] getPublicationStatusToShow() {
+        return publicationStatusToShow.toArray(new String[0]);
     }
 
-    public void setStatusToShow(String[] statusToShow) {
-        this.statusToShow = statusToShow;
+    public void setPublicationStatusToShow(String[] publicationStatusToShow) {
+        this.publicationStatusToShow = Arrays.asList(publicationStatusToShow);
     }
 
-    public String[] getComplexesToShow() {
-        return complexesToShow;
+    public String[] getComplexStatusToShow() {
+        return complexStatusToShow.toArray(new String[0]);
     }
 
-    public void setComplexesToShow(String[] complexesToShow) {
-        this.complexesToShow = complexesToShow;
+    public void setComplexStatusToShow(String[] complexStatusToShow) {
+        this.complexStatusToShow = Arrays.asList(complexStatusToShow);
+    }
+
+    public String[] getComplexTypesToShow() {
+        return complexTypesToShow.toArray(new String[0]);
+    }
+
+    public void setComplexTypesToShow(String[] complexTypesToShow) {
+        this.complexTypesToShow = Arrays.asList(complexTypesToShow);
+    }
+
+    public void onComplexTypeChange() {
+        if (this.complexTypesToShow.contains("curated")) {
+            this.complexStatusToShow = DEFAULT_STATUS_SHOWN;
+        } else if (this.complexTypesToShow.contains("predicted")) {
+            this.complexStatusToShow = List.of("ready for release");
+        }
     }
 
     public LazyDataModel<ComplexSummary> getAllComplexes() {
@@ -176,37 +196,37 @@ public class DashboardController extends BaseController {
         return queryService;
     }
 
-    private String getStatusToShowSql() {
-        if (statusToShow.length == 0) {
+    private String getStatusToShowSql(List<String> statusToShow, List<String> defaultStatus) {
+        if (statusToShow.isEmpty()) {
             addWarningMessage("No statuses selected", "Using default status selection");
-            statusToShow = DEFAULT_STATUS_SHOWN;
+            statusToShow = defaultStatus;
         }
 
         StringBuilder statusToShowSql = new StringBuilder();
 
-        for (int i=0; i<statusToShow.length; i++) {
+        for (int i=0; i<statusToShow.size(); i++) {
             if (i>0) {
                 statusToShowSql.append(" or");
             }
-            statusToShowSql.append(" p.cvStatus.shortName = '").append(statusToShow[i]).append("'");
+            statusToShowSql.append(" p.cvStatus.shortName = '").append(statusToShow.get(i)).append("'");
         }
 
         return statusToShowSql.toString();
     }
 
-    private String getComplexesToShowSql() {
-        if (complexesToShow.length == 0) {
+    private String getComplexTypesToShowSql() {
+        if (complexTypesToShow.isEmpty()) {
             addWarningMessage("No complex type selected", "Using default complex type selection");
-            complexesToShow = DEFAULT_COMPLEXES_SHOWN;
+            complexTypesToShow = DEFAULT_COMPLEX_TYPES_SHOWN;
         }
 
         StringBuilder complexesToShowSql = new StringBuilder();
 
-        for (int i=0; i<complexesToShow.length; i++) {
+        for (int i=0; i<complexTypesToShow.size(); i++) {
             if (i>0) {
                 complexesToShowSql.append(" or");
             }
-            if (complexesToShow[i].equals("predicted")) {
+            if (complexTypesToShow.get(i).equals("predicted")) {
                 complexesToShowSql.append(" p.predictedComplex is true");
             } else {
                 complexesToShowSql.append(" p.predictedComplex is false");
@@ -217,6 +237,11 @@ public class DashboardController extends BaseController {
     }
 
     private String getAdditionalSqlForComplexes() {
-        return "(" + getComplexesToShowSql() + ") and (" + getStatusToShowSql() + ")";
+        String typeToShowSql = getComplexTypesToShowSql();
+        List<String> defaultComplexStatus = DEFAULT_STATUS_SHOWN;
+        if (!complexTypesToShow.contains("curated") && complexTypesToShow.contains("predicted")) {
+            defaultComplexStatus = List.of("predicted");
+        }
+        return "(" + typeToShowSql + ") and (" + getStatusToShowSql(complexStatusToShow, defaultComplexStatus) + ")";
     }
 }

@@ -45,8 +45,8 @@
 
             <p>
                 <h:panelGrid columns="3">
-                    <h:outputLabel for="selStatus" value="Show status:" escape="false"/>
-                    <h:selectManyCheckbox id="selStatus" value="#{dashboardController.statusToShow}">
+                    <h:outputLabel for="selPublicationStatus" value="Show publications:" escape="false"/>
+                    <h:selectManyCheckbox id="selPublicationStatus" value="#{dashboardController.publicationStatusToShow}">
                         <f:selectItem itemLabel="New" itemValue="new"/>
                         <f:selectItem itemLabel="Curation in progress" itemValue="curation in progress"/>
                         <f:selectItem itemLabel="Ready for checking" itemValue="ready for checking"/>
@@ -55,7 +55,7 @@
                         <f:selectItem itemLabel="Released" itemValue="released"/>
                     </h:selectManyCheckbox>
                     <p:commandButton value="Refresh" onclick="refresh_dashboard.show()"
-                                     actionListener="#{dashboardController.refreshAllTables()}"
+                                     actionListener="#{dashboardController.refreshPublicationsTable()}"
                                      ajax="false"/>
                 </h:panelGrid>
             </p>
@@ -93,14 +93,27 @@
             </p:tabView>
 
             <p>
-                <h:panelGrid columns="3" rendered="#{dashboardController.complexTableEnabled}">
+                <h:panelGrid columns="3">
                     <h:outputLabel for="selComplexType" value="Show complexes:" escape="false"/>
-                    <h:selectManyCheckbox id="selComplexType" value="#{dashboardController.complexesToShow}">
+                    <h:selectManyCheckbox id="selComplexType" value="#{dashboardController.complexTypesToShow}">
                         <f:selectItem itemLabel="Manually Curated" itemValue="curated"/>
                         <f:selectItem itemLabel="Predicted" itemValue="predicted"/>
+                        <p:ajax update="selComplexStatus" listener="#{dashboardController.onComplexTypeChange}" />
+                    </h:selectManyCheckbox>
+                </h:panelGrid>
+            </p>
+            <p>
+                <h:panelGrid columns="3">
+                    <h:selectManyCheckbox id="selComplexStatus" value="#{dashboardController.complexStatusToShow}">
+                        <f:selectItem itemLabel="New" itemValue="new"/>
+                        <f:selectItem itemLabel="Curation in progress" itemValue="curation in progress"/>
+                        <f:selectItem itemLabel="Ready for checking" itemValue="ready for checking"/>
+                        <f:selectItem itemLabel="Accepted on hold" itemValue="accepted on hold"/>
+                        <f:selectItem itemLabel="Ready for release" itemValue="ready for release"/>
+                        <f:selectItem itemLabel="Released" itemValue="released"/>
                     </h:selectManyCheckbox>
                     <p:commandButton value="Refresh" onclick="refresh_dashboard.show()"
-                                     actionListener="#{dashboardController.refreshComplexesTables()}"
+                                     actionListener="#{dashboardController.refreshComplexesTable()}"
                                      ajax="false"/>
                 </h:panelGrid>
             </p>
