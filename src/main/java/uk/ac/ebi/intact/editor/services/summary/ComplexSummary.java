@@ -44,6 +44,13 @@ public class ComplexSummary implements Serializable{
         return name;
     }
 
+    public String getNameTruncated() {
+        if (name != null && name.length() > 200) {
+            return name.substring(0, 200) + "...";
+        }
+        return name;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
