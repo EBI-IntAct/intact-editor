@@ -24,7 +24,9 @@ import uk.ac.ebi.intact.editor.controller.UserSessionController;
 import uk.ac.ebi.intact.editor.services.dashboard.DashboardQueryService;
 import uk.ac.ebi.intact.editor.services.summary.ComplexSummary;
 import uk.ac.ebi.intact.editor.services.summary.PublicationSummary;
+import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
 import uk.ac.ebi.intact.jami.ApplicationContextProvider;
+import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleStatus;
 import uk.ac.ebi.intact.jami.model.user.Role;
 
 import javax.annotation.Resource;
@@ -41,7 +43,10 @@ import java.util.List;
 @Controller
 @Scope( "session" )
 public class DashboardController extends BaseController {
-    public static final List<String> DEFAULT_STATUS_SHOWN = List.of("new", "curation in progress", "ready for checking");
+    public static final List<String> DEFAULT_STATUS_SHOWN = List.of(
+            LifeCycleStatus.NEW.shortLabel(),
+            LifeCycleStatus.CURATION_IN_PROGRESS.shortLabel(),
+            LifeCycleStatus.READY_FOR_CHECKING.shortLabel());
     public static final List<String> DEFAULT_COMPLEX_TYPES_SHOWN = List.of("curated");
     private LazyDataModel<PublicationSummary> allPublications;
     private LazyDataModel<PublicationSummary> ownedByUser;
@@ -165,7 +170,7 @@ public class DashboardController extends BaseController {
         if (this.complexTypesToShow.contains("curated")) {
             this.complexStatusToShow = DEFAULT_STATUS_SHOWN;
         } else if (this.complexTypesToShow.contains("predicted")) {
-            this.complexStatusToShow = List.of("ready for release");
+            this.complexStatusToShow = List.of(LifeCycleStatus.READY_FOR_RELEASE.shortLabel());
         }
     }
 
@@ -229,7 +234,7 @@ public class DashboardController extends BaseController {
             if (complexTypesToShow.get(i).equals("predicted")) {
                 complexesToShowSql.append(" p.predictedComplex is true");
             } else {
-                complexesToShowSql.append(" p.predictedComplex is false");
+                complexesToShowSql.append(" p.predictedComplex is false or p.predictedComplex is null");
             }
         }
 
@@ -240,7 +245,7 @@ public class DashboardController extends BaseController {
         String typeToShowSql = getComplexTypesToShowSql();
         List<String> defaultComplexStatus = DEFAULT_STATUS_SHOWN;
         if (!complexTypesToShow.contains("curated") && complexTypesToShow.contains("predicted")) {
-            defaultComplexStatus = List.of("predicted");
+            defaultComplexStatus = List.of(LifeCycleStatus.READY_FOR_RELEASE.shortLabel());
         }
         return "(" + typeToShowSql + ") and (" + getStatusToShowSql(complexStatusToShow, defaultComplexStatus) + ")";
     }
