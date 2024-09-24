@@ -13,6 +13,7 @@ import java.io.Serializable;
 public class ComplexSummary implements Serializable{
     private String rowStyle;
     private String ac;
+    private String complexAc;
     private String name;
     private String caution;
     private String internalRemark;
@@ -38,6 +39,14 @@ public class ComplexSummary implements Serializable{
 
     public void setAc(String ac) {
         this.ac = ac;
+    }
+
+    public String getComplexAc() {
+        return complexAc;
+    }
+
+    public void setComplexAc(String complexAc) {
+        this.complexAc = complexAc;
     }
 
     public String getName() {
