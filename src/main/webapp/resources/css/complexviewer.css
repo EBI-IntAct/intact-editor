@@ -1,0 +1,30 @@
+.innerMiddleDiv {
+    flex: auto;
+    display: flex;
+}
+
+.networkContainerDiv {
+    min-height: 600px;
+    width: 75%;
+}
+
+#networkContainer {
+    flex: auto;
+    display: flex;
+    min-height: 600px;
+    min-width: 0;
+}
+
+.complexViewerSVG {
+    flex: auto;
+    min-height: 0;
+    min-width: 0;
+}
+
+.legend {
+    border: 1px solid gray;
+    padding: 5px;
+    margin: 5px;
+    width: fit-content;
+    height: fit-content;
+}

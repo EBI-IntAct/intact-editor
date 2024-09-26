@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+        xmlns="http://www.w3.org/2000/svg"
+        version="1.1"
+        width="31.1875"
+        height="31.1875"
+        id="svg3391">
+    <defs
+            id="defs3393"/>
+    <metadata
+            id="metadata3396">
+    </metadata>
+    <g
+            transform="translate(-75.83482,-839.62558)"
+            id="layer1">
+        <g
+                transform="translate(-333.02968,392.69634)"
+                id="g3537"
+                style="display:block">
+            <polygon
+                    points="0,-5 10,-10 0,10 -10,-10 "
+                    transform="translate(424.45825,462.52299)"
+                    id="polygon39"
+                    style="fill:none;stroke:#ffff99;stroke-width:5;stroke-opacity:0"/>
+            <polygon
+                    points="0,-5 10,-10 0,10 -10,-10 "
+                    transform="translate(424.45825,462.52299)"
+                    id="polygon43"
+                    style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-opacity:1"/>
+        </g>
+    </g>
+</svg>
