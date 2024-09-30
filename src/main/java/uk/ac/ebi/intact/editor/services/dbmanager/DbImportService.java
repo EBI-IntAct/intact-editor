@@ -20,8 +20,8 @@ public class DbImportService extends AbstractEditorService {
     public void acceptImport(String importId){
         if (importId != null && importId.length() > 0){
             // first delete features imported
-            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_annotation where ac in ( " +
-                    "select distinct a.ac from ia_annotation a, ia_controlledvocab cv where a.topic_ac = cv.ac and cv.shortlabel = :remark and a.description = :jobId " +
+            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_annotation where ac in ( " +
+                    "select distinct a.ac from intact.ia_annotation a, intact.ia_controlledvocab cv where a.topic_ac = cv.ac and cv.shortlabel = :remark and a.description = :jobId " +
                     ")")
                     .setParameter("remark", "remark-internal")
                     .setParameter("jobId", importId)
@@ -36,8 +36,8 @@ public class DbImportService extends AbstractEditorService {
         if (importId != null && importId.length() > 0){
 
             // first delete features imported
-            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_feature where ac in ( " +
-                    "select distinct f.ac from ia_feature f, ia_feature2annot fa, ia_annotation a, ia_controlledvocab cv " +
+            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_feature where ac in ( " +
+                    "select distinct f.ac from intact.ia_feature f, intact.ia_feature2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.feature_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId" +
                     " )")
@@ -54,8 +54,8 @@ public class DbImportService extends AbstractEditorService {
         if (importId != null && importId.length() > 0){
 
             // then delete participants imported
-            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_component where ac in ( " +
-                    "select distinct f.ac from ia_component f, ia_component2annot fa, ia_annotation a, ia_controlledvocab cv " +
+            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_component where ac in ( " +
+                    "select distinct f.ac from intact.ia_component f, intact.ia_component2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.component_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId" +
                     " )")
@@ -72,8 +72,8 @@ public class DbImportService extends AbstractEditorService {
         if (importId != null && importId.length() > 0){
 
             // then delete interactions imported
-            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_interactor where ac in ( " +
-                    "select distinct f.ac from ia_interactor f, ia_int2annot fa, ia_annotation a, ia_controlledvocab cv " +
+            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_interactor where ac in ( " +
+                    "select distinct f.ac from intact.ia_interactor f, intact.ia_int2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.interactor_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId" +
                     " )")
@@ -90,8 +90,8 @@ public class DbImportService extends AbstractEditorService {
         if (importId != null && importId.length() > 0){
 
             // then delete experiments imported
-            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_experiment where ac in ( " +
-                    "select distinct f.ac from ia_experiment f, ia_exp2annot fa, ia_annotation a, ia_controlledvocab cv " +
+            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_experiment where ac in ( " +
+                    "select distinct f.ac from intact.ia_experiment f, intact.ia_exp2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.experiment_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId" +
                     " )")
@@ -108,8 +108,8 @@ public class DbImportService extends AbstractEditorService {
         if (importId != null && importId.length() > 0){
 
             // then delete publications imported
-            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_publication where ac in ( " +
-                    "select distinct f.ac from ia_publication f, ia_pub2annot fa, ia_annotation a, ia_controlledvocab cv " +
+            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_publication where ac in ( " +
+                    "select distinct f.ac from intact.ia_publication f, intact.ia_pub2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.publication_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId" +
                     " )")
@@ -126,8 +126,8 @@ public class DbImportService extends AbstractEditorService {
         if (importId != null && importId.length() > 0){
 
             // then delete organisms imported
-            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_biosource where ac in ( " +
-                    "select distinct f.ac from ia_biosource f, ia_biosource_alias a, ia_controlledvocab cv " +
+            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_biosource where ac in ( " +
+                    "select distinct f.ac from intact.ia_biosource f, intact.ia_biosource_alias a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.aliastype_ac and a.parent_ac = f.ac and " +
                     "cv.shortlabel = :synonym and a.name = :jobId" +
                     " )")
@@ -144,8 +144,8 @@ public class DbImportService extends AbstractEditorService {
         if (importId != null && importId.length() > 0){
 
             // then delete source imported
-            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_institution where ac in ( " +
-                    "select distinct f.ac from ia_institution f, ia_institution2annot fa, ia_annotation a, ia_controlledvocab cv " +
+            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_institution where ac in ( " +
+                    "select distinct f.ac from intact.ia_institution f, intact.ia_institution2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.institution_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId" +
                     " )")
@@ -162,8 +162,8 @@ public class DbImportService extends AbstractEditorService {
         if (importId != null && importId.length() > 0){
 
             // before deleting cvs, check all annotations used in this cv
-            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_annotation where topic_ac in ( " +
-                    "select distinct f.ac from ia_controlledvocab f, ia_cvobject2annot fa, ia_annotation a, ia_controlledvocab cv " +
+            int updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_annotation where topic_ac in ( " +
+                    "select distinct f.ac from intact.ia_controlledvocab f, intact.ia_cvobject2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.cvobject_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId " +
                     ")")
@@ -172,13 +172,13 @@ public class DbImportService extends AbstractEditorService {
                     .executeUpdate();
             log.info("Deleted annotations involving new cv "+updated);
 
-            updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_controlledvocab_xref where database_ac in ( " +
-                    "select distinct f.ac from ia_controlledvocab f, ia_cvobject2annot fa, ia_annotation a, ia_controlledvocab cv " +
+            updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_controlledvocab_xref where database_ac in ( " +
+                    "select distinct f.ac from intact.ia_controlledvocab f, intact.ia_cvobject2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.cvobject_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId " +
                     ") " +
                     " or qualifier_ac in ( " +
-                    "select distinct f.ac from ia_controlledvocab f, ia_cvobject2annot fa, ia_annotation a, ia_controlledvocab cv " +
+                    "select distinct f.ac from intact.ia_controlledvocab f, intact.ia_cvobject2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.cvobject_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId" +
                     " )")
@@ -187,8 +187,8 @@ public class DbImportService extends AbstractEditorService {
                     .executeUpdate();
             log.info("Deleted xrefs involving new cv "+updated);
 
-            updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_controlledvocab_alias where aliastype_ac in ( " +
-                    "select distinct f.ac from ia_controlledvocab f, ia_cvobject2annot fa, ia_annotation a, ia_controlledvocab cv " +
+            updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_controlledvocab_alias where aliastype_ac in ( " +
+                    "select distinct f.ac from intact.ia_controlledvocab f, intact.ia_cvobject2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.cvobject_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId " +
                     ")")
@@ -198,8 +198,8 @@ public class DbImportService extends AbstractEditorService {
             log.info("Deleted aliases involving new cv "+updated);
 
             // then delete cv imported
-            updated = getIntactDao().getEntityManager().createNativeQuery("delete from ia_controlledvocab where ac in ( " +
-                    "select distinct f.ac from ia_controlledvocab f, ia_cvobject2annot fa, ia_annotation a, ia_controlledvocab cv " +
+            updated = getIntactDao().getEntityManager().createNativeQuery("delete from intact.ia_controlledvocab where ac in ( " +
+                    "select distinct f.ac from intact.ia_controlledvocab f, intact.ia_cvobject2annot fa, intact.ia_annotation a, intact.ia_controlledvocab cv " +
                     "where cv.ac = a.topic_ac and a.ac = fa.annotation_ac and f.ac = fa.cvobject_ac and " +
                     "cv.shortlabel = :remark and a.description = :jobId" +
                     " )")

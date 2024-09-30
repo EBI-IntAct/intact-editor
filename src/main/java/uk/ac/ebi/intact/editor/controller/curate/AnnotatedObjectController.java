@@ -207,6 +207,10 @@ public abstract class AnnotatedObjectController extends BaseController implement
                 default:
                     break;
             }
+
+            if (complex.isPredictedComplex()) {
+                addInfoMessage("Predicted complex", "");
+            }
         }
     }
 

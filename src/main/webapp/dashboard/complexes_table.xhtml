@@ -18,9 +18,9 @@
 
         <p:ajax event="page" onstart="load_complex.show()" oncomplete="load_complex.hide()"/>
 
-        <p:column id="name" headerText="Name" sortBy="#{complex.name}">
+        <p:column id="name" headerText="Name" sortBy="#{complex.nameTruncated}">
             <ot:separateConversationContext>
-                <h:link outcome="/curate/complex" value="#{complex.name}" includeViewParams="true">
+                <h:link outcome="/curate/complex" value="#{complex.nameTruncated}" includeViewParams="true">
                     <f:param name="ac" value="#{complex.ac}"/>
                 </h:link>
             </ot:separateConversationContext>
@@ -30,6 +30,9 @@
                 <h:graphicImage alt="caution" library="images" name="warn.gif"
                                 title="#{complex.caution}"/>
             </h:panelGroup>
+        </p:column>
+        <p:column id="complex_ac" headerText="Complex AC" sortBy="#{complex.complexAc}">
+            <h:outputText value="#{complex.complexAc}"/>
         </p:column>
         <p:column id="ac" headerText="AC" sortBy="#{complex.ac}">
             <h:outputText value="#{complex.ac}"/>

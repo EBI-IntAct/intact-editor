@@ -158,6 +158,7 @@ public class ComplexSummaryService extends AbstractEditorService implements Inta
     private ComplexSummary createSummaryFrom(IntactComplex pub){
         ComplexSummary summary = new ComplexSummary();
         summary.setAc(pub.getAc());
+        summary.setComplexAc(pub.getComplexAc());
         summary.setName(extractName(pub));
         summary.setComplexType(pub.getInteractorType() != null ? pub.getInteractorType().getShortName() : "");
         summary.setInteractionType(pub.getInteractionType() != null ? pub.getInteractionType().getShortName() : "");

@@ -89,6 +89,7 @@ public class ComplexController extends AnnotatedObjectController {
     private final LifecycleEventListener lifecycleEventListener = new ComplexBCLifecycleEventListener();
     private IntactComplex complex;
     private String ac;
+    private String complexAc;
     private LinkedList<ParticipantWrapper> participantWrappers;
     @Autowired
     private UserSessionController userSessionController;
@@ -265,8 +266,9 @@ public class ComplexController extends AnnotatedObjectController {
                     //Bring complex by CPX or EBI
                     setComplex(getComplexEditorService().loadComplexByAcOrLatestCPXVersion(ac));
                 }
-            } else {
-                if (complex != null) ac = complex.getAc();
+            } else if (complex != null) {
+                ac = complex.getAc();
+                complexAc = complex.getComplexAc();
             }
 
             if (complex == null) {
@@ -410,6 +412,14 @@ public class ComplexController extends AnnotatedObjectController {
         this.ac = ac;
     }
 
+    public String getComplexAc() {
+        return complexAc;
+    }
+
+    public void setComplexAc(String complexAc) {
+        this.complexAc = complexAc;
+    }
+
     public void cloneParticipant(ParticipantWrapper participantWrapper) {
         ModelledParticipantCloner cloner = new ModelledParticipantCloner();
 
@@ -494,9 +504,11 @@ public class ComplexController extends AnnotatedObjectController {
         this.complex = complex;
         if (complex != null) {
             this.ac = complex.getAc();
+            this.complexAc = complex.getComplexAc();
             initialiseDefaultProperties(complex);
         } else {
             this.ac = null;
+            this.complexAc = null;
         }
     }
 
@@ -907,6 +919,20 @@ public class ComplexController extends AnnotatedObjectController {
             addInfoMessage("Claimed complex ownership", "You are now the owner of this complex");
         } catch (IllegalTransitionException e) {
             addErrorMessage("Cannot claim ownership: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        }
+    }
+
+    public void curatePredictedComplex(ActionEvent evt) {
+        try {
+            getEditorService().claimOwnership(complex, getCurrentUser(), false);
+            getEditorService().markAsCurationInProgressFromReadyToRelease(complex, getCurrentUser(), isReadyForRelease());
+            complex.setPredictedComplex(false);
+
+            addInfoMessage("Manually curated complex", "Complex is now being manually curated");
+            addInfoMessage("Claimed complex ownership", "You are now the owner of this complex");
+            addInfoMessage("Curation started", "Curation is now in progress");
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot start curation of complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 

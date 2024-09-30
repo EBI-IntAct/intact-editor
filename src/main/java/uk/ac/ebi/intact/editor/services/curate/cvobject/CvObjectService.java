@@ -134,9 +134,9 @@ public class CvObjectService extends AbstractEditorService {
 
         synchronized (this){
             String cvQuery = "select c from IntactCvTerm c " +
-                    "where c.ac not in (" +
-                    " select c2.ac from IntactCvTerm c2 join c2.dbAnnotations as a join a.topic as t " +
-                    "where t.shortName = :hidden)";
+                    "where not exists (" +
+                    " select c2 from IntactCvTerm c2 join c2.dbAnnotations as a join a.topic as t " +
+                    "where c2.ac = c.ac and t.shortName = :hidden)";
             Query query = getIntactDao().getEntityManager().createQuery(cvQuery);
             query.setParameter("hidden","hidden");
 

@@ -10,6 +10,7 @@ import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 import uk.ac.ebi.intact.jami.context.IntactConfiguration;
 import uk.ac.ebi.intact.jami.model.extension.AbstractIntactFeature;
 import uk.ac.ebi.intact.jami.model.extension.AbstractIntactParticipant;
+import uk.ac.ebi.intact.jami.model.extension.IntactComplex;
 import uk.ac.ebi.intact.jami.model.extension.IntactInteractor;
 import uk.ac.ebi.intact.jami.model.extension.IntactStoichiometry;
 
@@ -44,35 +45,42 @@ public class ParticipantWrapper {
         this.interactorIdentity = initialiseInteractorIdentity(interactor);
     }
 
-    private String initialiseInteractorIdentity(Interactor interactor) {
+    private String initialiseInteractorIdentity(IntactInteractor interactor) {
         // build list of identifiers
-        StringBuilder sb = new StringBuilder(64);
+        List<String> ids = new ArrayList<>();
         if (interactor instanceof InteractorPool){
-            Iterator<Interactor> memberIterator = ((InteractorPool)interactor).iterator();
-            while (memberIterator.hasNext()){
-                sb.append( initialiseInteractorIdentity(memberIterator.next()));
-                if( memberIterator.hasNext() ) {
-                    sb.append( "|" );
-                }
+            for (Interactor value : (InteractorPool) interactor) {
+                ids.add(initialiseInteractorIdentity((IntactInteractor) value));
+            }
+        } else if (interactor instanceof IntactComplex) {
+            final Collection<Xref> complexIdentities = XrefUtils.collectAllXrefsHavingQualifier(
+                    interactor.getIdentifiers(), Xref.COMPLEX_PRIMARY_MI, Xref.COMPLEX_PRIMARY);
+            ids.add(getIdentityFromIdentifiers(complexIdentities));
+        }
+        if (ids.isEmpty()) {
+            final Collection<Xref> identities = XrefUtils.collectAllXrefsHavingQualifier(
+                    interactor.getIdentifiers(), Xref.IDENTITY_MI, Xref.IDENTITY);
+            ids.add(getIdentityFromIdentifiers(identities));
+        }
+        return String.join("|", ids);
+    }
+
+    private String getIdentityFromIdentifiers(Collection<Xref> identities) {
+        StringBuilder sb = new StringBuilder(64);
+        Iterator<Xref> refIterator = identities.iterator();
+        // filter first intact acs
+        IntactConfiguration intactConfig = ApplicationContextProvider.getBean("intactJamiConfiguration");
+        while (refIterator.hasNext()) {
+            if (XrefUtils.isXrefFromDatabase(refIterator.next(),
+                    intactConfig.getDefaultInstitution().getMIIdentifier(), intactConfig.getDefaultInstitution().getShortName())) {
+                refIterator.remove();
             }
         }
-        else{
-            final Collection<Xref> identities = XrefUtils.collectAllXrefsHavingQualifier(interactor.getIdentifiers(), Xref.IDENTITY_MI, Xref.IDENTITY);
-            Iterator<Xref> refIterator = identities.iterator();
-            // filter first intact acs
-            IntactConfiguration intactConfig = ApplicationContextProvider.getBean("intactJamiConfiguration");
-            while(refIterator.hasNext()){
-                if (XrefUtils.isXrefFromDatabase(refIterator.next(),
-                        intactConfig.getDefaultInstitution().getMIIdentifier(), intactConfig.getDefaultInstitution().getShortName())){
-                    refIterator.remove();
-                }
-            }
-            for ( Iterator<Xref> iterator = identities.iterator(); iterator.hasNext(); ) {
-                Xref xref = iterator.next();
-                sb.append( xref.getId() );
-                if( iterator.hasNext() ) {
-                    sb.append( "|" );
-                }
+        for (Iterator<Xref> iterator = identities.iterator(); iterator.hasNext(); ) {
+            Xref xref = iterator.next();
+            sb.append(xref.getId());
+            if (iterator.hasNext()) {
+                sb.append("|");
             }
         }
         return sb.toString();
