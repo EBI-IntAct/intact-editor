@@ -62,6 +62,11 @@
                      and userSessionController.isItMe(complexController.complex.currentReviewer)}"
                          actionListener="#{complexController.revertAccepted}"
                          action="#{complexController.doSave}" ajax="false"/>
+        <p:commandButton value="Back to Ready for checking"
+                         styleClass="important-button-alt"
+                         rendered="#{complexController.released and userSessionController.isItMe(complexController.complex.currentOwner)}"
+                         actionListener="#{complexController.revertReleasedToReadyForChecking}"
+                         action="#{complexController.doSave}" ajax="false"/>
         <p:commandButton value="Put on hold" type="button"
                          styleClass="important-button-bad"
                          rendered="#{(complexController.readyForRelease or complexController.released)
@@ -125,9 +130,6 @@
             </ui:include>
         </p:submenu>
         <p:menuitem value="Claim ownership" actionListener="#{complexController.claimOwnership}" ajax="false"/>
-<!--        <p:menuitem value="Curate predicted complex"-->
-<!--                    rendered="#{complexController.complex.predictedComplex}"-->
-<!--                    actionListener="#{complexController.curatePredictedComplex}" ajax="false"/>-->
     </ui:define>
 
     <ui:define name="curateContent">

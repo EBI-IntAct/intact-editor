@@ -462,17 +462,6 @@ public class EditorObjectService extends AbstractEditorService {
     }
 
     @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
-    public void markAsCurationInProgressFromReadyToRelease(Releasable releasable, User user, boolean isReadyForReleased) {
-        if (releasable != null) {
-            detachObject((IntactPrimaryObject) releasable);
-
-            if (isReadyForReleased) {
-                lifecycleManager.getReadyForReleaseStatus().startCuration(releasable, user);
-            }
-        }
-    }
-
-    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
     public void markAsReadyForChecking(Releasable releasable, User user, String reasonForReadyForChecking) {
         if (releasable != null) {
             detachObject((IntactPrimaryObject) releasable);
@@ -500,6 +489,19 @@ public class EditorObjectService extends AbstractEditorService {
             } else {
                 LifeCycleEvent acceptedEvt = ReleasableUtils.getLastEventOfType(releasable, LifeCycleEventType.ACCEPTED);
                 releasable.getLifecycleEvents().remove(acceptedEvt);
+                releasable.setStatus(LifeCycleStatus.READY_FOR_CHECKING);
+            }
+        }
+    }
+
+    @Transactional(value = "jamiTransactionManager", readOnly = true, propagation = Propagation.REQUIRED)
+    public void revertReleasedToReadyForChecking(Releasable releasable, User user, boolean isReleased) {
+        if (releasable != null) {
+            detachObject((IntactPrimaryObject) releasable);
+
+            if (isReleased) {
+                lifecycleManager.getReleasedStatus().revertToReadyForChecking(releasable, user);
+            } else {
                 releasable.setStatus(LifeCycleStatus.READY_FOR_CHECKING);
             }
         }

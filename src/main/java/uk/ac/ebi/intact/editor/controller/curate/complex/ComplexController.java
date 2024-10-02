@@ -84,6 +84,8 @@ import java.util.*;
 @ConversationName("general")
 public class ComplexController extends AnnotatedObjectController {
 
+    private static final Set<String> PREDICTED_COMPLEX_ECO_CODES = Set.of("ECO:0007653", "ECO:0008004");
+
     private static final Log log = LogFactory.getLog(ComplexController.class);
     private static final String NEW_COMPLEX_VERSION_CONSTANT = "Newer Version Created";
     private final LifecycleEventListener lifecycleEventListener = new ComplexBCLifecycleEventListener();
@@ -334,6 +336,19 @@ public class ComplexController extends AnnotatedObjectController {
                     addErrorMessage("Cannot save master protein " + transcript.toString(), e.getCause() + ": " + e.getMessage());
                 }
                 getChangesController().removeFromHiddenChanges(unsaved);
+            }
+        }
+
+        // When curating a predicted complex, the ECO code is updated to reflect the evidence type of the curation.
+        // Therefore, if the ECO code is no longer one of the predicted ECO codes, then the complex is no longer predicted.
+        if (complex != null && complex.isPredictedComplex() && complex.getEvidenceType() != null) {
+            Optional<Xref> ecoCodeXrefOp = complex.getEvidenceType().getIdentifiers().stream()
+                    .filter(id -> ModelledInteraction.ECO_MI.equals(id.getDatabase().getMIIdentifier()))
+                    .findFirst();
+            if (ecoCodeXrefOp.isPresent()) {
+                if (!PREDICTED_COMPLEX_ECO_CODES.contains(ecoCodeXrefOp.get().getId())) {
+                    complex.setPredictedComplex(false);
+                }
             }
         }
 
@@ -922,20 +937,6 @@ public class ComplexController extends AnnotatedObjectController {
         }
     }
 
-    public void curatePredictedComplex(ActionEvent evt) {
-        try {
-            getEditorService().claimOwnership(complex, getCurrentUser(), false);
-            getEditorService().markAsCurationInProgressFromReadyToRelease(complex, getCurrentUser(), isReadyForRelease());
-            complex.setPredictedComplex(false);
-
-            addInfoMessage("Manually curated complex", "Complex is now being manually curated");
-            addInfoMessage("Claimed complex ownership", "You are now the owner of this complex");
-            addInfoMessage("Curation started", "Curation is now in progress");
-        } catch (IllegalTransitionException e) {
-            addErrorMessage("Cannot start curation of complex: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
-        }
-    }
-
     public void markAsAssignedToMe(ActionEvent evt) {
         try {
             getEditorService().markAsAssignedToMe(complex, getCurrentUser());
@@ -992,6 +993,14 @@ public class ComplexController extends AnnotatedObjectController {
             getEditorService().revertAccepted(complex, getCurrentUser(), isReadyForRelease());
         } catch (IllegalTransitionException e) {
             addErrorMessage("Cannot revert accepted: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+        }
+    }
+
+    public void revertReleasedToReadyForChecking(ActionEvent evt) {
+        try {
+            getEditorService().revertReleasedToReadyForChecking(complex, getCurrentUser(), isReleased());
+        } catch (IllegalTransitionException e) {
+            addErrorMessage("Cannot revert released: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 

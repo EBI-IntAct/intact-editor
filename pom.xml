@@ -11,7 +11,7 @@
     <artifactId>editor</artifactId>
     <packaging>war</packaging>
 
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
     <name>Service :: IntAct Editor</name>
 
     <scm>
@@ -34,7 +34,7 @@
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
         <psi.jami.version>3.6.0</psi.jami.version>
         <!--The version needs to be the same than in intact-dataexchange to avoid problems-->
-        <intact.jami.version>3.1.0</intact.jami.version>
+        <intact.jami.version>3.1.1-SNAPSHOT</intact.jami.version>
         <dataexchange.version>4.3.0-SNAPSHOT</dataexchange.version>
         <intact.tools.version>2.0.1</intact.tools.version>
         <intact.primefaces.version>3.1.1</intact.primefaces.version>
