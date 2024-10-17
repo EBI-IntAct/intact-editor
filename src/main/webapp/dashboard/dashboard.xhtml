@@ -98,7 +98,6 @@
                     <h:selectManyCheckbox id="selComplexType" value="#{dashboardController.complexTypesToShow}">
                         <f:selectItem itemLabel="Manually Curated" itemValue="curated"/>
                         <f:selectItem itemLabel="Predicted" itemValue="predicted"/>
-                        <p:ajax update="selComplexStatus" listener="#{dashboardController.onComplexTypeChange}" />
                     </h:selectManyCheckbox>
                 </h:panelGrid>
             </p>

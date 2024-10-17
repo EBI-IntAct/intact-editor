@@ -997,10 +997,16 @@ public class ComplexController extends AnnotatedObjectController {
     }
 
     public void revertReleasedToReadyForChecking(ActionEvent evt) {
+        if (!userSessionController.isItMe(complex.getCurrentOwner())) {
+            addErrorMessage("Cannot mark as Ready for checking", "You are not the owner of this complex");
+            return;
+        }
+
         try {
             getEditorService().revertReleasedToReadyForChecking(complex, getCurrentUser(), isReleased());
+            addInfoMessage("Complex ready for checking", "Assigned to reviewer: " + complex.getCurrentReviewer().getLogin());
         } catch (IllegalTransitionException e) {
-            addErrorMessage("Cannot revert released: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
+            addErrorMessage("Cannot mark as ready for checking: " + e.getMessage(), ExceptionUtils.getFullStackTrace(e));
         }
     }
 

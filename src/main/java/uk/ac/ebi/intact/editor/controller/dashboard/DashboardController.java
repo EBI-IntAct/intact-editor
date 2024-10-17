@@ -24,7 +24,6 @@ import uk.ac.ebi.intact.editor.controller.UserSessionController;
 import uk.ac.ebi.intact.editor.services.dashboard.DashboardQueryService;
 import uk.ac.ebi.intact.editor.services.summary.ComplexSummary;
 import uk.ac.ebi.intact.editor.services.summary.PublicationSummary;
-import uk.ac.ebi.intact.editor.util.LazyDataModelFactory;
 import uk.ac.ebi.intact.jami.ApplicationContextProvider;
 import uk.ac.ebi.intact.jami.model.lifecycle.LifeCycleStatus;
 import uk.ac.ebi.intact.jami.model.user.Role;
@@ -32,7 +31,6 @@ import uk.ac.ebi.intact.jami.model.user.Role;
 import javax.annotation.Resource;
 import javax.faces.context.FacesContext;
 import javax.faces.event.ComponentSystemEvent;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -164,14 +162,6 @@ public class DashboardController extends BaseController {
 
     public void setComplexTypesToShow(String[] complexTypesToShow) {
         this.complexTypesToShow = Arrays.asList(complexTypesToShow);
-    }
-
-    public void onComplexTypeChange() {
-        if (this.complexTypesToShow.contains("curated")) {
-            this.complexStatusToShow = DEFAULT_STATUS_SHOWN;
-        } else if (this.complexTypesToShow.contains("predicted")) {
-            this.complexStatusToShow = List.of(LifeCycleStatus.READY_FOR_RELEASE.shortLabel());
-        }
     }
 
     public LazyDataModel<ComplexSummary> getAllComplexes() {

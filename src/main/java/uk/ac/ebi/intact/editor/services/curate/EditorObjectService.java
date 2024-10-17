@@ -498,12 +498,7 @@ public class EditorObjectService extends AbstractEditorService {
     public void revertReleasedToReadyForChecking(Releasable releasable, User user, boolean isReleased) {
         if (releasable != null) {
             detachObject((IntactPrimaryObject) releasable);
-
-            if (isReleased) {
-                lifecycleManager.getReleasedStatus().revertToReadyForChecking(releasable, user);
-            } else {
-                releasable.setStatus(LifeCycleStatus.READY_FOR_CHECKING);
-            }
+            lifecycleManager.getReleasedStatus().revertToReadyForChecking(releasable, user);
         }
     }
 

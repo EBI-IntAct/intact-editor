@@ -489,7 +489,7 @@
 
                         <h:selectOneMenu value="#{complexController.complex.currentReviewer}"
                                          hideNoSelectionOption="true"
-                                         rendered="#{(userSessionController.hasRole('ADMIN') and interaction.currentReviewer != null)}"
+                                         rendered="#{(userSessionController.hasRole('ADMIN') or userSessionController.isItMe(interaction.currentOwner))}"
                                          disabled="#{complexController.isLifeCycleDisabled()}"
                                          converter="userConverter">
                             <f:selectItems value="#{userAdminController.complexReviewerSelectItems}"/>
